@@ -1,0 +1,9 @@
+#Windows
+Thumbs.db
+
+# Compiled files
+*.o
+*.lib
+*.dll
+*.exp
+*.obj
