@@ -17,7 +17,7 @@ tags.UINT64   = string.pack("B", 0x07)
 tags.SINT64   = string.pack("B", 0x08)
 tags.SINGLE   = string.pack("B", 0x09)
 tags.DOUBLE   = string.pack("B", 0x0A)
-tags.QUAD	   = string.pack("B", 0x0B)
+tags.QUAD	  = string.pack("B", 0x0B)
 tags.VARINT   = string.pack("B", 0x0C)
 tags.VARINTZZ = string.pack("B", 0x0D)
 

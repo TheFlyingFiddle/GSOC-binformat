@@ -97,6 +97,7 @@ local mapping = standard.tuple(
 	{mapping = primitive.varint},
 	{mapping = primitive.bit}	
 })
+
 testSuccess(mapping,
 {
 	{
@@ -157,11 +158,11 @@ local mapping = standard.list(standard.union(
 	["string"] = primitive.stream,
 	["nil"]	   = primitive.null
 }))
+
 testSuccess(mapping, 
 {
 	{ "A", nil, "B", nil, "C" },
 	{ "D", "E", nil, nil, "F" }
 }, deepEquals)
-
 
 print("All tests succeeded.")
