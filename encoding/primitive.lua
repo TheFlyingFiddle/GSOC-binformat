@@ -10,7 +10,8 @@ local function createMapper(typeTag, encodeFunc, decodeFunc)
 	end
 	
 	function primitive:decode(decoder)
-		decoder[decodeFunc](decoder)
+		local val = decoder[decodeFunc](decoder)
+		return val
 	end
 	
 	return primitive
@@ -56,9 +57,10 @@ end
 
 function WString:decode(decoder)
 	local length = decoder:readvarint();
-	local array  = table.getn{n=length}
+	local array  = { }
 	for i=1,length,1 do
-		array[i] = decoder:readint16()
+		local char = decoder:readint16()
+		array[i] = string.char(char);
 	end	
 	
 	return table.concat(array)	

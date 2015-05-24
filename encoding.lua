@@ -143,8 +143,13 @@ end
 --used for zigzag variable integer encoding used in 
 --google protocol buffers. 
 function encoderMT:writevarintzz(number)
-	--Think this is correct. ~ seems to be both xor and not in lua...
-	local zigzaged = (number << 1) ~ (number >> 63) 
+	--Can also be done via arithmetic shift.
+	local bits = 0xFFFFFFFFFFFFFFFF
+	if(number >= 0) then
+		bits = 0;
+	end
+	
+	local zigzaged = (number << 1) ~ bits
 	self:writevarint(zigzaged)
 end
 
@@ -162,7 +167,6 @@ end
 
 --Encodes data using the specified mapping.
 function encoderMT:encode(mapping, data)
-	print"Encoding item"
 	self:writestring(mapping.tag)
 	mapping:encode(self, data)	
 end
@@ -219,13 +223,13 @@ function decoderMT:readint16()
 end
 
 --Reads a number between [-0x80000000 .. 0x7fffffff] from the input stream.
-function decoderMT:writeint32()
+function decoderMT:readint32()
 	local rep = self:readraw(4)
 	return string.unpack("i4", rep)
 end
 
 --Reads a number between [-0x8000000000000000 .. 0x7fffffffffffffff]  from the input stream.
-function decoderMT:writeint64()
+function decoderMT:readint64()
 	local rep = self:readraw(8);
 	return string.unpack("i8", rep)
 end
@@ -261,7 +265,7 @@ function decoderMT:readvarint()
 	local number = 0;
 	local count  = 0;
 	while true do
-		local byte = self:readraw(1)
+		local byte = self:readbyte()
 		number = number | ((byte & 0x7F) << (7 * count))
 		if byte < 0x80 then break end
 		count = count + 1;
@@ -278,7 +282,8 @@ end
 -- zigzag encoding employed by google protocol buffers. 
 function decoderMT:readvarintzz()
 	local zigzaged = self:readvarint()
-	return (zigzaged >> 1) ~ (-(zigzaged & 1));
+	return (zigzaged >> 1) ~ (-(zigzaged & 1)) 
+	
 end
 
 --Closes the decoder.

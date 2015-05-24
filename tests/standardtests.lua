@@ -5,59 +5,163 @@ local primitive = require"encoding.primitive"
 local standard	= require"encoding.standard"
 local testing   = require"testing"
 
+--This function tests that mirroring encoding/decoding functions work.
+--@params mapper the mapping object used for encoding and decoding.
+--@params args a number of arguments to encode and decode.
 
+--The function tests the mapper by using it to encode and decode 
+--to a faked stream.
+function testSuccess(mapper, args, equals)
+	if not equals then
+		equals = function(a, b) return a == b end
+	end
 
-local out = testing.outstream()
-local encoder = encoding.encoder(out)
+	local mockOut = testing.outstream()
+	local encoder = encoding.encoder(mockOut)
 
--- table with a sequence of booleans encoded as 'LIST BIT'
-local data = { true, false, true, false }
-local mapping = standard.list(primitive.bit)
-encoder:encode(mapping, data) -- encode raw data
+	--Start by encoding the values in args
+	for _, v in pairs(args) do
+		local status, err = pcall(encoder.encode, encoder, mapper, v);
+		if not status then
+			error(string.format(
+			   "Failed to encode %s using mapper %s.\nWith error %s",
+				tostring(v), mapper, err))
+		end
+	end
+	
+	local mockIn = testing.instream(mockOut.buffer)
+	local decoder = encoding.decoder(mockIn)
+	--Then we decode them and make sure they are the same.
+	for _, v in pairs(args) do
+		local status, decodedOrErr = pcall(decoder.decode, decoder, mapper);
+		if status then 
+			if not equals(decodedOrErr, v) then 
+				error(string.format(
+					"Did not decode input correctly. Input:%s Output:%s" ..
+					"Using mapper %s",
+					tostring(v), decodeOrErr, mapper, decoderFunc));
+			end
+		else 
+			error(string.format(
+				"Decoding failed for valid input %s with mapper %s\nWith error: %s"
+				, tostring(v), mapper, decodedOrErr));
+		end
+	end
+end
 
--- table mapping strings to numbers encoded as 'MAP STREAM VARINT'
-local data = {
-	["John Doe"] = 25,
-	["Jane Doe"] = 25,
-	["Baby Doe"] = 1,
-}
+local function deepEquals(a, b)
+	local ta = type(a)
+	local tb = type(b)
+
+	if ta ~= tb then return false end
+	
+	if ta == "table" then 
+		for k, v in pairs(a) do
+			if not deepEquals(b[k], v) then
+				return false
+			end
+		end
+		return true
+	else 
+		return a == b;
+	end
+end
+
+print("Staring encoding.standard tests")
+
+local mapping = standard.list(primitive.bit);
+testSuccess(mapping, 
+{
+	{true, false, false, true, false},
+	{false, true, true, false, true}
+}, deepEquals)
+
 local mapping = standard.map(primitive.stream, primitive.varint)
-encoder:encode(mapping, data) -- encode raw data
+testSuccess(mapping, 
+{
+	{
+		["John Doe"] = 25,
+		["Jane Doe"] = 25,
+		["Baby Doe"] = 1	
+	},
+	{
+		["Donald Duck"]  = 312,
+		["Mickey Mouse"] = 32,
+		["Goofy"]		 = 12
+	}
+}, deepEquals);
 
--- table containg info about a person as 'TUPLE 03 STREAM VARINT BIT'
-local data = {
-	"John Doe", -- name
-	25, -- age
-	true, -- male
-}
-local mapping = standard.tuple({
-	{mapping = primitive.stream}, -- default value for 'key' is 1
-	{mapping = primitive.varint}, -- default value for 'key' is 2
-	{mapping = primitive.bit}, -- default value for 'key' is 3
+local mapping = standard.tuple(
+{
+	{mapping = primitive.stream},
+	{mapping = primitive.varint},
+	{mapping = primitive.bit}	
 })
-encoder:encode(mapping, data) -- encode raw data
+testSuccess(mapping,
+{
+	{
+		"Picard",
+		20,
+		true
+	},
+	{
+		"Worf",
+		15,
+		false
+	},
+	{
+		"Riker",
+		18,
+		false
+	},
+	{
+		"Data",
+		13,
+		false
+	}
+}, deepEquals)
 
--- table containg fields about a person as 'TUPLE 03 STREAM VARINT BIT'
-local data = {
-	name = "John Doe",
-	age = 25,
-	male = true,
-}
-local mapping = standard.tuple({
+local mapping = standard.tuple 
+{
 	{key = "name", mapping = primitive.stream},
-	{key = "age", mapping = primitive.varint},
-	{key = "male", mapping = primitive.bit},
-})
-encoder:encode(mapping, data) -- encode raw data
+	{key = "rank", mapping = primitive.varint},
+	{key = "captain", mapping = primitive.bit}
+}
 
--- table containing strings and nils as 'LIST UNION 02 STREAM NULL'
-local data = { "A", nil, "B", nil, "C" }
-local mapping = standard.list(standard.union({
-	["string"] = primitive.stream, -- when value is a string
-	["nil"] = primitive.null, -- when value is nil
+testSuccess(mapping,
+{
+	{
+		name = "Pickard",
+		rank = 20,
+		captain = true
+	},
+	{
+		name = "Worf",
+		rank = 15,
+		captain = false
+	},
+	{
+		name = "Riker",
+		rank = 18,
+		captain = false
+	},
+	{
+		name = "Data",
+		rank = 13,
+		captain = false
+	}
+}, deepEquals)
+
+local mapping = standard.list(standard.union(
+{
+	["string"] = primitive.stream,
+	["nil"]	   = primitive.null
 }))
-encoder:encode(mapping, data) -- encode raw data
+testSuccess(mapping, 
+{
+	{ "A", nil, "B", nil, "C" },
+	{ "D", "E", nil, nil, "F" }
+}, deepEquals)
 
--- flushes any pending data and finished the encoding scope
-encoder:close()
-out:close()
+
+print("All tests succeeded.")

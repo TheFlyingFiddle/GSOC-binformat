@@ -24,8 +24,8 @@ function testSuccess(mapper, args)
 		end
 	end
 	
-	local mockIn = testing.outstream(mockOut.buffer)
-	local decoder = encoding.decoder(mockOut)
+	local mockIn = testing.instream(mockOut.buffer)
+	local decoder = encoding.decoder(mockIn)
 
 	--Then we decode them and make sure they are the same.
 	for _, v in pairs(args) do
@@ -35,14 +35,12 @@ function testSuccess(mapper, args)
 				error(string.format(
 					"Did not decode input correctly. Input:%s Output:%s" ..
 					"Using mapper %s",
-					tostring(v), decodeOrErr, mapper, decoderFunc));
+					tostring(v), decodedOrErr, mapper, decoderFunc));
 			end
 		else 
-			if shouldWork then 
-				error(string.format(
+			error(string.format(
 					"Decoding failed for valid input %s with mapper %s\nWith error: %s"
-					, tostring(v), mapper));
-			end
+					, tostring(v), mapper, decodedOrErr));
 		end
 	end
 end

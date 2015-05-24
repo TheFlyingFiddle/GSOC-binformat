@@ -26,28 +26,27 @@ function testSuccess(encodeFunc, decodeFunc, args)
 				tostring(v), encodeFunc, decodeFunc, err))
 		end
 	end
-	
-	local mockIn = testing.outstream(mockOut.buffer)
-	local decoder = encoding.decoder(mockOut)
+	local mockIn = testing.instream(mockOut.buffer)
+	local decoder = encoding.decoder(mockIn)
 
 	--Then we decode them and make sure they are the same.
 	for _, v in pairs(args) do
 		local func = decoder[decodeFunc];
-		local status, decodedOrErr = pcall(func, decoder);
-		if status then 
+		local decodedOrErr = func(decoder)
+		--local status, decodedOrErr = pcall(func, decoder);
+		if true then 
 			if decodedOrErr ~= v then 
 				error(string.format(
 					"Did not decode input correctly. Input:%s Output:%s" ..
-					"Using encoder %s and decoder %s",
+					" Using encoder %s and decoder %s",
 					tostring(v), tostring(decodedOrErr),
 					encodeFunc, decoderFunc));
 			end
 		else 
-			if shouldWork then 
-				error(string.format(
-					"Decoding failed for valid input %s with encoder %s and " ..
-					"decoder %s.\nWith error: %s", tostring(v), encodeFunc, decodeFunc));
-			end
+			error(string.format(
+				"Decoding failed for valid input %s with encoder %s and " ..
+				"decoder %s.\nWith error: %s", tostring(v), encodeFunc, decodeFunc,
+				decodedOrErr));
 		end
 	end
 end
@@ -179,7 +178,7 @@ testSuccess("writevarintzz", "readvarintzz",
 	0xffff, 
 	-0x8000000, 
 	0xffffffff,
-	-0x8000000000000000,
+	-0x7fffffffffffffff,
 	0xffffffffffffffff,
 	table.unpack(testing.randomInts(0, 0xff, 20)),									--Byte range
 	table.unpack(testing.randomInts(0x100, 0xffff, 20)),								--Short range

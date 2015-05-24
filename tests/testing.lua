@@ -3,7 +3,7 @@ local testing = { }
 --Faked output stream.
 --It stores it's output in a string.
 local outMT = { }
-outMT.__index = outMT;
+outMT.__index = outMT
 function outMT:write(string)
 	self.buffer = self.buffer .. string;		
 end
@@ -14,9 +14,9 @@ function outMT:close() end
 --Faked input stream.
 --Reads it's input from a string.
 local inMT = { }
-inMT.__index = inMT;
+inMT.__index = inMT
 function inMT:read(count)
-	local res = string.sub(self.buffer, self.pos, self.pos + count)
+	local res = string.sub(self.buffer, self.pos, self.pos + count - 1)
 	self.pos = self.pos + count
 	return res;
 end
@@ -28,11 +28,11 @@ function testing.outstream()
 	return mock
 end
 
-function testing.instream(string)
+function testing.instream(str)
 	local mock = { }
-	mock.pos   = 1
-	mock.buffer = string
 	setmetatable(mock, inMT)
+	mock.pos   = 1
+	mock.buffer = str
 	return mock	
 end
 
