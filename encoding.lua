@@ -162,6 +162,7 @@ end
 
 --Encodes data using the specified mapping.
 function encoderMT:encode(mapping, data)
+	print"Encoding item"
 	self:writestring(mapping.tag)
 	mapping:encode(self, data)	
 end

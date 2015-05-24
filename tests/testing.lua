@@ -8,6 +8,8 @@ function outMT:write(string)
 	self.buffer = self.buffer .. string;		
 end
 
+function outMT:flush() end
+function outMT:close() end
 
 --Faked input stream.
 --Reads it's input from a string.
