@@ -1,39 +1,7 @@
-local encoding = require"../encoding"
+package.path = package.path .. ";../encoding.lua"
 
---Faked output stream.
---It stores it's output in a string.
-local outMT = { }
-outMT.__index = outMT;
-function outMT:write(string)
-	self.buffer = self.buffer .. string;		
-end
-
-
---Faked input stream.
---Reads it's input from a string.
-local inMT = { }
-inMT.__index = inMT;
-function inMT:read(count)
-	local res = string.sub(self.buffer, self.pos, self.pos + count)
-	self.pos = self.pos + count
-	return res;
-end
-
-local function mockoutstream()
-	local mock = { }
-	mock.buffer = ""
-	setmetatable(mock, outMT)
-	return mock
-end
-
-local function mockinstream(string)
-	local mock = { }
-	mock.pos   = 1
-	mock.buffer = string
-	setmetatable(mock, inMT)
-	return mock	
-end
-
+local encoding = require("encoding")
+local testing  = require("testing")
 
 --This function tests that mirroring encoding/decoding functions work.
 --@params encodeFunc the encoding function under test
@@ -45,7 +13,7 @@ end
 --function. These decoded values are checked agains the input and if they are inccorect
 --an error is produced. 
 function testSuccess(encodeFunc, decodeFunc, args)
-	local mockOut  = mockoutstream()
+	local mockOut  = testing.outstream()
 	local encoder = encoding.encoder(mockOut)
 
 	--Start by encoding the values in args
@@ -59,13 +27,13 @@ function testSuccess(encodeFunc, decodeFunc, args)
 		end
 	end
 	
-	local mockIn = mockoutstream(mockOut.buffer)
+	local mockIn = testing.outstream(mockOut.buffer)
 	local decoder = encoding.decoder(mockOut)
 
 	--Then we decode them and make sure they are the same.
 	for _, v in pairs(args) do
 		local func = decoder[decodeFunc];
-		local status, decodedOrErr = pcall(func, decoder, v);
+		local status, decodedOrErr = pcall(func, decoder);
 		if status then 
 			if decodedOrErr ~= v then 
 				error(string.format(
@@ -85,7 +53,7 @@ function testSuccess(encodeFunc, decodeFunc, args)
 end
 
 function testEncodingFaliure(encodeFunc, args)
-	local mockIn  = mockinstream()
+	local mockIn  = testing.instream()
 	local encoder = encoding.encoder(mockIn)
 
 	--Start by encoding the values in args
@@ -101,41 +69,24 @@ function testEncodingFaliure(encodeFunc, args)
 end
 
 
-function randomNumbers(min, max, count)
-	local numbers = { }
-	for i=1, count, 1 do
-		table.insert(numbers, math.random(min, max))
-	end
-	return numbers
-end
-
-function randomDoubles(count)
-	local numbers = { }
-	for i=1, count, 1 do
-		table.insert(numbers, math.random())
-	end
-	return numbers
-end
-
 print("Testing encoding.")
-
 
 --Tests that we can write/read bits (booleans)
 testSuccess("writebit", "readbit", {true, false});
 
 --Test that we can write/read floats.
---Singles are abit tricky since you looks precisions.
-testSuccess("writesingle", "readsingle", randomNumbers(0, 0xffff, 20)); 
+--Singles are abit tricky since you lose precisions.
+testSuccess("writesingle", "readsingle", testing.randomInts(0, 0xffff, 20)); 
 
 --Test that we can write/read doubles.
-testSuccess("writedouble", "readdouble", randomDoubles(20))
+testSuccess("writedouble", "readdouble", testing.randomDoubles(20))
 
 --Test that write/read bytes works correctly.
 testSuccess("writebyte", "readbyte", 
 {
 	0, 
 	0xff, 
-	table.unpack(randomNumbers(0, 0xff, 20))
+	table.unpack(testing.randomInts(0, 0xff, 20))
 })
 
 
@@ -144,7 +95,7 @@ testSuccess("writeuint16", "readuint16",
 {
 	0, 
 	0xffff, 
-	table.unpack(randomNumbers(0, 0xffff, 20))
+	table.unpack(testing.randomInts(0, 0xffff, 20))
 })
 
 --Test that write/read 32-bit uints works correctly.
@@ -152,7 +103,7 @@ testSuccess("writeuint32", "readuint32",
 {
 	0,
 	0xffffffff, 
-	table.unpack(randomNumbers(0, 0xffffffff, 20))
+	table.unpack(testing.randomInts(0, 0xffffffff, 20))
 })
 
 --Test that write/read 64-bit uints works correctly.
@@ -160,7 +111,7 @@ testSuccess("writeuint64", "readuint64",
 {	
 	0, 
 	0xffffffffffffffff, 
-	table.unpack(randomNumbers(0, 0x7fffffffffffffff, 20))
+	table.unpack(testing.randomInts(0, 0x7fffffffffffffff, 20))
 })
 
 --Test that write/read 16-bit signed ints works correctly.
@@ -168,7 +119,7 @@ testSuccess("writeint16", "readint16",
 {
 	-0x8000, 
 	0x7fff, 
-	table.unpack(randomNumbers(-0x8000, 0x7fff, 20))
+	table.unpack(testing.randomInts(-0x8000, 0x7fff, 20))
 })
 
 --Test that write/read 32-bit signed ints works correctly.
@@ -176,7 +127,7 @@ testSuccess("writeint32", "readint32",
 {
 	-0x80000000,
 	0x7fffffff,
-	table.unpack(randomNumbers(-0x80000000, 0x7fffffff, 20))
+	table.unpack(testing.randomInts(-0x80000000, 0x7fffffff, 20))
 })
 
 
@@ -185,23 +136,23 @@ testSuccess("writeint64", "readint64",
 {
 	-0x8000000000000000,
 	0x7fffffffffffffff,
-	table.unpack(randomNumbers(-0x800000000000, 0x800000000000, 20))
+	table.unpack(testing.randomInts(-0x800000000000, 0x800000000000, 20))
 })
 
 --Test that we cannot write bytes larger then 0xff.
-testEncodingFaliure("writebyte", randomNumbers(0x100, 0xffff, 20))
+testEncodingFaliure("writebyte", testing.randomInts(0x100, 0xffff, 20))
 
 --Test that we cannot write 16-bit ints larger then 0xffff.
-testEncodingFaliure("writeuint16", randomNumbers(0x10000, 0xffffffff, 20))
+testEncodingFaliure("writeuint16", testing.randomInts(0x10000, 0xffffffff, 20))
 
 --Test that we cannot write 32-bit ints larger then 0xffffffff.
-testEncodingFaliure("writeuint32", randomNumbers(0x100000000, 0x800000000000000, 20))
+testEncodingFaliure("writeuint32", testing.randomInts(0x100000000, 0x800000000000000, 20))
 
 --Test that we cannot write 16-bit signed ints larger then 0x8000
-testEncodingFaliure("writeint16", randomNumbers(0x8000, 0xffff, 20))
+testEncodingFaliure("writeint16", testing.randomInts(0x8000, 0xffff, 20))
 
 --Test that we cannot write 32-bit signed ints larger then 0x80000000
-testEncodingFaliure("writeint32", randomNumbers(0x80000000, 0xffffffff, 20))
+testEncodingFaliure("writeint32", testing.randomInts(0x80000000, 0xffffffff, 20))
 
 --Tests that we can write/read variable length integers in various ranges.
 testSuccess("writevarint", "readvarint", 
@@ -211,11 +162,11 @@ testSuccess("writevarint", "readvarint",
 	0xffff, 
 	0xffffffff, 
 	0xffffffffffffffff,
-	table.unpack(randomNumbers(0, 0xff, 20)),									--Byte range
-	table.unpack(randomNumbers(0x100, 0xffff, 20)),								--Short range
-	table.unpack(randomNumbers(0x10000, 0xffffffff, 20)),						--Int	range
-	table.unpack(randomNumbers(0x100000000, 0x7fffffffffffffff, 20)),			--long  range
-	table.unpack(randomNumbers(0x8000000000000000, 0xffffffffffffffff, 20))	--long  range
+	table.unpack(testing.randomInts(0, 0xff, 20)),									--Byte range
+	table.unpack(testing.randomInts(0x100, 0xffff, 20)),								--Short range
+	table.unpack(testing.randomInts(0x10000, 0xffffffff, 20)),						--Int	range
+	table.unpack(testing.randomInts(0x100000000, 0x7fffffffffffffff, 20)),			--long  range
+	table.unpack(testing.randomInts(0x8000000000000000, 0xffffffffffffffff, 20))	--long  range
 })
 
 --Tests that we can write/read variable length signed integers in various ranges.
@@ -230,11 +181,11 @@ testSuccess("writevarintzz", "readvarintzz",
 	0xffffffff,
 	-0x8000000000000000,
 	0xffffffffffffffff,
-	table.unpack(randomNumbers(0, 0xff, 20)),									--Byte range
-	table.unpack(randomNumbers(0x100, 0xffff, 20)),								--Short range
-	table.unpack(randomNumbers(0x10000, 0xffffffff, 20)),						--Int	range
-	table.unpack(randomNumbers(0x100000000, 0x7fffffffffffffff, 20)),			--long  range
-	table.unpack(randomNumbers(0x8000000000000000, 0xffffffffffffffff, 20))		--long  range
+	table.unpack(testing.randomInts(0, 0xff, 20)),									--Byte range
+	table.unpack(testing.randomInts(0x100, 0xffff, 20)),								--Short range
+	table.unpack(testing.randomInts(0x10000, 0xffffffff, 20)),						--Int	range
+	table.unpack(testing.randomInts(0x100000000, 0x7fffffffffffffff, 20)),			--long  range
+	table.unpack(testing.randomInts(0x8000000000000000, 0xffffffffffffffff, 20))		--long  range
 })
 
 

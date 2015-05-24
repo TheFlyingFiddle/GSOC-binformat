@@ -1,4 +1,54 @@
 local encoding = { } 
+local tags     = { }
+--Standard tags
+tags.VOID     = string.pack("B", 0x00)
+tags.NULL     = VOID
+
+tags.BIT	   = string.pack("B", 0x01)
+tags.BOOLEAN  = BIT
+
+--NUMBERS
+tags.BYTE     = string.pack("B", 0x02)
+tags.UINT16   = string.pack("B", 0x03)
+tags.SINT16   = string.pack("B", 0x04)
+tags.UINT32   = string.pack("B", 0x05)
+tags.SINT32   = string.pack("B", 0x06)
+tags.UINT64   = string.pack("B", 0x07)
+tags.SINT64   = string.pack("B", 0x08)
+tags.SINGLE   = string.pack("B", 0x09)
+tags.DOUBLE   = string.pack("B", 0x0A)
+tags.QUAD	   = string.pack("B", 0x0B)
+tags.VARINT   = string.pack("B", 0x0C)
+tags.VARINTZZ = string.pack("B", 0x0D)
+
+--CHARS, STREAM and STRINGS
+tags.CHAR	   = string.pack("B", 0x0E)
+tags.WCHAR    = string.pack("B", 0x0F)
+tags.STREAM   = string.pack("B", 0x10)
+tags.STRING   = string.pack("B", 0x11)
+tags.WSTRING  = string.pack("B", 0x12)
+
+-- Encode changing
+tags.DYNAMIC  = string.pack("B", 0x13)
+tags.OBJECT   = string.pack("B", 0x14)
+tags.EMBEDDED = string.pack("B", 0x15)
+tags.SEMANTIC = string.pack("B", 0x16)
+
+--Aggregate types
+tags.LIST	   = string.pack("B", 0x17)
+tags.SET      = string.pack("B", 0x18)
+tags.ARRAY    = string.pack("B", 0x19)
+tags.TUPLE    = string.pack("B", 0x1A)
+tags.UNION    = string.pack("B", 0x1B)
+tags.MAP	   = string.pack("B", 0x1C)
+
+--Time and Date
+tags.TIME     = string.pack("B", 0x1D)
+tags.DATE     = string.pack("B", 0x1E)
+
+encoding.tags = tags;
+
+
 local encoderMT = { }
 encoderMT.__index = encoderMT;
 
@@ -112,8 +162,8 @@ end
 
 --Encodes data using the specified mapping.
 function encoderMT:encode(mapping, data)
-	--The meat of the encoder.
-	error("Not yet implemented")
+	self:writestring(mapping.tag)
+	mapping:encode(self, data)	
 end
 
 --Creates an encoder from an output stream.
@@ -238,8 +288,9 @@ end
 
 --Decodes using the specified mapping.
 function decoderMT:decode(mapping)
-	--This will be the meat of this entire file.
-	error("Not yet implemented.");	
+	local meta_types = self:readstring()
+	--We should add some type checking here. 
+	return mapping:decode(self)
 end
 
 --Creates a decoder
