@@ -92,7 +92,6 @@ end
 local MapMT = { }
 MapMT.__index = MapMT
 function MapMT:encode(encoder, value)
-	print("called")
 	local size = self.handler:getsize(value)
 	encoder:writevarint(size)
 	for i=1, size, 1 do
