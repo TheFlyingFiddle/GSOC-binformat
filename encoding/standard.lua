@@ -1,5 +1,6 @@
-local encoding = require"encoding"
-local composed = require"encoding.composed"
+local encoding  = require"encoding"
+local composed  = require"encoding.composed"
+local primitive = require"encoding.primitive" 
 
 local standard = { }
 
@@ -46,18 +47,18 @@ function standard.map(...)
     return newmap(TableAsMap, ...)
 end
 
-local TableAsTupleMT = { }
-TableAsTupleMT.__index = TableAsTupleMT
-function TableAsTupleMT:getitem(value, index)
+local TableAsTuple = { }
+TableAsTuple.__index = TableAsTuple
+function TableAsTuple:getitem(value, index)
     local key = self.keys[index]
     return value[key];
 end
 
-function TableAsTupleMT:create()
+function TableAsTuple:create()
     return { }
 end
 
-function TableAsTupleMT:setitem(value, index, item)
+function TableAsTuple:setitem(value, index, item)
     local key = self.keys[index]
     value[key] = item;
 end
@@ -78,16 +79,16 @@ function standard.tuple(members)
     end
 
     local handler = { }
-    setmetatable(handler, TableAsTupleMT)
+    setmetatable(handler, TableAsTuple)
     handler.keys = keys;
     
     return newtuple(handler, table.unpack(mappers))             
 end
 
 
-local TypeUnionMT = { }
-TypeUnionMT.__index = TypeUnionMT;
-function TypeUnionMT:select(value)
+local TypeUnion = { }
+TypeUnion.__index = TypeUnion;
+function TypeUnion:select(value)
     local typeof = type(value)
     local counter = 1
     for k,v in pairs(self.kinds) do
@@ -96,19 +97,20 @@ function TypeUnionMT:select(value)
         end
         counter = counter + 1
     end 
-    
+        
     error(string.format("Cannot encode type: %s", typeof))
 end
 
-function TypeUnionMT:create(kind, value)
+function TypeUnion:create(kind, value)
     return value;
 end
 
 local newunion = composed.union;
 function standard.union(kinds)
     local handler = { }
-    setmetatable(handler, TypeUnionMT)
+    setmetatable(handler, TypeUnion)
     handler.kinds = kinds;
+    
     
     local mappers = { }
     for k, v in pairs(kinds) do
@@ -116,6 +118,23 @@ function standard.union(kinds)
     end
     
     return newunion(handler, table.unpack(mappers)) 
+end
+
+local Nullable = { }
+function Nullable:select(value)
+   if value then 
+      return 2, value;
+   else
+      return 1, nil;
+   end
+end
+
+function Nullable:create(kind, value)
+   return value;
+end
+
+function standard.nullable(mapper)
+   return newunion(Nullable, { primitive.null, mapper })   
 end
 
 return standard
