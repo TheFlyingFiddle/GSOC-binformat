@@ -74,4 +74,10 @@ end
 
 primitives.wstring = WString;
 
+
+--TIME and DATE would be nice to have. 
+--Initialy i am thinking of time as long nanoseconds from 1970
+--and DATE to be some int type i guess. 
+
+
 return primitives
