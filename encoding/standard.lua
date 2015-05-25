@@ -118,6 +118,4 @@ function standard.union(kinds)
     return newunion(handler, table.unpack(mappers)) 
 end
 
-
-
 return standard

@@ -2,16 +2,17 @@ local encoding = require"encoding"
 
 local composed = { }
 
-local ArrayMT = { }
-ArrayMT.__index = ArrayMT
-function ArrayMT:encode(encoder, value)
+--Mapper for the ARRAY <T> tag.
+local Array = { }
+Array.__index = Array
+function Array:encode(encoder, value)
     encoder:writevarint(self.size)
     for i=1,size,1 do
         encoder:encode(self.mapper, self.handler:getitem(value, i))
     end
 end
 
-function ArrayMT:decode(decoder)
+function Array:decode(decoder)
     local size = self.size;
     local value = self.handler:create();
     for i=1, size, 1 do
@@ -22,7 +23,7 @@ end
 
 function composed.array(handler, mapper, size)
     local array = { }
-    setmetatable(array, ArrayMT)
+    setmetatable(array, Array)
     array.tag     = encoding.tags.ARRAY .. mapper.tag
     array.size    = size
     array.handler = handler
@@ -30,9 +31,10 @@ function composed.array(handler, mapper, size)
     return array    
 end
 
-local ListMT = {  }
-ListMT.__index = ListMT;
-function ListMT:encode(encoder, value)
+--Mapper for the LIST <T> tag.
+local List = {  }
+List.__index = List;
+function List:encode(encoder, value)
     local size = self.handler:getsize(value)
     encoder:writevarint(size)
     for i=1,size, 1 do
@@ -40,7 +42,7 @@ function ListMT:encode(encoder, value)
     end 
 end
 
-function ListMT:decode(decoder)
+function List:decode(decoder)
     local size = decoder:readvarint()
     local value  = self.handler:create(size)
     for i=1,size, 1 do
@@ -52,16 +54,17 @@ end
 
 function composed.list(handler, mapper)
     local list = {  }
-    setmetatable(list, ListMT)
+    setmetatable(list, List)
     list.tag    = encoding.tags.LIST .. mapper.tag;
     list.handler = handler;
     list.mapper  = mapper;
     return list;
 end
 
-local SetMT = {  }
-SetMT.__index = SetMT;
-function SetMT:encode(encoder, value)
+--Mapper for the SET <T> tag.
+local Set = {  }
+Set.__index = Set;
+function Set:encode(encoder, value)
     local size = self.handler:getsize(value)
     encoder:writevarint(size)
     for i=1,size, 1 do
@@ -69,7 +72,7 @@ function SetMT:encode(encoder, value)
     end 
 end
 
-function SetMT:decode(decoder)
+function Set:decode(decoder)
     local size = decoder:readvarint()
     local value  = self.handler:create(size)
     for i=1,size, 1 do
@@ -81,7 +84,7 @@ end
 
 function composed.set(handler, mapper)
     local list = {  }
-    setmetatable(list, SetMT)
+    setmetatable(list, Set)
     list.tag    = encoding.tags.SET .. mapper.tag;
     list.handler = handler;
     list.mapper  = mapper;
@@ -89,9 +92,10 @@ function composed.set(handler, mapper)
 end
 
 
-local MapMT = { }
-MapMT.__index = MapMT
-function MapMT:encode(encoder, value)
+--Mapper for the MAP <K> <V> tag.
+local Map = { }
+Map.__index = Map
+function Map:encode(encoder, value)
     local size = self.handler:getsize(value)
     encoder:writevarint(size)
     for i=1, size, 1 do
@@ -101,7 +105,7 @@ function MapMT:encode(encoder, value)
     end
 end
 
-function MapMT:decode(decoder)
+function Map:decode(decoder)
     local size  = decoder:readvarint();
     local value = self.handler:create(size)
     for i=1, size, 1 do
@@ -115,7 +119,7 @@ end
 
 function composed.map(handler, keymapper, itemmapper)
     local map = { }
-    setmetatable(map, MapMT)
+    setmetatable(map, Map)
     map.tag   = encoding.tags.MAP .. keymapper.tag .. itemmapper.tag    
     map.handler    = handler
     map.keymapper  = keymapper
@@ -123,9 +127,10 @@ function composed.map(handler, keymapper, itemmapper)
     return map;
 end
 
-local TupleMT = { }
-TupleMT.__index = TupleMT
-function TupleMT:encode(encoder, value)
+--Mapper for the TUPLE N <T1> <T2> ... <TN> tag.
+local Tuple = { }
+Tuple.__index = Tuple
+function Tuple:encode(encoder, value)
     for i=1, #self.mappers, 1 do
         local mapper = self.mappers[i]
         local item   = self.handler:getitem(value, i)
@@ -133,7 +138,7 @@ function TupleMT:encode(encoder, value)
     end
 end
 
-function TupleMT:decode(decoder)
+function Tuple:decode(decoder)
     local value = self.handler:create();
     for i=1, #self.mappers, 1 do
         local mapper = self.mappers[i] 
@@ -145,7 +150,7 @@ end
 
 function composed.tuple(handler, ...)
     local tuple = { }
-    setmetatable(tuple, TupleMT)
+    setmetatable(tuple, Tuple)
     tuple.mappers = { ... }
     tuple.handler = handler
     
@@ -158,15 +163,16 @@ function composed.tuple(handler, ...)
     return tuple;
 end
 
-local UnionMT = { }
-UnionMT.__index = UnionMT
-function UnionMT:encode(encoder, value)
+--Mapper for the UNION N <T1> <T2> ... <TN>
+local Union = { }
+Union.__index = Union
+function Union:encode(encoder, value)
     local kind, encodable = self.handler:select(value)
     encoder:writevarint(kind)
     encoder:encode(self.mappers[kind], value)
 end
 
-function UnionMT:decode(decoder)
+function Union:decode(decoder)
     local kind    = decoder:readvarint();
     local decoded = decoder:decode(self.mappers[kind])
     return self.handler:create(kind, encoded)
@@ -174,7 +180,7 @@ end
 
 function composed.union(handler, ...)
     local union = { }
-    setmetatable(union, UnionMT)
+    setmetatable(union, Union)
     union.handler = handler
     union.mappers = { ... }
     
@@ -187,19 +193,20 @@ function composed.union(handler, ...)
     return union
 end
 
-local SemanticMT = { }
-SemanticMT.__index = SemanticMT
-function SemanticMT:encode(encoder, value)
+--Mapper for the SEMANTING "ID" <T> tag
+local Semantic = { }
+Semantic.__index = Semantic
+function Semantic:encode(encoder, value)
     encoder:encode(self.mapper, value)
 end
 
-function SemanticMT:decode(decoder)
+function Semantic:decode(decoder)
     return decoder:decode(self.mapper)
 end
 
 function composed.semantic(id, mapper)
     local semantic = { }
-    setmetatable(semantic, SemanticMT)
+    setmetatable(semantic, Semantic)
     
     semantic.tag    = encoding.tags.SEMANTIC .. id .. mapper.tag
     semantic.mapper = mapper
@@ -207,6 +214,7 @@ function composed.semantic(id, mapper)
 end
 
 --Left to implement is
--- object and embedded
+-- object, embedded
+-- and typeref 
 
 return composed
