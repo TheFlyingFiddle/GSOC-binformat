@@ -8,7 +8,7 @@ Array.__index = Array
 function Array:encode(encoder, value)
     encoder:writevarint(self.size)
     for i=1,size,1 do
-        encoder:encode(self.mapper, self.handler:getitem(value, i))
+        self.mapper:encode(encoder, self.handler:getitem(value, i))
     end
 end
 
@@ -16,7 +16,7 @@ function Array:decode(decoder)
     local size = self.size;
     local value = self.handler:create();
     for i=1, size, 1 do
-        local item = decoder:decode(self.mapper)
+        local item = self.mapper:decode(decoder)
         self.handler:setitem(value, i, item)
     end
 end
@@ -38,7 +38,7 @@ function List:encode(encoder, value)
     local size = self.handler:getsize(value)
     encoder:writevarint(size)
     for i=1,size, 1 do
-        encoder:encode(self.mapper, self.handler:getitem(value, i)) 
+        self.mapper:encode(encoder, self.handler:getitem(value, i)) 
     end 
 end
 
@@ -46,7 +46,7 @@ function List:decode(decoder)
     local size = decoder:readvarint()
     local value  = self.handler:create(size)
     for i=1,size, 1 do
-        local item = decoder:decode(self.mapper)
+        local item = self.mapper:decode(decoder)
         self.handler:setitem(value, i, item)
     end
     return value;
@@ -68,7 +68,7 @@ function Set:encode(encoder, value)
     local size = self.handler:getsize(value)
     encoder:writevarint(size)
     for i=1,size, 1 do
-        encoder:encode(self.mapper, self.handler:getitem(value, i)) 
+        self.mapper:encode(encoder, self.handler:getitem(value, i)) 
     end 
 end
 
@@ -76,7 +76,7 @@ function Set:decode(decoder)
     local size = decoder:readvarint()
     local value  = self.handler:create(size)
     for i=1,size, 1 do
-        local item = decoder:decode(self.mapper)
+        local item = self.mapper:decode(decoder)
         self.handler:putitem(value, item)
     end
     return value;
@@ -100,8 +100,8 @@ function Map:encode(encoder, value)
     encoder:writevarint(size)
     for i=1, size, 1 do
         local key, item = self.handler:getitem(value, i);
-        encoder:encode(self.keymapper, key)
-        encoder:encode(self.itemmapper, item);
+        self.keymapper:encode(encoder, key)
+        self.itemmapper:encode(encoder, item);
     end
 end
 
@@ -109,8 +109,8 @@ function Map:decode(decoder)
     local size  = decoder:readvarint();
     local value = self.handler:create(size)
     for i=1, size, 1 do
-        local key  = decoder:decode(self.keymapper)
-        local item = decoder:decode(self.itemmapper)
+        local key  = self.keymapper:decode(decoder)
+        local item = self.itemmapper:decode(decoder)
         self.handler:putitem(value, key, item)
     end 
     
@@ -134,7 +134,7 @@ function Tuple:encode(encoder, value)
     for i=1, #self.mappers, 1 do
         local mapper = self.mappers[i]
         local item   = self.handler:getitem(value, i)
-        encoder:encode(mapper, item);
+        mapper:encode(encoder, item)
     end
 end
 
@@ -142,7 +142,7 @@ function Tuple:decode(decoder)
     local value = self.handler:create();
     for i=1, #self.mappers, 1 do
         local mapper = self.mappers[i] 
-        local item   = decoder:decode(mapper)
+        local item   = mapper:decode(decoder)
         self.handler:setitem(value, i, item)
     end
     return value;   
@@ -168,13 +168,15 @@ local Union = { }
 Union.__index = Union
 function Union:encode(encoder, value)
     local kind, encodable = self.handler:select(value)
+    local mapper = self.mappers[kind]
     encoder:writevarint(kind)
-    encoder:encode(self.mappers[kind], value)
+    mapper:encode(encoder, value)    
 end
 
 function Union:decode(decoder)
     local kind    = decoder:readvarint();
-    local decoded = decoder:decode(self.mappers[kind])
+    local mapper  = self.mappers[kind]
+    local decoded = mapper:decode(decoder)
     return self.handler:create(kind, encoded)
 end
 
@@ -197,11 +199,11 @@ end
 local Semantic = { }
 Semantic.__index = Semantic
 function Semantic:encode(encoder, value)
-    encoder:encode(self.mapper, value)
+    self.mapper:encode(encoder, value)
 end
 
 function Semantic:decode(decoder)
-    return decoder:decode(self.mapper)
+    return self.mapper:decode(decoder)
 end
 
 function composed.semantic(id, mapper)
@@ -213,8 +215,50 @@ function composed.semantic(id, mapper)
     return semantic
 end
 
+local Object = { }
+Object.__index = Object;
+function Object:encode(encoder, value)
+    local ident = self.handler:identify(value)
+    local index = 0
+    for i, v in ipairs(encoder.objects) do
+        if ident == v then
+            index = i
+        end
+    end   
+    
+    if index == 0 then 
+        index = #encoder.objects;
+        encoder:writevarint(index)
+        self.mapper:encode(encoder, value)
+        table.insert(encoder.objects, ident)
+    else 
+        encoder:writevarint(index - 1)
+    end
+end
+
+function Object:decode(decoder)
+    local index = decoder:readvarint();
+    index = index + 1;
+    if index > #decoder.objects then 
+        local obj = self.mapper:decode(decoder)
+        table.insert(decoder.objects, obj)
+        return obj
+    else
+        return decoder.objects[index]
+    end
+end 
+
+function composed.object(handler, mapper)
+    local object = { }
+    setmetatable(object, Object)
+    object.mapper  = mapper
+    object.handler = handler
+    object.tag = encoding.tags.OBJECT .. mapper.tag; 
+    return object    
+end
+
+
 --Left to implement is
--- object, embedded
--- and typeref 
+-- embedded and typeref 
 
 return composed

@@ -137,4 +137,16 @@ function standard.nullable(mapper)
    return newunion(Nullable, { primitive.null, mapper })   
 end
 
+
+local LuaValueAsObject = { }
+function LuaValueAsObject:identify(value)
+    --This enables any lua type to be used as an object.
+    return value; 
+end
+
+local newobject = composed.object
+function standard.object(mapper)
+    return newobject(LuaValueAsObject, mapper)
+end
+
 return standard

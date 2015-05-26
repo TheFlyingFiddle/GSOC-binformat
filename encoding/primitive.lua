@@ -20,7 +20,7 @@ end
 local tags = encoding.tags;
 
 primitives.bit      = createMapper(tags.BIT,       "writebit",       "readbit")
-primitives.boolean  = createMapper(tags.BIT        "writebit",       "readbit")
+primitives.boolean  = createMapper(tags.BIT,       "writebit",       "readbit")
 primitives.byte     = createMapper(tags.BYTE,      "writebyte",      "readbyte")
 primitives.varint   = createMapper(tags.VARINT,    "writevarint",    "readvarint")
 primitives.varintzz = createMapper(tags.VARINTZZ,  "writevarintzz",  "readvarintzz")

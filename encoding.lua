@@ -55,7 +55,7 @@ Encoder.__index = Encoder;
 --Writes the bytes contained in a raw string,
 --to the output stream of the encoder.
 function Encoder:writeraw(string)
-   self.stream:write(string);
+   self.stream:write(string)
 end
 
 --Encodes s string.
@@ -143,7 +143,6 @@ end
 --used for zigzag variable integer encoding used in 
 --google protocol buffers. 
 function Encoder:writevarintzz(number)
-   
    -- This did not work for negative numbers...
    -- local bits = number >> 63 
    
@@ -159,17 +158,13 @@ function Encoder:writevarintzz(number)
    self:writevarint(zigzaged)
 end
 
---Flushes the underlying stream ensuring that 
---all data has been written.
-function Encoder:flush()
-   self.stream:flush()
-end
-
 --Finishes any pending operations and closes 
 --the encoder. After this operation the encoder can no longer be used.
 function Encoder:close()
-   self:flush()
-   self.stream:close()
+   self.stream:flush()
+   self.objects = nil;
+   self.stream  = nil;
+   setmetatable(self, nil);
 end
 
 --Encodes data using the specified mapping.
@@ -182,7 +177,14 @@ end
 function encoding.encoder(outStream)
    local encoder = { stream = outStream }
    setmetatable(encoder, Encoder)
+   encoder.objects = { }
    return encoder
+end
+
+function encoding.encode(outStream, value, mapping)
+   local encoder = encoding.encoder(outStream)
+   encoder:encode(value, mapping)
+   encoder:close()   
 end
 
 local Decoder = { }
@@ -295,12 +297,15 @@ end
 --Closes the decoder.
 --After this operation is performed the decoder can no longer be used.
 function Decoder:close()
-   self.stream:close();
+   self.objects = nil
+   setmetatable(self, nil)
 end
 
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
    local meta_types = self:readstring()
+   print(meta_types)
+   print(mapping.tag)
    assert(meta_types == mapping.tag)
    return mapping:decode(self)
 end
@@ -309,7 +314,16 @@ end
 function encoding.decoder(inStream)
    local decoder = { stream = inStream}
    setmetatable(decoder, Decoder)
+   decoder.objects = { }
    return decoder
+end
+
+--Convinience function for decoding a single value.
+function encoding.decode(stream, mapping)
+   local decoder = encoding.decoder(stream)
+   local val     = decoder:decode(mapping)
+   decoder:close()
+   return val
 end
 
 return encoding
