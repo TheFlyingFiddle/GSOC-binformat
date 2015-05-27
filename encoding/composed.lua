@@ -107,10 +107,12 @@ end
 
 function Map:decode(decoder)
     local size  = decoder:readvarint();
+    
     local value = self.handler:create(size)
     for i=1, size, 1 do
         local key  = self.keymapper:decode(decoder)
         local item = self.itemmapper:decode(decoder)
+        
         self.handler:putitem(value, key, item)
     end 
     
@@ -176,8 +178,9 @@ end
 function Union:decode(decoder)
     local kind    = decoder:readvarint();
     local mapper  = self.mappers[kind]
+    
     local decoded = mapper:decode(decoder)
-    return self.handler:create(kind, encoded)
+    return self.handler:create(kind, decoded)
 end
 
 function composed.union(handler, ...)
@@ -229,8 +232,8 @@ function Object:encode(encoder, value)
     if index == 0 then 
         index = #encoder.objects;
         encoder:writevarint(index)
-        self.mapper:encode(encoder, value)
         table.insert(encoder.objects, ident)
+        self.mapper:encode(encoder, value)
     else 
         encoder:writevarint(index - 1)
     end
@@ -283,8 +286,68 @@ function composed.dynamic(handler)
     
     return dynamic
 end
---Left to implement is
--- embedded and typeref 
 
+
+--It's unclear how this should work. 
+--How does an application forward messages? 
+--Is the only purpose of embedded to be skippable?
+--What does it mean for it 
+--Something like flatbuffer-tables seems like a better idea
+--For data that needs to be forward/backward compatible. 
+--I will defer implementing this to a later point in time.
+local Embedded = { }
+Embedded.__index = Embedded;
+
+function Embedded:encode(encoder, value)
+end
+
+function Embedded:decode(encoder, value)
+end
+
+function composed.embeded(mapper)
+end
+
+local Typeref = { }
+Typeref.__index = Typeref
+function Typeref:encode(encoder, value)
+    self.mapper:encode(encoder, value)
+end
+
+function Typeref:decode(decoder)
+    local val = self.mapper:decode(decoder)
+    return val
+    
+end
+
+function Typeref:setRef(mapper)
+    if self.mapper then
+        error("This type reference already refers to a complete type")
+    end
+   
+    --We need to figure out the index we should refer back to.
+    self.mapper = mapper
+    local tmptag = self.tag
+    local index  = 1
+    while true do
+        local i = string.find(mapper.tag, tmptag, index)
+        if not i then return end
+        index = i + 1
+                                                                
+        local offset = i - 1
+        local reftag = encoding.tags.TYPEREF .. string.pack("B", offset)
+        mapper.tag = string.gsub(mapper.tag, tmptag, reftag, 1)                
+    end
+end
+
+--Used to identify the mapper.
+local typrefCounter = 0;
+function composed.typeref()
+    local typeref = { }
+    setmetatable(typeref, Typeref);
+    typeref.tag = "incomplete_typeref" .. typrefCounter;
+    typrefCounter = typrefCounter + 1;
+    
+    return typeref;
+end
 
 return composed

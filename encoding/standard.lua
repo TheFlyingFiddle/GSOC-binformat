@@ -46,7 +46,7 @@ function TableAsMap:create(size)
     return { }
 end
 
-function TableAsMap:putitem(value, key, item)
+function TableAsMap:putitem(value, key, item)    
     value[key] = item;
 end
 
@@ -99,8 +99,8 @@ TypeUnion.__index = TypeUnion;
 function TypeUnion:select(value)
     local typeof = type(value)
     local counter = 1
-    for k,v in pairs(self.kinds) do
-        if k == typeof then 
+    for i ,v in ipairs(self.kinds) do
+        if v.type == typeof then 
             return counter, v;
         end
         counter = counter + 1
@@ -118,11 +118,10 @@ function standard.union(kinds)
     local handler = { }
     setmetatable(handler, TypeUnion)
     handler.kinds = kinds;
-    
-    
+        
     local mappers = { }
-    for k, v in pairs(kinds) do
-        table.insert(mappers, v)
+    for i, v in ipairs(kinds) do
+        table.insert(mappers, v.mapping)
     end
     
     return newunion(handler, table.unpack(mappers)) 
@@ -142,7 +141,7 @@ function Nullable:create(kind, value)
 end
 
 function standard.nullable(mapper)
-   return newunion(Nullable, { primitive.null, mapper })   
+   return newunion(Nullable, primitive.null, mapper)   
 end
 
 

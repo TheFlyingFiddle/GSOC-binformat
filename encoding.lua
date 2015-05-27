@@ -46,6 +46,10 @@ tags.MAP      = string.pack("B", 0x1C)
 tags.TIME     = string.pack("B", 0x1D)
 tags.DATE     = string.pack("B", 0x1E)
 
+--Types
+tags.TYPEREF  = string.pack("B", 0x1F)
+tags.TYPE     = string.pack("B", 0x20)
+
 encoding.tags = tags;
 
 

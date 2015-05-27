@@ -17,7 +17,7 @@ local data =
 		[3] = "C"
 	}
 }
-print(testing.prettyPrint(data))
+testing.prettyPrint(data)
 
 local mapping  = standard.dynamic()
 local out = testing.outstream();
@@ -26,5 +26,5 @@ encoding.encode(out, data, mapping)
 local in_ = testing.instream(out.buffer)
 local value = encoding.decode(in_, mapping)
 
-print(testing.prettyPrint(value))
+testing.prettyPrint(value)
 assert(testing.deepEquals(data, value))

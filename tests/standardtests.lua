@@ -105,12 +105,12 @@ testSuccess(mapping,
 	}
 }, testing.deepEquals)
 
-local mapping = standard.tuple 
+local mapping = standard.tuple(
 {
 	{key = "name", mapping = primitive.stream},
 	{key = "rank", mapping = primitive.varint},
 	{key = "captain", mapping = primitive.bit}
-}
+})
 
 testSuccess(mapping,
 {
@@ -138,8 +138,8 @@ testSuccess(mapping,
 
 local mapping = standard.list(standard.union(
 {
-	["string"] = primitive.stream,
-	["nil"]	   = primitive.null
+	{ type = "string", mapping = primitive.stream },
+	{ type = "nil",    mapping = primitive.null }
 }))
 
 testSuccess(mapping, 
