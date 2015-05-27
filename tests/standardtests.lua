@@ -49,23 +49,6 @@ function testSuccess(mapper, args, equals)
 	end
 end
 
-local function deepEquals(a, b)
-	local ta = type(a)
-	local tb = type(b)
-
-	if ta ~= tb then return false end
-	
-	if ta == "table" then 
-		for k, v in pairs(a) do
-			if not deepEquals(b[k], v) then
-				return false
-			end
-		end
-		return true
-	else 
-		return a == b;
-	end
-end
 
 print("Staring encoding.standard tests")
 
@@ -74,7 +57,7 @@ testSuccess(mapping,
 {
 	{true, false, false, true, false},
 	{false, true, true, false, true}
-}, deepEquals)
+}, testing.deepEquals)
 
 local mapping = standard.map(primitive.stream, primitive.varint)
 testSuccess(mapping, 
@@ -89,7 +72,7 @@ testSuccess(mapping,
 		["Mickey Mouse"] = 32,
 		["Goofy"]		 = 12
 	}
-}, deepEquals);
+}, testing.deepEquals);
 
 local mapping = standard.tuple(
 {
@@ -120,7 +103,7 @@ testSuccess(mapping,
 		13,
 		false
 	}
-}, deepEquals)
+}, testing.deepEquals)
 
 local mapping = standard.tuple 
 {
@@ -151,7 +134,7 @@ testSuccess(mapping,
 		rank = 13,
 		captain = false
 	}
-}, deepEquals)
+}, testing.deepEquals)
 
 local mapping = standard.list(standard.union(
 {
@@ -163,6 +146,6 @@ testSuccess(mapping,
 {
 	{ "A", nil, "B", nil, "C" },
 	{ "D", "E", nil, nil, "F" }
-}, deepEquals)
+}, testing.deepEquals)
 
 print("All tests succeeded.")

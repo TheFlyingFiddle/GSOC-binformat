@@ -53,5 +53,50 @@ function testing.randomDoubles(count)
 	return numbers
 end
 
+function testing.deepEquals(a, b)
+	local ta = type(a)
+	local tb = type(b)
+
+	if ta ~= tb then return false end
+	
+	if ta == "table" then 
+		for k, v in pairs(a) do
+			if not testing.deepEquals(b[k], v) then
+				return false
+			end
+		end
+		return true
+	else 
+		return a == b;
+	end
+end
+
+local function pf(a, l)
+	local level = l
+		
+	if type(a) == "table" then
+		local space1 = ""
+		local space2 = ""
+ 		for i=1, level, 1 do
+			space1 = space1 .. "  ";
+		end
+		space2 = space1 .. "  "
+				
+		local s = "\n" .. space1 .. "{\n"
+		for k, v in pairs(a) do
+			s = s .. space2 .. "[" .. pf(k, level + 1) .. "] = " .. pf(v, level + 1) .. "\n" 
+		end
+		s = s .. space1 .. "}"
+		return s;
+	elseif type(a) == "string" then
+		return "\"" .. a .. "\""
+	else
+		return tostring(a)
+	end
+end
+
+function testing.prettyPrint(a)
+	print(pf(a, 0))
+end
 
 return testing

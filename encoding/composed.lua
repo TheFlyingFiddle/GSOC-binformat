@@ -258,7 +258,33 @@ function composed.object(handler, mapper)
 end
 
 
+
+local Dynamic = { }
+Dynamic.__index = Dynamic
+
+function Dynamic:encode(encoder, value)
+	local mapper   = self.handler:getvaluemapping(value)
+	local metatype = mapper.tag
+	encoder:writestring(metatype)
+	mapper:encode(encoder, value)
+end
+
+function Dynamic:decode(decoder)
+	local metatype = decoder:readstring()
+	local mapping  = self.handler:getmetamapping(metatype)
+	return mapping:decode(decoder)	
+end
+
+function composed.dynamic(handler)
+    local dynamic = { }
+    setmetatable(dynamic, Dynamic)
+    dynamic.handler     = handler
+    dynamic.tag         = encoding.tags.DYNAMIC
+    
+    return dynamic
+end
 --Left to implement is
 -- embedded and typeref 
+
 
 return composed

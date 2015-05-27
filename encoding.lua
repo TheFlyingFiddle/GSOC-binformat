@@ -183,7 +183,7 @@ end
 
 function encoding.encode(outStream, value, mapping)
    local encoder = encoding.encoder(outStream)
-   encoder:encode(value, mapping)
+   encoder:encode(mapping, value)
    encoder:close()   
 end
 
@@ -304,8 +304,6 @@ end
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
    local meta_types = self:readstring()
-   print(meta_types)
-   print(mapping.tag)
    assert(meta_types == mapping.tag)
    return mapping:decode(self)
 end

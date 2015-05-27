@@ -21,9 +21,17 @@ function standard.array(...)
 end
 
 local TableAsMap = { }
-function TableAsMap:getsize(value) return #value end
-function TableAsMap:getitem(value, i)
+function TableAsMap:getsize(value) 
     local counter = 0;
+    for _, __ in pairs(value) do
+        counter = counter + 1
+    end
+    
+    return counter
+end
+
+function TableAsMap:getitem(value, i)
+    local counter = 1;
     for k, v in pairs(value) do 
         if counter == i then
             return k, v;
@@ -148,5 +156,43 @@ local newobject = composed.object
 function standard.object(mapper)
     return newobject(LuaValueAsObject, mapper)
 end
+
+local DynamicHandler = { }
+DynamicHandler.__index = DynamicHandler
+
+function DynamicHandler:getvaluemapping(value)
+	local typeof = type(value)
+	return self.typemappings[typeof];	
+end
+
+function DynamicHandler:getmetamapping(mt)
+	for _, v in pairs(self.typemappings) do 
+		if v.tag == mt then
+			return v;
+		end
+	end
+	
+	error("Could not find a mapping for type " + mt)
+end
+
+local newdynamic = composed.dynamic
+function standard.dynamic()
+    local handler = { } 
+    setmetatable(handler, DynamicHandler)
+    handler.typemappings = { }
+    
+    local dynamic = newdynamic(handler)
+    
+    --It's a shame that we cannot differentiate between integers and doubles
+    --Since varints are normally much smaller then 8 bytes. 
+    handler.typemappings["number"]   = primitive.fpdouble
+    handler.typemappings["string"]   = primitive.string
+    handler.typemappings["boolean"]  = primitive.boolean
+    handler.typemappings["nil"]      = primitive.null
+    handler.typemappings["table"]    = standard.object(standard.map(dynamic, dynamic))
+         
+    return dynamic
+end	
+
 
 return standard
