@@ -173,15 +173,26 @@ end
 
 --Encodes data using the specified mapping.
 function Encoder:encode(mapping, data)
-   self:writestring(mapping.tag)
+   if self.usemetadata then 
+      self:writestring(mapping.tag)
+   end
+   
    mapping:encode(self, data)	
 end
 
 --Creates an encoder from an output stream.
-function encoding.encoder(outStream)
+--Defaults to output metadata.
+function encoding.encoder(outStream, usemetadata)
    local encoder = { stream = outStream }
    setmetatable(encoder, Encoder)
    encoder.objects = { }
+   
+   if usemetadata == false then 
+      encoder.usemetadata = false
+   else 
+      encoder.usemetadata = true;
+   end
+   
    return encoder
 end
 
@@ -309,16 +320,26 @@ end
 
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
-   local meta_types = self:readstring()
-   assert(meta_types == mapping.tag)
+   if self.usemetadata then 
+      local meta_types = self:readstring()
+      assert(meta_types == mapping.tag)
+   end 
+   
    return mapping:decode(self)
 end
 
 --Creates a decoder
-function encoding.decoder(inStream)
+function encoding.decoder(inStream, usemetadata)
    local decoder = { stream = inStream}
    setmetatable(decoder, Decoder)
    decoder.objects = { }
+   
+   if usemetadata == false then 
+      decoder.usemetadata = false
+   else
+      decoder.usemetadata = true
+   end
+   
    return decoder
 end
 

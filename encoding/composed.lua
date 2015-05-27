@@ -264,9 +264,8 @@ function Object:decode(decoder)
         local tmpObj = { }
         table.insert(decoder.objects, tmpObj) --Incase we have cyclic references.
         local obj = self.mapper:decode(decoder)
-        table[index] = obj
         fixcyclicrefs(obj, tmpObj, obj)
-        
+        decoder.objects[index] = obj
         return obj
     else
         return decoder.objects[index]
