@@ -197,7 +197,7 @@ local data =
 		}
 	}
 }
---last.next = data;
+last.next = data;
 
 local out = testing.outstream();
 encoding.encode(out, data, listmapping)
@@ -209,4 +209,4 @@ assert(value.payload == data.payload)
 assert(value.next.payload == data.next.payload)
 assert(value.next.next.payload == data.next.next.payload)
 assert(value.next.next.next.payload == last.payload)
---assert(value == value.next.next.next)
+assert(value == value.next.next.next.next)

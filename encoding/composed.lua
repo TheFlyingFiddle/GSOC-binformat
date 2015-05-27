@@ -239,12 +239,34 @@ function Object:encode(encoder, value)
     end
 end
 
+local function fixcyclicrefs(obj, tmp, ref)
+    local t = type(obj)
+    if t == "table" then
+        for k, v in pairs(obj) do
+            if k == tmp and v == tmp then
+                obj[ref] = ref
+            elseif k == tmp then 
+                obj[ref] = v
+            elseif v == tmp then
+                obj[k] = ref     
+            end
+            
+            fixcyclicrefs(k, tmp, ref)
+            fixcyclicrefs(v, tmp, ref)        
+        end
+    end
+end
+
 function Object:decode(decoder)
     local index = decoder:readvarint();
     index = index + 1;
     if index > #decoder.objects then 
+        local tmpObj = { }
+        table.insert(decoder.objects, tmpObj) --Incase we have cyclic references.
         local obj = self.mapper:decode(decoder)
-        table.insert(decoder.objects, obj)
+        table[index] = obj
+        fixcyclicrefs(obj, tmpObj, obj)
+        
         return obj
     else
         return decoder.objects[index]

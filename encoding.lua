@@ -305,6 +305,8 @@ function Decoder:close()
    setmetatable(self, nil)
 end
 
+
+
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
    local meta_types = self:readstring()
