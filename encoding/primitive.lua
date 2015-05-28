@@ -30,7 +30,7 @@ primitives.uint64   = createMapper(tags.UINT64,    "writeuint64",    "readuint64
 primitives.int16    = createMapper(tags.SINT16,    "writeint16",     "readint16")
 primitives.int32    = createMapper(tags.SINT32,    "writeint32",     "readint32")
 primitives.int64    = createMapper(tags.SINT64,    "writeint64",     "readint64")
-primitives.fpsimple = createMapper(tags.SINGLE,    "writesingle",    "readsingle")
+primitives.fpsingle = createMapper(tags.SINGLE,    "writesingle",    "readsingle")
 primitives.fpdouble = createMapper(tags.DOUBLE,    "writedouble",    "readdouble")
 
 --Not yet implemented primitives.fpquad = createMapper(QUAD, "writequad", "readquad");

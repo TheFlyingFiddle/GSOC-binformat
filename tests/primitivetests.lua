@@ -52,7 +52,7 @@ testSuccess(primitives.boolean, {true, false})
 
 --Test that we can write/read floats.
 --Singles are abit tricky since you lose precisions.
-testSuccess(primitives.fpsimple, testing.randomInts(0, 0xffff, 20)); 
+testSuccess(primitives.fpsingle, testing.randomInts(0, 0xffff, 20)); 
 
 --Test that we can write/read doubles.
 testSuccess(primitives.fpdouble, testing.randomDoubles(20))

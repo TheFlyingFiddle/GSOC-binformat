@@ -71,6 +71,7 @@ function TableAsTuple:setitem(value, index, item)
     value[key] = item;
 end
 
+
 local newtuple = composed.tuple;
 function standard.tuple(members)
     local keys    = { }
@@ -78,6 +79,8 @@ function standard.tuple(members)
 
     for i=1, #members, 1 do
         local member = members[i];
+        assert(member.mapping);
+            
         mappers[i] = member.mapping;
         if member.key then
             keys[i] = member.key
