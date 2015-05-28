@@ -1,3 +1,5 @@
+local encoding = require"encoding"
+
 local testing = { }
 
 --Faked output stream.
@@ -97,6 +99,16 @@ end
 
 function testing.prettyPrint(a)
 	print(pf(a, 0))
+end
+
+
+function test(data, mapping)
+	local out = testing.outstream();
+	encoding.encode(out, data, mapping)
+	print(out.buffer, string.len(out.buffer))
+	local in_ = testing.instream(out.buffer)
+	local value = encoding.decode(in_, mapping)
+	assert(testing.deepEquals(data, value))
 end
 
 return testing

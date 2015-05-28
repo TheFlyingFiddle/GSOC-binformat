@@ -48,7 +48,8 @@ tags.DATE     = string.pack("B", 0x1E)
 
 --Types
 tags.TYPEREF  = string.pack("B", 0x1F)
-tags.TYPE     = string.pack("B", 0x20)
+tags.TYPE     = string.pack("B", 0x20) 
+
 
 encoding.tags = tags;
 

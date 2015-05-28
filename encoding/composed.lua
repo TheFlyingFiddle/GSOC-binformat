@@ -262,9 +262,9 @@ function Object:decode(decoder)
     index = index + 1;
     if index > #decoder.objects then 
         local tmpObj = { }
-        table.insert(decoder.objects, tmpObj) --Incase we have cyclic references.
+        table.insert(decoder.objects, tmpObj)
         local obj = self.mapper:decode(decoder)
-        fixcyclicrefs(obj, tmpObj, obj)
+        fixcyclicrefs(obj, tmpObj, obj) --Can be very slow (on a large graph)
         decoder.objects[index] = obj
         return obj
     else
@@ -344,7 +344,7 @@ function Typeref:setRef(mapper)
     if self.mapper then
         error("This type reference already refers to a complete type")
     end
-   
+    
     --We need to figure out the index we should refer back to.
     self.mapper = mapper
     local tmptag = self.tag

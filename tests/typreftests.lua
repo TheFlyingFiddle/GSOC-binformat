@@ -6,15 +6,7 @@ local standard	= require"encoding.standard"
 local composed  = require"encoding.composed"
 local testing   = require"testing"
 
-
-local function test(data, mapping)
-	local out = testing.outstream();
-	encoding.encode(out, data, mapping)
-
-	local in_ = testing.instream(out.buffer)
-	local value = encoding.decode(in_, mapping)
-	assert(testing.deepEquals(data, value))
-end
+print("Starting tests for typeref")
 
 --A lua object as union with typeref
 -- union LuaValue
@@ -35,6 +27,7 @@ end
 --  OBJECT MAP 
 --		TYPEREF 06
 --      TYPEREF 08
+--  (Could possebly include functions aswell)
 local luaref = composed.typeref()
 local luamapping = standard.union(
 { 
@@ -174,7 +167,6 @@ test(data, treemapping)
 --    UNION 02
 --	    VOID
 --		TYPEREF 06
-
 local listref 	  = composed.typeref()
 local listmapping = standard.object(standard.tuple(
 {
@@ -210,3 +202,5 @@ assert(value.next.payload == data.next.payload)
 assert(value.next.next.payload == data.next.next.payload)
 assert(value.next.next.next.payload == last.payload)
 assert(value == value.next.next.next.next)
+
+print("all tests passed")
