@@ -84,3 +84,40 @@ local data =
 }
 
 testdynamicmapping(data, monster)
+
+
+--This will not work
+local noderef = { }
+local node = standard.nullable(standard.tuple(
+	{ key = "payload", mapping = primitive.fpdouble },
+	{ key = "left",    mapping = noderef },
+	{ key = "right",   mapping = noderef }
+))
+noderef:setref(node)
+
+local tree = standard.tuple(
+{
+	{ key = "count",   mapping = primitive.varint },
+	{ key = "root",    mapping = node }	
+})
+
+local data = 
+{
+	nodecount = 4,
+	root = 
+	{
+		payload = 3,
+		left = 
+		{
+			payload = 8,
+			left = 
+			{
+				payload = 21
+			}	
+		},
+		right = 
+		{
+			payload = 32	
+		}
+	}
+}
