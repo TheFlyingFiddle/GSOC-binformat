@@ -65,7 +65,7 @@ local monsterdata =
 	color    = Color.Blue --Blue
 }
 
-test(monsterdata, monster)
+testing.testmapping(monsterdata, monster)
 
 local monsterdata = 
 {
@@ -78,6 +78,6 @@ local monsterdata =
 	color    = Color.Blue --Blue
 }
 
-test(monsterdata, monster)
+testing.testmapping(monsterdata, monster)
 
 print("All composed tests passed.")

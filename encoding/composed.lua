@@ -289,12 +289,12 @@ Dynamic.__index = Dynamic
 function Dynamic:encode(encoder, value)
 	local mapper   = self.handler:getvaluemapping(value)
 	local metatype = mapper.tag
-	encoder:writestring(metatype)
+	encoder:writeraw(metatype)
 	mapper:encode(encoder, value)
 end
 
 function Dynamic:decode(decoder)
-	local metatype = decoder:readstring()
+	local metatype = decoder:readtype()
 	local mapping  = self.handler:getmetamapping(metatype)
 	return mapping:decode(decoder)	
 end
@@ -365,7 +365,7 @@ local typrefCounter = 0;
 function composed.typeref()
     local typeref = { }
     setmetatable(typeref, Typeref);
-    typeref.tag = "incomplete_typeref" .. typrefCounter;
+    typeref.tag = "incomplete_typeref" .. typrefCounter; --Sort of A hack I guess...
     typrefCounter = typrefCounter + 1;
     
     return typeref;

@@ -4,6 +4,7 @@ local primitive = require"encoding.primitive"
 
 local standard = { }
 
+--List and Array handler
 local TableAsList = { }
 function TableAsList:getsize(value) return #value end
 function TableAsList:getitem(value, index) return value[index] end
@@ -20,10 +21,45 @@ function standard.array(...)
     return newlist(TableAsList, ...)
 end
 
+--Set handler
+local TableAsSet = { }
+function TableAsSet:getsize(value)
+    local counter = 0;
+    for _ in pairs(value) do
+        counter = counter + 1
+    end
+    return counter
+end
+
+function TableAsSet:getitem(value, i)
+    local counter = 1;
+    for k, v in pairs(value) do 
+        if counter == i then
+            return k, v;
+        end
+        counter = counter + 1;
+    end
+    return nil;
+end
+
+function TableAsSet:create(size)
+    return { }
+end
+
+function TableAsSet:putitem(value, item)
+    value[item] = true
+end
+
+local newset = composed.set
+function standard.set(...)
+    return newset(TableAsSet, ...)
+end
+
+--Map handler
 local TableAsMap = { }
 function TableAsMap:getsize(value) 
     local counter = 0;
-    for _, __ in pairs(value) do
+    for _ in pairs(value) do
         counter = counter + 1
     end
     
@@ -55,6 +91,7 @@ function standard.map(...)
     return newmap(TableAsMap, ...)
 end
 
+--Tuple handler
 local TableAsTuple = { }
 TableAsTuple.__index = TableAsTuple
 function TableAsTuple:getitem(value, index)
@@ -70,7 +107,6 @@ function TableAsTuple:setitem(value, index, item)
     local key = self.keys[index]
     value[key] = item;
 end
-
 
 local newtuple = composed.tuple;
 function standard.tuple(members)
@@ -96,7 +132,7 @@ function standard.tuple(members)
     return newtuple(handler, table.unpack(mappers))             
 end
 
-
+--Union handler
 local TypeUnion = { }
 TypeUnion.__index = TypeUnion;
 function TypeUnion:select(value)
@@ -130,6 +166,7 @@ function standard.union(kinds)
     return newunion(handler, table.unpack(mappers)) 
 end
 
+--Spacial case union nullable
 local Nullable = { }
 function Nullable:select(value)
    if value then 
@@ -147,7 +184,7 @@ function standard.nullable(mapper)
    return newunion(Nullable, primitive.null, mapper)   
 end
 
-
+--Object handler
 local LuaValueAsObject = { }
 function LuaValueAsObject:identify(value)
     --This enables any lua type to be used as an object.
@@ -159,40 +196,110 @@ function standard.object(mapper)
     return newobject(LuaValueAsObject, mapper)
 end
 
-local DynamicHandler = { }
-DynamicHandler.__index = DynamicHandler
-
-function DynamicHandler:getvaluemapping(value)
-	local typeof = type(value)
-	return self.typemappings[typeof];	
+--Dynamic handler
+local ErrorMapper = { }
+ErrorMapper.__index = ErrorMapper
+function ErrorMapper:encode(encoder, value)
+    error("The dynamic mapper cannot encode value of type " .. self.typeof .. ".")
+end
+function ErrorMapper:decode(decoder)
+    error("The dynamic mapper cannot decode value of type " .. self.typeof .. ".")
+end
+local function errormapper(typeof)
+    local em = { }
+    setmetatable(em, ErrorMapper)
+    em.typeof = typeof
+    return em
 end
 
-function DynamicHandler:getmetamapping(mt)
-	for _, v in pairs(self.typemappings) do 
-		if v.tag == mt then
-			return v;
-		end
-	end
-	
-	error("Could not find a mapping for type " + mt)
+local DynamicHandler = { }
+DynamicHandler.__index = DynamicHandler
+function DynamicHandler:getvaluemapping(value)
+	local typeof = type(value)
+	return self.encodemapping[typeof];	
+end
+
+local tags = encoding.tags
+function DynamicHandler:getmetamapping(type)
+    local mapper = self.decodemapping[type.tag]
+    if mapper then return mapper end
+    
+    if type.tag == tags.LIST then
+        return standard.list(self:getmetamapping(type.element))
+    elseif type.tag == tags.SET then
+        return standard.set(self:getmetamapping(type.element))
+    elseif type.tag == tags.ARRAY then
+        return standard.array(self:getmetamapping(type.element), type.size)    
+    elseif type.tag == tags.TUPLE then
+        local tuple = { }
+        for i=1, type.size do 
+            tuple[i] = { mapping = self:getmetamapping(type[i]) }
+        end
+        return standard.tuple(tuple)
+    elseif type.tag == tags.UNION then
+        local kinds = { }
+        for i=1, type.size do
+            kinds[i] = {mapping = self:getmetamapping(type[i])}
+        end
+        return standard.union(kinds)
+    elseif type.tag == tags.MAP then
+        local key   = self:getmetamapping(type.key)
+        local value = self:getmetamapping(type.value)
+        return standard.map(key, value)        
+    elseif type.tag == tags.OBJECT then
+        return standard.object(self:getmetamapping(type.sub))    
+    elseif type.tag == tags.EMBEDDED then
+        error("not yet imeplemented")
+    elseif type.tag == tags.SEMANTIC then
+        return composed.semantic(type.id, self:getmetamapping(type.sub))
+    elseif type.tag == tags.TYPEREF then
+        error("At the moment TYPREFS in dynamic types are not supported. ")
+    else
+        error("Unrecognised tag", type.tag)
+    end
 end
 
 local newdynamic = composed.dynamic
 function standard.dynamic()
     local handler = { } 
     setmetatable(handler, DynamicHandler)
-    handler.typemappings = { }
-    
     local dynamic = newdynamic(handler)
     
-    --It's a shame that we cannot differentiate between integers and doubles
-    --Since varints are normally much smaller then 8 bytes. 
-    handler.typemappings["number"]   = primitive.fpdouble
-    handler.typemappings["string"]   = primitive.string
-    handler.typemappings["boolean"]  = primitive.boolean
-    handler.typemappings["nil"]      = primitive.null
-    handler.typemappings["table"]    = standard.object(standard.map(dynamic, dynamic))
-         
+    local DynEncode = { }
+    handler.encodemapping = DynEncode
+    DynEncode["nil"]  = primitive.null
+    DynEncode.number  = primitive.fpdouble
+    DynEncode.string  = primitive.stream
+    DynEncode.boolean = primitive.boolean
+    DynEncode.table   = standard.object(standard.map(dynamic, dynamic))
+    DynEncode["function"] = errormapper("function")
+    DynEncode.userdata    = errormapper("userdata")
+    DynEncode.thread      = errormapper("thread")
+        
+    local tags = encoding.tags
+    local DynDecode = { }
+    handler.decodemapping = DynDecode
+    
+    DynDecode[tags.VOID]     = primitive.null
+    DynDecode[tags.CHAR]     = primitive.char
+    DynDecode[tags.WCHAR]    = primitive.wchar
+    DynDecode[tags.STREAM]   = primitive.stream
+    DynDecode[tags.STRING]   = primitive.string
+    DynDecode[tags.WSTRING]  = primitive.wstring
+    DynDecode[tags.BIT]      = primitive.bit
+    DynDecode[tags.BYTE]     = primitive.byte
+    DynDecode[tags.UINT16]   = primitive.uint16
+    DynDecode[tags.UINT32]   = primitive.uint32
+    DynDecode[tags.UINT64]   = primitive.uint64
+    DynDecode[tags.SINT16]   = primitive.int16
+    DynDecode[tags.SINT32]   = primitive.int32
+    DynDecode[tags.SINT64]   = primitive.int64
+    DynDecode[tags.VARINT]   = primitive.varint
+    DynDecode[tags.VARINTZZ] = primitive.varintzz
+    DynDecode[tags.SINGLE]   = primitive.fpsingle
+    DynDecode[tags.DOUBLE]   = primitive.fpdouble
+    DynDecode[tags.DYNAMIC]  = dynamic
+    --DynDecode[tags.QUAD]     = primitive.fpquad         
     return dynamic
 end	
 

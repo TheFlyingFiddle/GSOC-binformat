@@ -53,7 +53,7 @@ local data =
 	}
 }
 
-test(data, luamapping)
+testing.testmapping(data, luamapping)
 
 --Linked list.
 -- tuple List
@@ -90,7 +90,7 @@ local data =
 	}
 }
 
-test(data, listmapping)
+testing.testmapping(data, listmapping)
 
 --A binary tree
 -- tuple Tree 
@@ -150,8 +150,7 @@ local data =
 		}
 	}
 }
-
-test(data, treemapping)
+testing.testmapping(data, treemapping)
 
 -- Linked list with cycle
 -- tuple List

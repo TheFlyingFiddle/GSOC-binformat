@@ -1,10 +1,10 @@
 local encoding = { } 
 local tags     = { }
 --Standard tags
-tags.VOID    = string.pack("B", 0x00)
+tags.VOID    = string.pack("B", 0x00) 
 tags.NULL    = VOID
 
-tags.BIT     = string.pack("B", 0x01)
+tags.BIT     = string.pack("B", 0x01) 
 tags.BOOLEAN = BIT
 
 --NUMBERS
@@ -53,9 +53,21 @@ tags.TYPE     = string.pack("B", 0x20)
 
 encoding.tags = tags;
 
+function encoding.tagstring(tag)
+   for k,v in pairs(tags) do
+      if v == tag then
+         return k
+      end
+   end
+   
+   return "Tag not found"
+end
+
+
 
 local Encoder = { }
 Encoder.__index = Encoder;
+
 
 --Writes the bytes contained in a raw string,
 --to the output stream of the encoder.
@@ -175,7 +187,7 @@ end
 --Encodes data using the specified mapping.
 function Encoder:encode(mapping, data)
    if self.usemetadata then 
-      self:writestring(mapping.tag)
+      self:writeraw(mapping.tag)
    end
    
    mapping:encode(self, data)	
@@ -197,8 +209,8 @@ function encoding.encoder(outStream, usemetadata)
    return encoder
 end
 
-function encoding.encode(outStream, value, mapping)
-   local encoder = encoding.encoder(outStream)
+function encoding.encode(outStream, value, mapping, usemetadata)
+   local encoder = encoding.encoder(outStream, usemetadata)
    encoder:encode(mapping, value)
    encoder:close()   
 end
@@ -317,17 +329,59 @@ function Decoder:close()
    setmetatable(self, nil)
 end
 
-
-
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
    if self.usemetadata then 
-      local meta_types = self:readstring()
+      local meta_types = self:readraw(string.len(mapping.tag))
       assert(meta_types == mapping.tag)
    end 
    
    return mapping:decode(self)
 end
+
+--Reads a type from the stream. 
+--I am not sure this method should be here. 
+--It could be better to have a parse module
+--that can extract types from metadata and possibly
+--some idl language. It could be the case that this should be a pull parser
+--instead of a dom parser. 
+function Decoder:readtype()
+   local first = self:readraw(1)
+   local type  = { tag = first}
+   if first == tags.LIST then
+      type.element = self:readtype()   
+   elseif first == tags.SET then 
+      type.element = self:readtype()   
+   elseif first == tags.ARRAY then
+      type.size    = self:readvarint()
+      type.element = self:readtype()
+   elseif first == tags.TUPLE then
+      type.size = self:readvarint()
+      for i=1, type.size do
+         type[i] = self:readtype()
+      end
+   elseif first == tags.UNION then
+      type.size = self:readvarint()
+      for i=1, type.size do
+         type[i] = self:readtype()
+      end 
+   elseif first == tags.MAP then
+      type.key   = self:readtype()
+      type.value = self:readtype()
+   elseif first == tags.OBJECT then
+      type.sub  = self:readtype()
+   elseif first == tags.EMBEDDED then
+      type.sub  = self:readtype()
+   elseif first == tags.SEMANTIC then
+      type.id  = self:readstring()
+      type.sub = self:readtype()
+   elseif first == tags.TYPEREF then
+      --This is difficult to deal with
+      error("At the moment cannot decode TYPREFS in metatypes.")
+   end
+   return type
+end
+
 
 --Creates a decoder
 function encoding.decoder(inStream, usemetadata)
@@ -345,8 +399,8 @@ function encoding.decoder(inStream, usemetadata)
 end
 
 --Convinience function for decoding a single value.
-function encoding.decode(stream, mapping)
-   local decoder = encoding.decoder(stream)
+function encoding.decode(stream, mapping, usemetadata)
+   local decoder = encoding.decoder(stream, usemetadata)
    local val     = decoder:decode(mapping)
    decoder:close()
    return val
