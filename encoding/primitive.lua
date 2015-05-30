@@ -34,8 +34,6 @@ primitives.fpsingle = createMapper(tags.SINGLE,    "writesingle",    "readsingle
 primitives.fpdouble = createMapper(tags.DOUBLE,    "writedouble",    "readdouble")
 
 --Not yet implemented primitives.fpquad = createMapper(QUAD, "writequad", "readquad");
-primitives.char     = createMapper(tags.CHAR,   "writebyte",   "readbyte")
-primitives.wchar    = createMapper(tags.WCHAR,  "writeint16",  "readint16")
 primitives.stream   = createMapper(tags.STREAM, "writestring", "readstring")
 primitives.string   = createMapper(tags.STRING, "writestring", "readstring")
 
@@ -45,35 +43,53 @@ primitives.string   = createMapper(tags.STRING, "writestring", "readstring")
 local Void = { tag = tags.VOID }
 function Void:encode(encoder, value) end
 function Void:decode(decoder) return nil end
-
 primitives.void = Void
-primitives.null = Void
+
+local Null = { tag = tags.NULL }
+function Null:encode(encoder, value) end
+function Null:decode(decoder) return nil end
+
+primitives.null = Null
+
+--CHAR should read as a 1 char string.
+local Char = { tag = tags.CHAR }
+function Char:encode(encoder, value)
+    assert(#value == 1, "invalid char")
+    encoder:writeraw(value)
+end
+function Char:decode(decoder)
+    return decoder:readraw(1)
+end
+
+primitives.char = Char
+
+local WChar = { tag = tags.WCHAR }
+function WChar:encode(encoder, value)
+    assert(#value == 2, "invalid string length")
+    encoder:writeraw(value)
+end
+
+function WChar:decode(decoder)
+    return decoder:readraw(2)        
+end
+
+primitives.wchar = WChar
 
 --The wstring does not have a onetoone mapping with an encoding/decoding function.
 --Thus we need to create the mapper manually.
 local WString = { tag = tags.WSTRING }
 function WString:encode(encoder, value)
-    local length = string.len(value)
+    local length = #value
+    assert(length %2 == 0, "invalid wide string")
     encoder:writevarint(length)
-    for i=1, length, 1 do
-        local char = string.byte(value, i)
-        encoder:writeint16(char)
-    end
+    encoder:writeraw(value)
 end
 
 function WString:decode(decoder)
-    local length = decoder:readvarint();
-    local array  = { }
-    for i=1,length,1 do
-        local char = decoder:readint16()
-        array[i] = string.char(char);
-    end 
-    
-    return table.concat(array)  
+    local length = encoder:readvarint()
+    return decoder:readraw(length)
 end
-
 primitives.wstring = WString;
-
 
 --TIME and DATE would be nice to have. 
 --Initialy i am thinking of time as long nanoseconds from 1970

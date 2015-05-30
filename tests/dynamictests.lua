@@ -2,6 +2,7 @@ package.path = package.path .. ";../?.lua"
 
 local encoding  = require"encoding"
 local primitive = require"encoding.primitive"
+local composed  = require"encoding.composed"
 local standard	= require"encoding.standard"
 local testing   = require"testing"
 
@@ -86,8 +87,8 @@ local data =
 testdynamicmapping(data, monster)
 
 
---This will not work
-local noderef = { }
+--This will not work right now since the typeref problem is not solved. 
+local noderef = composed.typeref()
 local node = standard.nullable(standard.tuple(
 	{ key = "payload", mapping = primitive.fpdouble },
 	{ key = "left",    mapping = noderef },
@@ -121,3 +122,5 @@ local data =
 		}
 	}
 }
+
+--testdynamicmapping(data, tree)

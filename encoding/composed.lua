@@ -340,7 +340,7 @@ function Typeref:decode(decoder)
     
 end
 
-function Typeref:setRef(mapper)
+function Typeref:setref(mapper)
     if self.mapper then
         error("This type reference already refers to a complete type")
     end

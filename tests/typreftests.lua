@@ -38,7 +38,7 @@ local luamapping = standard.union(
 	{ type = "table",   mapping = standard.object(standard.map(luaref, luaref)) }
 })
 
-luaref:setRef(luamapping)
+luaref:setref(luamapping)
 
 local data = 
 {
@@ -74,7 +74,7 @@ local listmapping = standard.tuple(
 	{ key = "payload", mapping = primitive.varint },
 	{ key = "next",    mapping = standard.nullable(listref) } 
 })
-listref:setRef(listmapping)
+listref:setref(listmapping)
 
 local data =
 {
@@ -122,7 +122,7 @@ local node = standard.nullable(standard.tuple(
 	{ key = "left",    mapping = noderef },
 	{ key = "right",   mapping = noderef }
 }))
-noderef:setRef(node)
+noderef:setref(node)
 
 local treemapping = standard.tuple(
 {
@@ -172,7 +172,7 @@ local listmapping = standard.object(standard.tuple(
 	{ key = "payload", mapping = primitive.varint },
 	{ key = "next",    mapping = standard.nullable(listref) } 
 }))
-listref:setRef(listmapping)
+listref:setref(listmapping)
 
 local last = { payload = 3 }
 local data =
