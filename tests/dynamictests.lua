@@ -1,11 +1,8 @@
-package.path = package.path .. ";../?.lua"
-
 local encoding  = require"encoding"
 local primitive = require"encoding.primitive"
 local composed  = require"encoding.composed"
 local standard	= require"encoding.standard"
-local testing   = require"testing"
-
+local testing   = require"tests.testing"
 --Inout dynamic encoding
 local data = 
 {

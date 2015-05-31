@@ -1,9 +1,7 @@
-package.path = package.path .. ";../?.lua"
-
 local encoding  = require"encoding"
 local primitive = require"encoding.primitive"
 local standard	= require"encoding.standard"
-local testing   = require"testing"
+local testing   = require"tests.testing"
 
 --This function tests that mirroring encoding/decoding functions work.
 --@params mapper the mapping object used for encoding and decoding.

@@ -1,3 +1,5 @@
+local format = require"format"
+
 local encoding = { } 
 local tags     = { }
 --Standard tags
@@ -73,112 +75,82 @@ end
 local Encoder = { }
 Encoder.__index = Encoder;
 
-
 --Writes the bytes contained in a raw string,
 --to the output stream of the encoder.
 function Encoder:writeraw(string)
-   self.stream:write(string)
+   self.stream:writeraw(string)
 end
 
 --Encodes s string.
 function Encoder:writestring(s)
-   local length = string.len(s)
-   self:writevarint(length)
-   self:writeraw(s)
+   self.stream:writestring(s)
 end
 
 --Encodes an integer that is in the range [0 .. 0xff].
 function Encoder:writebyte(byte)
-   local rep = string.pack("B", byte)
-   self:writeraw(rep);
+   self.stream:writebyte(byte)
 end
 
 --Encodes an integer that is in the range [0 .. 0xffff].
 function Encoder:writeuint16(number)
-   local rep = string.pack("I2", number)
-   self:writeraw(rep);
+   self.stream:writeuint16(number)
 end
 
 --Encodes an integer that is in the range [0 .. 0xffffffff].
 function Encoder:writeuint32(number)
-   local rep = string.pack("I4", number)
-   self:writeraw(rep);
+   self.stream:writeuint32(number)
 end
 
 --Encodes an integer that is in the range [0 .. 0xffffffffffffffff].
 function Encoder:writeuint64(number)
-   local rep = string.pack("I8", number)
-   self:writeraw(rep);
+   self.stream:writeuint64(number)
 end
 
 --Encodes an integer that is in the range [-0x8000 .. 0x7fff].
 function Encoder:writeint16(number)
-   local rep = string.pack("i2", number)
-   self:writeraw(rep)	
+   self.stream:writeint16(number)
 end
 
 --Encodesan integer that is in the range [-0x80000000 .. 0x7fffffff].
 function Encoder:writeint32(number)
-   local rep = string.pack("i4", number)
-   self:writeraw(rep)
+   self.stream:writeint32(number)
 end
 
 --Encodes an integer that is in the range [-0x8000000000000000 .. 0x7fffffffffffffff].
 function Encoder:writeint64(number)
-   local rep = string.pack("i8", number)
-   self:writeraw(rep)
+   self.stream:writeint64(number)
 end
 
 --Encodes a float point value with 32-bit precision in IEEE 754 format.
 function Encoder:writesingle(number)
-   local rep = string.pack("f", number)
-   self:writeraw(rep)
+   self.stream:writesingle(number)
 end
 
 --Encodes a float point value with 64-bit precision in IEEE 754 format.
 function Encoder:writedouble(number)
-   local rep = string.pack("d", number);
-   self:writeraw(rep);
-end
-
---Encodes a boolean value.
-function Encoder:writebit(bit)
-   local number = 0;
-   if bit then number = 1 end
-   local rep = string.pack("B", number)
-   self:writeraw(rep)
+   self.stream:writedouble(number)
 end
 
 --Encodes a number in the variable integer encoding
 --used by google protocol buffers. 
 function Encoder:writevarint(number)
-   while number >= 0x80 or number < 0 do
-      local byte = (number | 0x80) & 0x00000000000000FF
-      number = number >> 7;
-      self:writebyte(byte);
-   end
-   
-   self:writebyte(number)
+   self.stream:writevarint(number)
 end
 
 --Encodes a number in zigzag encoded format 
 --used for zigzag variable integer encoding used in 
 --google protocol buffers. 
 function Encoder:writevarintzz(number)
-   -- This did not work for negative numbers...
-   -- local bits = number >> 63 
-   
-   --Workaround
-   --All bits set to 1
-   local bits = 0xFFFFFFFFFFFFFFFF
-   if(number >= 0) then
-      --All bits set to 0
-      bits = 0;
-   end
-   
-   local zigzaged = (number << 1) ~ bits
-   self:writevarint(zigzaged)
+   self.stream:writevarintzz(number)
 end
+
+--Encodes a boolean value. This value could be encoded as 
+--a single bit. But I do not really like that. Since it affects
+--All write functions if that is the case. 
+function Encoder:writebit(bit)
+   self.stream:writebit(bit)
+end
+
 
 --Finishes any pending operations and closes 
 --the encoder. After this operation the encoder can no longer be used.
@@ -201,7 +173,7 @@ end
 --Creates an encoder from an output stream.
 --Defaults to output metadata.
 function encoding.encoder(outStream, usemetadata)
-   local encoder = { stream = outStream }
+   local encoder = { stream = format.writer(outStream) }
    setmetatable(encoder, Encoder)
    encoder.objects = { }
    
@@ -225,112 +197,83 @@ Decoder.__index = Decoder;
 
 --Reads a string of length count from the input stream.
 function Decoder:readraw(count)
-   return self.stream:read(count);
+   return self.stream:readraw(count)
 end
 
 --Reads a length prefixed string from the input stream.
 function Decoder:readstring()
-   local size = self:readvarint()
-   return self:readraw(size); 
+   return self.stream:readstring() 
 end
 
 --Reads a byte from the input stream.
 function Decoder:readbyte()
-   local rep = self:readraw(1);
-   return string.unpack("B", rep);	
+   return self.stream:readbyte()
 end
 
 --Reads a number between [0 .. 0xffff] from the input stream.
 function Decoder:readuint16()
-   local rep = self:readraw(2)
-   return string.unpack("I2", rep)
+   return self.stream:readuint16()
 end
 
 --Reads a number between [0 .. 0xffffffff] from the input stream.
 function Decoder:readuint32()
-   local rep = self:readraw(4)
-   return string.unpack("I4", rep)
+   return self.stream:readuint32();
 end
 
 --Reads a number between [0 .. 0xffffffffffff] from the input stream.
 function Decoder:readuint64()
-   local rep = self:readraw(8);
-   return string.unpack("I8", rep)
+   return self.stream:readuint64()
 end
 
 --Reads a number between [-0x8000 .. 0x7fff] from the input stream.
 function Decoder:readint16()
-   local rep = self:readraw(2)
-   return string.unpack("i2", rep)
+   return self.stream:readint16()
 end
 
 --Reads a number between [-0x80000000 .. 0x7fffffff] from the input stream.
 function Decoder:readint32()
-   local rep = self:readraw(4)
-   return string.unpack("i4", rep)
+   return self.stream:readint32()
 end
 
 --Reads a number between [-0x8000000000000000 .. 0x7fffffffffffffff]  from the input stream.
 function Decoder:readint64()
-   local rep = self:readraw(8);
-   return string.unpack("i8", rep)
+   return self.stream:readint64()
 end
 
 --Reads a floting point number of precision 32-bit in 
 --IEEE 754 single precision format.
 function Decoder:readsingle()
-   local rep = self:readraw(4)
-   return string.unpack("f", rep)
+   return self.stream:readsingle()
 end
-
 
 --Reads a floting point number of precision 64-bit in 
 --IEEE 754 double precision format.
 function Decoder:readdouble()
-   local rep = self:readraw(8)
-   return string.unpack("d", rep)
+   return self.stream:readdouble()
 end
 
 --Reads a boolean value from the stream.
 function Decoder:readbit()
-   local rep = self:readbyte();
-   if rep == 0 then 
-      return false
-   else
-      return true
-   end
+   return self.stream:readbit()
 end
 
 --Reads a variable integer encoded using the encoding
 --employed by google protocol buffers. 
 function Decoder:readvarint()
-   local number = 0;
-   local count  = 0;
-   while true do
-      local byte = self:readbyte()
-      number = number | ((byte & 0x7F) << (7 * count))
-      if byte < 0x80 then break end
-      count = count + 1;
-
-      if count == 10 then
-         --Something is wrong the data is corrupt.
-         error("Decoded stream is corrupt!");	
-      end
-   end
-   return number;
+   return self.stream:readvarint()
 end
 
 --Reads a variable zigzag encoded integer encoded using the 
 -- zigzag encoding employed by google protocol buffers. 
 function Decoder:readvarintzz()
-   local zigzaged = self:readvarint()
-   return (zigzaged >> 1) ~ (-(zigzaged & 1)) 
+   return self.stream:readvarintzz()
 end
 
 --Closes the decoder.
 --After this operation is performed the decoder can no longer be used.
 function Decoder:close()
    self.objects = nil
+   self.stream  = nil
    setmetatable(self, nil)
 end
 
@@ -387,10 +330,9 @@ function Decoder:readtype()
    return type
 end
 
-
 --Creates a decoder
 function encoding.decoder(inStream, usemetadata)
-   local decoder = { stream = inStream}
+   local decoder = { stream = format.reader(inStream)}
    setmetatable(decoder, Decoder)
    decoder.objects = { }
    

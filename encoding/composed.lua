@@ -309,13 +309,8 @@ function composed.dynamic(handler)
 end
 
 
---It's unclear how this should work. 
---How does an application forward messages? 
---Is the only purpose of embedded to be skippable?
---What does it mean for it 
---Something like flatbuffer-tables seems like a better idea
---For data that needs to be forward/backward compatible. 
---I will defer implementing this to a later point in time.
+--Need to create a memory buffer before we write it to
+--the stream. 
 local Embedded = { }
 Embedded.__index = Embedded;
 

@@ -1,8 +1,5 @@
-package.path = package.path .. ";../encoding.lua"
-
 local encoding = require("encoding")
-local testing  = require("testing")
-
+local testing   = require"tests.testing"
 --This function tests that mirroring encoding/decoding functions work.
 --@params encodeFunc the encoding function under test
 --@params decodeFunc the decoding function under test
@@ -26,6 +23,7 @@ function testSuccess(encodeFunc, decodeFunc, args)
 				tostring(v), encodeFunc, decodeFunc, err))
 		end
 	end
+	
 	local mockIn = testing.instream(mockOut.buffer)
 	local decoder = encoding.decoder(mockIn)
 
@@ -40,7 +38,7 @@ function testSuccess(encodeFunc, decodeFunc, args)
 					"Did not decode input correctly. Input:%s Output:%s" ..
 					" Using encoder %s and decoder %s",
 					tostring(v), tostring(decodedOrErr),
-					encodeFunc, decoderFunc));
+					encodeFunc, decodeFunc));
 			end
 		else 
 			error(string.format(

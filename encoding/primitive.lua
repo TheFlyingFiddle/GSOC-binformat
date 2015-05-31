@@ -54,7 +54,7 @@ primitives.null = Null
 --CHAR should read as a 1 char string.
 local Char = { tag = tags.CHAR }
 function Char:encode(encoder, value)
-    assert(#value == 1, "invalid char")
+    assert(string.len(value) == 1, "invalid character")
     encoder:writeraw(value)
 end
 function Char:decode(decoder)
@@ -65,7 +65,7 @@ primitives.char = Char
 
 local WChar = { tag = tags.WCHAR }
 function WChar:encode(encoder, value)
-    assert(#value == 2, "invalid string length")
+    assert(string.len(value) == 2, "invalid wide character")
     encoder:writeraw(value)
 end
 
@@ -79,14 +79,14 @@ primitives.wchar = WChar
 --Thus we need to create the mapper manually.
 local WString = { tag = tags.WSTRING }
 function WString:encode(encoder, value)
-    local length = #value
+    local length = string.len(value)
     assert(length %2 == 0, "invalid wide string")
     encoder:writevarint(length)
     encoder:writeraw(value)
 end
 
 function WString:decode(decoder)
-    local length = encoder:readvarint()
+    local length = decoder:readvarint()
     return decoder:readraw(length)
 end
 primitives.wstring = WString;
