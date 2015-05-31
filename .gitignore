@@ -10,3 +10,5 @@ Thumbs.db
 
 #Test files
 *.dat 
+
+/streams
