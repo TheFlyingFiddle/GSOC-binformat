@@ -7,3 +7,6 @@ Thumbs.db
 *.dll
 *.exp
 *.obj
+
+#Test files
+*.dat 
