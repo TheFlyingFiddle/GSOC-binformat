@@ -3,6 +3,8 @@ local primitive = require"encoding.primitive"
 local composed  = require"encoding.composed"
 local standard	= require"encoding.standard"
 local testing   = require"tests.testing"
+
+--[[
 --Inout dynamic encoding
 local data = 
 {
@@ -83,7 +85,6 @@ local data =
 
 testdynamicmapping(data, monster)
 
-
 --This will not work right now since the typeref problem is not solved. 
 local noderef = composed.typeref()
 local node = standard.nullable(standard.tuple(
@@ -120,4 +121,4 @@ local data =
 	}
 }
 
---testdynamicmapping(data, tree)
+--testdynamicmapping(data, tree) --]]

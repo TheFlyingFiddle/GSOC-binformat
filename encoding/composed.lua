@@ -289,12 +289,12 @@ Dynamic.__index = Dynamic
 function Dynamic:encode(encoder, value)
 	local mapper   = self.handler:getvaluemapping(value)
 	local metatype = mapper.tag
-	encoder:writeraw(metatype)
+	encoder:writestring(metatype)
 	mapper:encode(encoder, value)
 end
 
 function Dynamic:decode(decoder)
-	local metatype = decoder:readtype()
+	local metatype = decoder:readstring()
 	local mapping  = self.handler:getmetamapping(metatype)
 	return mapping:decode(decoder)	
 end
@@ -354,6 +354,7 @@ function Typeref:setref(mapper)
         mapper.tag = string.gsub(mapper.tag, tmptag, reftag, 1)                
     end
 end
+
 
 --Used to identify the mapper.
 local typrefCounter = 0;

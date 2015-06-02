@@ -200,11 +200,9 @@ end
 local ErrorMapper = { }
 ErrorMapper.__index = ErrorMapper
 function ErrorMapper:encode(encoder, value)
-    error("The dynamic mapper cannot encode value of type " .. self.typeof .. ".")
+    error("The dynamic mapper cannot encode values of type " .. self.typeof .. ".")
 end
-function ErrorMapper:decode(decoder)
-    error("The dynamic mapper cannot decode value of type " .. self.typeof .. ".")
-end
+
 local function errormapper(typeof)
     local em = { }
     setmetatable(em, ErrorMapper)
@@ -220,53 +218,18 @@ function DynamicHandler:getvaluemapping(value)
 end
 
 local tags = encoding.tags
-function DynamicHandler:getmetamapping(type)
-    local mapper = self.decodemapping[type.tag]
-    if mapper then return mapper end
-    
-    if type.tag == tags.LIST then
-        return standard.list(self:getmetamapping(type.element))
-    elseif type.tag == tags.SET then
-        return standard.set(self:getmetamapping(type.element))
-    elseif type.tag == tags.ARRAY then
-        return standard.array(self:getmetamapping(type.element), type.size)    
-    elseif type.tag == tags.TUPLE then
-        local tuple = { }
-        for i=1, type.size do 
-            tuple[i] = { mapping = self:getmetamapping(type[i]) }
-        end
-        return standard.tuple(tuple)
-    elseif type.tag == tags.UNION then
-        local kinds = { }
-        for i=1, type.size do
-            kinds[i] = {mapping = self:getmetamapping(type[i])}
-        end
-        return standard.union(kinds)
-    elseif type.tag == tags.MAP then
-        local key   = self:getmetamapping(type.key)
-        local value = self:getmetamapping(type.value)
-        return standard.map(key, value)        
-    elseif type.tag == tags.OBJECT then
-        return standard.object(self:getmetamapping(type.sub))    
-    elseif type.tag == tags.EMBEDDED then
-        error("not yet imeplemented")
-    elseif type.tag == tags.SEMANTIC then
-        return composed.semantic(type.id, self:getmetamapping(type.sub))
-    elseif type.tag == tags.TYPEREF then
-        error("At the moment TYPREFS in dynamic types are not supported. ")
-    else
-        error("Unrecognised tag", type.tag)
-    end
+function DynamicHandler:getmetamapping(typestring)
+    return self.generator:frommeta(typestring)
 end
 
 local newdynamic = composed.dynamic
-function standard.dynamic()
-    local handler = { } 
+function standard.dynamic(generator)
+    local handler = { }
+    handler.generator = generator
+     
     setmetatable(handler, DynamicHandler)
     local dynamic = newdynamic(handler)
-    
     local DynEncode = { }
-    handler.encodemapping = DynEncode
     DynEncode["nil"]  = primitive.null
     DynEncode.number  = primitive.fpdouble
     DynEncode.string  = primitive.stream
@@ -276,30 +239,7 @@ function standard.dynamic()
     DynEncode.userdata    = errormapper("userdata")
     DynEncode.thread      = errormapper("thread")
         
-    local tags = encoding.tags
-    local DynDecode = { }
-    handler.decodemapping = DynDecode
-    
-    DynDecode[tags.VOID]     = primitive.null
-    DynDecode[tags.CHAR]     = primitive.char
-    DynDecode[tags.WCHAR]    = primitive.wchar
-    DynDecode[tags.STREAM]   = primitive.stream
-    DynDecode[tags.STRING]   = primitive.string
-    DynDecode[tags.WSTRING]  = primitive.wstring
-    DynDecode[tags.BIT]      = primitive.bit
-    DynDecode[tags.BYTE]     = primitive.byte
-    DynDecode[tags.UINT16]   = primitive.uint16
-    DynDecode[tags.UINT32]   = primitive.uint32
-    DynDecode[tags.UINT64]   = primitive.uint64
-    DynDecode[tags.SINT16]   = primitive.int16
-    DynDecode[tags.SINT32]   = primitive.int32
-    DynDecode[tags.SINT64]   = primitive.int64
-    DynDecode[tags.VARINT]   = primitive.varint
-    DynDecode[tags.VARINTZZ] = primitive.varintzz
-    DynDecode[tags.SINGLE]   = primitive.fpsingle
-    DynDecode[tags.DOUBLE]   = primitive.fpdouble
-    DynDecode[tags.DYNAMIC]  = dynamic
-    --DynDecode[tags.QUAD]     = primitive.fpquad         
+    handler.encodemapping = DynEncode
     return dynamic
 end	
 

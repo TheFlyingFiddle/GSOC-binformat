@@ -196,4 +196,35 @@ function format.reader(innerstream)
 end
 
 
+function format.packvarint(number)
+   local s = ""   
+   while number >= 0x80 or number < 0 do
+      local byte = (number | 0x80) & 0x00000000000000FF
+      number = number >> 7;
+      s = s .. string.pack("B", byte)
+   end
+      
+   s = s .. string.pack("B", number)
+   return s;     
+end
+
+function format.unpackvarint(str)
+   local number = 0;
+   local count  = 0;
+   while true do
+      local byte = string.byte(str, count + 1)
+      number = number | ((byte & 0x7F) << (7 * count))
+      if byte < 0x80 then break end
+      count = count + 1;
+
+      if count == 10 then
+         --Something is wrong the data is corrupt.
+         error("stream is corrupt!");	
+      end
+   end
+   
+   return number, count + 1    
+end
+
+
 return format

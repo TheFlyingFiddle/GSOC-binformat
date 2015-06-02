@@ -4,13 +4,13 @@ local encoding = { }
 local tags     = { }
 --Standard tags
 tags.VOID    = string.pack("B", 0x00) 
-tags.NULL    = string.pack("B", 0x01)
+tags.NULL    = string.pack("B", 0x01) 
 
 tags.BIT     = string.pack("B", 0x02) 
-tags.BOOLEAN = string.pack("B", 0x03)
+tags.BOOLEAN = string.pack("B", 0x03) 
 
 --NUMBERS
-tags.BYTE     = string.pack("B", 0x04)
+tags.BYTE     = string.pack("B", 0x04) 
 tags.UINT16   = string.pack("B", 0x05)
 tags.SINT16   = string.pack("B", 0x06)
 tags.UINT32   = string.pack("B", 0x07)
@@ -44,13 +44,9 @@ tags.TUPLE    = string.pack("B", 0x1C)
 tags.UNION    = string.pack("B", 0x1D)
 tags.MAP      = string.pack("B", 0x1E)
 
---Time and Date
-tags.TIME     = string.pack("B", 0x1F)
-tags.DATE     = string.pack("B", 0x20)
-
 --Types
-tags.TYPEREF  = string.pack("B", 0x21)
-tags.TYPE     = string.pack("B", 0x22) 
+tags.TYPEREF  = string.pack("B", 0x1F)
+tags.TYPE     = string.pack("B", 0x20) 
 
 
 --Possible extension that have not gotten approved by Renato yet.
@@ -71,6 +67,46 @@ function encoding.tagstring(tag)
    
    return "Tag not found"
 end
+
+
+--Standard generator functions
+function encoding.tagtoluatype(tag)
+   if tag == tags.VOID or
+      tag == tags.NULL then
+		return "nil"
+   elseif tag == tags.BIT or
+          tag == tags.BOOLEAN then
+		return "boolean"       
+   elseif tag == tags.BYTE or
+          tag == tags.UINT16 or
+          tag == tags.SINT16 or
+          tag == tags.UINT32 or
+          tag == tags.SINT32 or
+          tag == tags.UINT64 or
+          tag == tags.SINT64 or
+          tag == tags.SINGLE or
+          tag == tags.DOUBLE or
+          tag == tags.QUAD   or
+          tag == tags.VARINT or
+          tag == tags.VARINTZZ then
+		return "number"
+    elseif tag == tags.CHAR or
+           tag == tags.WCHAR or
+           tag == tags.STREAM or
+           tag == tags.STRING or
+           tag == tags.WSTRING then
+		return "string"
+    elseif tag == tags.LIST or
+           tag == tags.SET  or
+           tag == tags.ARRAY or
+           tag == tags.TUPLE or
+           tag == tags.MAP then
+		return "table"    
+   else	
+		return "unkown"
+   end
+end
+
 
 local Encoder = { }
 Encoder.__index = Encoder;
@@ -285,49 +321,6 @@ function Decoder:decode(mapping)
    end 
    
    return mapping:decode(self)
-end
-
---Reads a type from the stream. 
---I am not sure this method should be here. 
---It could be better to have a parse module
---that can extract types from metadata and possibly
---some idl language. It could be the case that this should be a pull parser
---instead of a dom parser. 
-function Decoder:readtype()
-   local first = self:readraw(1)
-   local type  = { tag = first}
-   if first == tags.LIST then
-      type.element = self:readtype()   
-   elseif first == tags.SET then 
-      type.element = self:readtype()   
-   elseif first == tags.ARRAY then
-      type.size    = self:readvarint()
-      type.element = self:readtype()
-   elseif first == tags.TUPLE then
-      type.size = self:readvarint()
-      for i=1, type.size do
-         type[i] = self:readtype()
-      end
-   elseif first == tags.UNION then
-      type.size = self:readvarint()
-      for i=1, type.size do
-         type[i] = self:readtype()
-      end 
-   elseif first == tags.MAP then
-      type.key   = self:readtype()
-      type.value = self:readtype()
-   elseif first == tags.OBJECT then
-      type.sub  = self:readtype()
-   elseif first == tags.EMBEDDED then
-      type.sub  = self:readtype()
-   elseif first == tags.SEMANTIC then
-      type.id  = self:readstring()
-      type.sub = self:readtype()
-   elseif first == tags.TYPEREF then
-      --This is difficult to deal with
-      error("At the moment cannot decode TYPREFS in metatypes.")
-   end
-   return type
 end
 
 --Creates a decoder
