@@ -5,9 +5,9 @@ local table = require "loop.table"
 local Viewer = require "loop.debug.Viewer"
 local Matcher = require "loop.debug.Matcher"
 
-encoding = require "encoding"
-primitive = require "encoding.primitive"
-standard = require "encoding.standard"
+encoding 	= require "encoding"
+primitive 	= encoding.primitive
+standard 	= encoding.standard 
 
 local function hexastream(output, stream, prefix, start)
 	local cursor = {}

@@ -3,73 +3,91 @@ local format = { }
 local Writer = { }
 Writer.__index = Writer;
 
-function Writer:writeraw(string)
+
+--Writes the bytes contained in a raw string,
+--to the output stream.
+function Writer:raw(string)
    self.inner:write(string)
    self.position = self.position + #string
 end
 
-function Writer:writestring(s)
+--Writes a length delimted stream of bytes
+function Writer:stream(s)
    local length = string.len(s)
-   self:writevarint(length)
-   self:writeraw(s)
+   self:varint(length)
+   self:raw(s)
 end
 
-function Writer:writebyte(byte)
+--Encodes an integer that is in the range [0 .. 0xffff].
+function Writer:byte(byte)
    local rep = string.pack("B", byte)
-   self:writeraw(rep);
+   self:raw(rep);
 end
 
-function Writer:writeuint16(number)
+--Writes an integer that is in the range [0 .. 0xffff].
+function Writer:uint16(number)
    local rep = string.pack("I2", number)
-   self:writeraw(rep);
+   self:raw(rep);
 end
 
-function Writer:writeuint32(number)
+--Writes an integer that is in the range [0 .. 0xffffffff].
+function Writer:uint32(number)
    local rep = string.pack("I4", number)
-   self:writeraw(rep);
+   self:raw(rep);
 end
 
-function Writer:writeuint64(number)
+--Writes an integer that is in the range [0 .. 0xffffffffffffffff].
+function Writer:uint64(number)
    local rep = string.pack("I8", number)
-   self:writeraw(rep);
+   self:raw(rep);
 end
 
-function Writer:writeint16(number)
+--Writes an integer that is in the range [-0x8000 .. 0x7fff].
+function Writer:int16(number)
    local rep = string.pack("i2", number)
-   self:writeraw(rep)	
+   self:raw(rep)	
 end
 
-function Writer:writeint32(number)
+--Writes integer that is in the range [-0x80000000 .. 0x7fffffff].
+function Writer:int32(number)
    local rep = string.pack("i4", number)
-   self:writeraw(rep)
+   self:raw(rep)
 end
 
-function Writer:writeint64(number)
+--Writes an integer that is in the range [-0x8000000000000000 .. 0x7fffffffffffffff].
+function Writer:int64(number)
    local rep = string.pack("i8", number)
-   self:writeraw(rep)
+   self:raw(rep)
 end
 
-function Writer:writesingle(number)
+--Writes a float point value with 32-bit precision in IEEE 754 format.
+function Writer:single(number)
    local rep = string.pack("f", number)
-   self:writeraw(rep)
+   self:raw(rep)
 end
 
-function Writer:writedouble(number)
+--Writes a float point value with 64-bit precision in IEEE 754 format.
+function Writer:double(number)
    local rep = string.pack("d", number);
-   self:writeraw(rep);
+   self:raw(rep);
 end
 
-function Writer:writevarint(number)
+--Writes a number in the variable integer encoding
+--used by google protocol buffers. 
+function Writer:varint(number)
    while number >= 0x80 or number < 0 do
       local byte = (number | 0x80) & 0x00000000000000FF
       number = number >> 7;
-      self:writebyte(byte);
+      self:byte(byte);
    end
    
-   self:writebyte(number)
+   self:byte(number)
 end
 
-function Writer:writevarintzz(number)
+--Writes a number in zigzag encoded format 
+--used for zigzag variable integer encoding used in 
+--google protocol buffers. 
+function Writer:varintzz(number)
    -- This did not work for negative numbers...
    -- local bits = number >> 63 
    --Workaround
@@ -81,10 +99,17 @@ function Writer:writevarintzz(number)
    end
    
    local zigzaged = (number << 1) ~ bits
-   self:writevarint(zigzaged)
+   self:varint(zigzaged)
 end
 
-function Writer:writebits(size, value)
+--Writes a boolean value.   
+function Writer:bool(bool)
+   if bool then bool = 1 else bool = 0 end
+   self:byte(bool)
+end
+
+--Writes the first size bits in value
+function Writer:bits(size, value)
    local count = self.bit_count
 	local bits = self.bit_buffer
 	bits = bits | value << count
@@ -93,30 +118,41 @@ function Writer:writebits(size, value)
 		count = count - 8
 		value = value >> (size-count)
 		size = count
-		self:writebyte(bits & 0xFF)
+		self:byte(bits & 0xFF)
 		bits = value
 	end
 	self.bit_count = count
 	self.bit_buffer = bits & ~(-1 << count)
 end
 
-function Writer:writeuint(size, value)
-   self:writebits(size, value)
+--Writes an unsigned integer of (size) bits
+function Writer:uint(size, value)
+   local max = 1 << size - 1
+   assert(value <= max)
+   self:bits(size, value)
 end
 
-function Writer:writeint(size, value)
-   local sign
-   if value < 0 then sign = 1 else sign = 0 end
-       
-   local signbit = (sign << (size - 1))
-   local val     = value | signbit     --I think this is correct
-   self:writebits(size, val)
+--Writes a signed integer of (size) bits
+function Writer:int(size, value)
+   local half = 1 << (size - 1)
+   
+   if value < 0 then
+      assert(-half <= value, "value to small")
+      local offset = (1 << size)
+      local nval   = offset + value
+      self:bits(size, nval)   
+   else
+      assert(half > value, "value to large")
+      self:bits(size, value)
+   end
 end
 
+--Flushes any remaining bits in the bitbuffer to the 
+--output.
 function Writer:flushbits()
    local count = self.bit_count
 	if count > 0 then
-		self:writebyte(self.bit_buffer & 0xFF)
+		self:byte(self.bit_buffer & 0xFF)
 		self.bit_count = 0
 		self.bit_buffer = 0
 	end
@@ -130,6 +166,7 @@ local alignbytes =
    string.pack("I7", 0), string.pack("I8", 0) 
 }
 
+--Alignes the output to the specified number of bytes.
 function Writer:align(to)
    local extra = self.position % to
    
@@ -139,6 +176,7 @@ function Writer:align(to)
    end
 end
 
+--Flushes the underlying stream and any bits not yet written.
 function Writer:flush()
    self:flushbits()
    self.inner:flush()
@@ -156,68 +194,92 @@ end
 local Reader = { }
 Reader.__index = Reader
 
---These functions assume that the stream is byte aligned. 
-function Reader:readraw(count)
+--Reads a string of length count from the input stream.
+function Reader:raw(count)
    self.position = self.position + count;
    return self.inner:read(count);
 end
 
-function Reader:readstring()
-   local size = self:readvarint()
-   return self:readraw(size); 
+--Reads a length prefixed stream of bytes from the input stream.
+function Reader:stream()
+   local size = self:varint()
+   return self:raw(size); 
 end
 
-function Reader:readbyte()
-   self:align(1)
-   local rep = self:readraw(1);
+--Reads a byte from the input stream.
+function Reader:byte()
+   local rep = self:raw(1);
    return string.unpack("B", rep);	
 end
 
-function Reader:readuint16()
-   local rep = self:readraw(2)
+--Reads a number between [0 .. 0xffff] from the input stream.
+function Reader:uint16()
+   local rep = self:raw(2)
    return string.unpack("I2", rep)
 end
 
-function Reader:readuint32()
-   local rep = self:readraw(4)
+--Reads a number between [0 .. 0xffffffff] from the input stream.
+function Reader:uint32()
+   local rep = self:raw(4)
    return string.unpack("I4", rep)
 end
 
-function Reader:readuint64()
-   local rep = self:readraw(8);
+--Reads a number between [0 .. 0xffffffffffff] from the input stream.
+function Reader:uint64()
+   local rep = self:raw(8);
    return string.unpack("I8", rep)
 end
 
-function Reader:readint16()
-   local rep = self:readraw(2)
+--Reads a number between [-0x8000 .. 0x7fff] from the input stream.
+function Reader:int16()
+   local rep = self:raw(2)
    return string.unpack("i2", rep)
 end
 
-function Reader:readint32()
-   local rep = self:readraw(4)
+--Reads a number between [-0x80000000 .. 0x7fffffff] from the input stream.
+function Reader:int32()
+   local rep = self:raw(4)
    return string.unpack("i4", rep)
 end
 
-function Reader:readint64()
-   local rep = self:readraw(8);
+--Reads a number between [-0x8000000000000000 .. 0x7fffffffffffffff]  from the input stream.
+function Reader:int64()
+   local rep = self:raw(8);
    return string.unpack("i8", rep)
 end
 
-function Reader:readsingle()
-   local rep = self:readraw(4)
+--Reads a floting point number of precision 32-bit in 
+--IEEE 754 single precision format.
+function Reader:single()
+   local rep = self:raw(4)
    return string.unpack("f", rep)
 end
 
-function Reader:readdouble()
-   local rep = self:readraw(8)
+--Reads a floting point number of precision 64-bit in 
+--IEEE 754 double precision format.
+function Reader:double()
+   local rep = self:raw(8)
    return string.unpack("d", rep)
 end
 
-function Reader:readvarint()
+--Reads a boolean value
+function Reader:bool()
+   local value = self:byte()
+   if value == 1 then
+      value = true
+   else
+      value = false
+   end
+   return value
+end
+
+--Reads a variable integer encoded using the encoding
+--employed by google protocol buffers. 
+function Reader:varint()
    local number = 0;
    local count  = 0;
    while true do
-      local byte = self:readbyte()
+      local byte = self:byte()
       number = number | ((byte & 0x7F) << (7 * count))
       if byte < 0x80 then break end
       count = count + 1;
@@ -232,12 +294,16 @@ function Reader:readvarint()
    return number;
 end
 
-function Reader:readvarintzz()
-   local zigzaged = self:readvarint()
+
+--Reads a variable zigzag encoded integer encoded using the 
+-- zigzag encoding employed by google protocol buffers. 
+function Reader:varintzz()
+   local zigzaged = self:varint()
    return (zigzaged >> 1) ~ (-(zigzaged & 1)) 
 end
 
-function Reader:readbits(size)
+--Reads size bits from the stream.
+function Reader:bits(size)
    local count = self.bit_count
    local bits  = self.bit_buffer
    
@@ -246,7 +312,7 @@ function Reader:readbits(size)
    while count < size - ready do
       value = value | (bits << ready)
       ready = ready + count
-      bits  = self:readbyte()
+      bits  = self:byte()
       count = 8
    end
    
@@ -256,29 +322,37 @@ function Reader:readbits(size)
    return value | ((bits & ~(-1 << size)) << ready)
 end
 
-function Reader:readuint(size)
-   return self:readbits(size)
+-- Reads an unsigned integer of size bits
+function Reader:uint(size)
+   return self:bits(size)
 end
 
-function Reader:readint(size)
+-- Reads a signed integer of size bits
+function Reader:int(size)
    --We need to fix the value
-   local value    = self:readbits(size)
-   local sign     = value >> (size - 1)
-   local signmask = ~(sign << (size - 1))
-   value = (sign << 63) | (signmask & value)
+     
+   local value    = self:bits(size)
+   local sign     = (value >> (size - 1))
+   if sign == 1 then
+      local max = (1 << size)
+      value = -(max - value)
+   end
+   
    return value
 end
 
-function Reader:align(to) --Can only align to bytes
+--Alignes the stream to the specified byte size
+function Reader:align(to) 
    local extra = self.position % to
      
    self:discardbits()
    if extra ~= 0 then
       local toremove = to - extra
-      self:readraw(toremove)
+      self:raw(toremove)
    end
 end
 
+--Discards any remaining bits in the bitbuffer.
 function Reader:discardbits()
    self.bit_count  = 0
    self.bit_buffer = 0
@@ -293,7 +367,7 @@ function format.reader(innerstream)
    return reader
 end
 
-
+--Packs a number into a string using the varint format.
 function format.packvarint(number)
    local s = ""   
    while number >= 0x80 or number < 0 do
@@ -306,6 +380,7 @@ function format.packvarint(number)
    return s;     
 end
 
+--Unpacks a number from a string with the varint format.
 function format.unpackvarint(str)
    local number = 0;
    local count  = 0;

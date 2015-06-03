@@ -1,11 +1,11 @@
-local encoding  = require"encoding"
 local format    = require"format"
-
-local primitive = require"encoding.primitive"
-local composed  = require"encoding.composed"
-local standard  = require"encoding.standard"
+local encoding  = require"encoding"
+local tags		= require"encoding.tags"
+local composed  = require"encoding.custom"
 local parser	= require"encoding.parser"
-local tags = encoding.tags;
+
+local primitive = encoding.primitive
+local standard  = encoding.standard
 
 local generating = { }
 
@@ -22,7 +22,7 @@ local function gentuple(generator, node)
 end
 
 local function nodetoluatype(node)
-	local type = encoding.tagtoluatype(node.tag)
+	local type = tags.tagtoluatype(node.tag)
 	if type == "unkown" then
 		if node.tag == tags.UNION then
 			return "unkown"
@@ -136,7 +136,7 @@ function Generator:fromtype(parsetree)
 		ref:setref(self.mappings[id])
 	end
 
-	self.ref  = nil
+	self.rep  = nil
 	self.root = nil
 	self.typerefs = nil
 	self.typerefnodex = nil

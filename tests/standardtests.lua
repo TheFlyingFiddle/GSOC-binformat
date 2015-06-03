@@ -1,6 +1,6 @@
 local encoding  = require"encoding"
-local primitive = require"encoding.primitive"
-local standard	= require"encoding.standard"
+local primitive = encoding.primitive
+local standard	= encoding.standard
 local testing   = require"tests.testing"
 
 --This function tests that mirroring encoding/decoding functions work.

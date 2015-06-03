@@ -1,7 +1,7 @@
 local encoding  = require"encoding"
-local primitive = require"encoding.primitive"
-local standard	= require"encoding.standard"
-local composed  = require"encoding.composed"
+local primitive = encoding.primitive
+local standard	= encoding.standard
+local composed  = require"encoding.custom"
 local testing   = require"tests.testing"
 
 print("Starting tests for typeref")

@@ -1,6 +1,6 @@
 local encoding   = require"encoding"
-local primitives = require"encoding.primitive"
-local testing   = require"tests.testing"
+local primitives = encoding.primitive
+local testing    = require"tests.testing"
 
 --This function tests that mirroring encoding/decoding functions work.
 --@params mapper the mapping object used for encoding and decoding.

@@ -1,4 +1,4 @@
-local encoding = require"encoding"
+local tags = require"encoding.tags"
 
 local composed = { }
 
@@ -6,7 +6,7 @@ local composed = { }
 local Array = { }
 Array.__index = Array
 function Array:encode(encoder, value)
-    encoder:writevarint(self.size)
+    encoder.writer:varint(self.size)
     for i=1,size,1 do
         self.mapper:encode(encoder, self.handler:getitem(value, i))
     end
@@ -24,7 +24,7 @@ end
 function composed.array(handler, mapper, size)
     local array = { }
     setmetatable(array, Array)
-    array.tag     = encoding.tags.ARRAY .. mapper.tag
+    array.tag     = tags.ARRAY .. mapper.tag
     array.size    = size
     array.handler = handler
     array.mapper  = mapper
@@ -36,14 +36,14 @@ local List = {  }
 List.__index = List;
 function List:encode(encoder, value)
     local size = self.handler:getsize(value)
-    encoder:writevarint(size)
+    encoder.writer:varint(size)
     for i=1,size, 1 do
         self.mapper:encode(encoder, self.handler:getitem(value, i)) 
     end 
 end
 
 function List:decode(decoder)
-    local size = decoder:readvarint()
+    local size = decoder.reader:varint()
     local value  = self.handler:create(size)
     for i=1,size, 1 do
         local item = self.mapper:decode(decoder)
@@ -55,7 +55,7 @@ end
 function composed.list(handler, mapper)
     local list = {  }
     setmetatable(list, List)
-    list.tag    = encoding.tags.LIST .. mapper.tag;
+    list.tag    = tags.LIST .. mapper.tag;
     list.handler = handler;
     list.mapper  = mapper;
     return list;
@@ -66,14 +66,14 @@ local Set = {  }
 Set.__index = Set;
 function Set:encode(encoder, value)
     local size = self.handler:getsize(value)
-    encoder:writevarint(size)
+    encoder.writer:varint(size)
     for i=1,size, 1 do
         self.mapper:encode(encoder, self.handler:getitem(value, i)) 
     end 
 end
 
 function Set:decode(decoder)
-    local size = decoder:readvarint()
+    local size = decoder.reader:varint()
     local value  = self.handler:create(size)
     for i=1,size, 1 do
         local item = self.mapper:decode(decoder)
@@ -85,7 +85,7 @@ end
 function composed.set(handler, mapper)
     local list = {  }
     setmetatable(list, Set)
-    list.tag    = encoding.tags.SET .. mapper.tag;
+    list.tag    = tags.SET .. mapper.tag;
     list.handler = handler;
     list.mapper  = mapper;
     return list;
@@ -97,7 +97,7 @@ local Map = { }
 Map.__index = Map
 function Map:encode(encoder, value)
     local size = self.handler:getsize(value)
-    encoder:writevarint(size)
+    encoder.writer:varint(size)
     for i=1, size, 1 do
         local key, item = self.handler:getitem(value, i);
         self.keymapper:encode(encoder, key)
@@ -106,7 +106,7 @@ function Map:encode(encoder, value)
 end
 
 function Map:decode(decoder)
-    local size  = decoder:readvarint();
+    local size  = decoder.reader:varint();
     
     local value = self.handler:create(size)
     for i=1, size, 1 do
@@ -122,7 +122,7 @@ end
 function composed.map(handler, keymapper, itemmapper)
     local map = { }
     setmetatable(map, Map)
-    map.tag   = encoding.tags.MAP .. keymapper.tag .. itemmapper.tag    
+    map.tag   = tags.MAP .. keymapper.tag .. itemmapper.tag    
     map.handler    = handler
     map.keymapper  = keymapper
     map.itemmapper = itemmapper
@@ -156,7 +156,7 @@ function composed.tuple(handler, ...)
     tuple.mappers = { ... }
     tuple.handler = handler
     
-    local tag = encoding.tags.TUPLE .. string.pack("B", #tuple.mappers)
+    local tag = tags.TUPLE .. string.pack("B", #tuple.mappers)
     for i=1, #tuple.mappers, 1 do
         tag = tag .. tuple.mappers[i].tag
     end
@@ -171,12 +171,12 @@ Union.__index = Union
 function Union:encode(encoder, value)
     local kind, encodable = self.handler:select(value)
     local mapper = self.mappers[kind]
-    encoder:writevarint(kind)
+    encoder.writer:varint(kind)
     mapper:encode(encoder, value)    
 end
 
 function Union:decode(decoder)
-    local kind    = decoder:readvarint();
+    local kind    = decoder.reader:varint();
     local mapper  = self.mappers[kind]
     
     local decoded = mapper:decode(decoder)
@@ -189,7 +189,7 @@ function composed.union(handler, ...)
     union.handler = handler
     union.mappers = { ... }
     
-    local tag = encoding.tags.UNION .. string.pack("B", #union.mappers)
+    local tag = tags.UNION .. string.pack("B", #union.mappers)
     for i=1, #union.mappers, 1 do
         tag = tag .. union.mappers[i].tag
     end
@@ -213,7 +213,7 @@ function composed.semantic(id, mapper)
     local semantic = { }
     setmetatable(semantic, Semantic)
     
-    semantic.tag    = encoding.tags.SEMANTIC .. id .. mapper.tag
+    semantic.tag    = tags.SEMANTIC .. id .. mapper.tag
     semantic.mapper = mapper
     return semantic
 end
@@ -231,11 +231,11 @@ function Object:encode(encoder, value)
     
     if index == 0 then 
         index = #encoder.objects;
-        encoder:writevarint(index)
+        encoder.writer:varint(index)
         table.insert(encoder.objects, ident)
         self.mapper:encode(encoder, value)
     else 
-        encoder:writevarint(index - 1)
+        encoder.writer:varint(index - 1)
     end
 end
 
@@ -258,7 +258,7 @@ local function fixcyclicrefs(obj, tmp, ref)
 end
 
 function Object:decode(decoder)
-    local index = decoder:readvarint();
+    local index = decoder.reader:varint();
     index = index + 1;
     if index > #decoder.objects then 
         local tmpObj = { }
@@ -277,7 +277,7 @@ function composed.object(handler, mapper)
     setmetatable(object, Object)
     object.mapper  = mapper
     object.handler = handler
-    object.tag = encoding.tags.OBJECT .. mapper.tag; 
+    object.tag = tags.OBJECT .. mapper.tag; 
     return object    
 end
 
@@ -289,12 +289,12 @@ Dynamic.__index = Dynamic
 function Dynamic:encode(encoder, value)
 	local mapper   = self.handler:getvaluemapping(value)
 	local metatype = mapper.tag
-	encoder:writestring(metatype)
+	encoder.writer:stream(metatype)
 	mapper:encode(encoder, value)
 end
 
 function Dynamic:decode(decoder)
-	local metatype = decoder:readstring()
+	local metatype = decoder.reader:stream()
 	local mapping  = self.handler:getmetamapping(metatype)
 	return mapping:decode(decoder)	
 end
@@ -303,7 +303,7 @@ function composed.dynamic(handler)
     local dynamic = { }
     setmetatable(dynamic, Dynamic)
     dynamic.handler     = handler
-    dynamic.tag         = encoding.tags.DYNAMIC
+    dynamic.tag         = tags.DYNAMIC
     
     return dynamic
 end
@@ -350,7 +350,7 @@ function Typeref:setref(mapper)
         index = i + 1
                                                                 
         local offset = i - 1
-        local reftag = encoding.tags.TYPEREF .. string.pack("B", offset)
+        local reftag = tags.TYPEREF .. string.pack("B", offset)
         mapper.tag = string.gsub(mapper.tag, tmptag, reftag, 1)                
     end
 end
