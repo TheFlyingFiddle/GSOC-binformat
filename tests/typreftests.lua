@@ -32,7 +32,7 @@ local luamapping = standard.union(
 	{ type = "nil",     mapping = primitive.void },
   	{ type = "string",  mapping = primitive.string},
 	{ type = "number",  mapping = primitive.fpdouble},
-	{ type = "boolean", mapping = primitive.bit },
+	{ type = "boolean", mapping = primitive.boolean },
 	{ type = "table",   mapping = standard.object(standard.map(luaref, luaref)) }
 })
 

@@ -2,7 +2,7 @@ local parser  	= require"encoding.parser"
 
 local validParseTexts = 
 {
-	"TUPLE 03 VARINT STRING BIT",
+	"TUPLE 03 VARINT STRING FLAG",
 	"MAP LIST OBJECT SET VARINT EMBEDDED LIST STRING",
 	"SEMANTIC nanotime UINT64",
 	"VOID",

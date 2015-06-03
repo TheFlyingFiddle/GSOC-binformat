@@ -4,7 +4,7 @@ local standard	= require"encoding.standard"
 local composed  = require"encoding.composed"
 local testing   = require"tests.testing"
 
-print("Starting composed tests")
+print("Starting monster tests")
 
 --This example aims to emulate the monster example
 --from the flatbuffers documentation.
@@ -62,7 +62,6 @@ local monsterdata =
 	inventory = { 0, 3, 12, 51, 42, 81, 44, 28, 15, 92, 123 },
 	color    = Color.Blue --Blue
 }
-
 testing.testmapping(monsterdata, monster)
 
 local monsterdata = 

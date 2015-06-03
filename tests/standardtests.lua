@@ -50,7 +50,7 @@ end
 
 print("Staring encoding.standard tests")
 
-local mapping = standard.list(primitive.bit);
+local mapping = standard.list(primitive.boolean);
 testSuccess(mapping, 
 {
 	{true, false, false, true, false},
@@ -76,7 +76,7 @@ local mapping = standard.tuple(
 {
 	{mapping = primitive.stream},
 	{mapping = primitive.varint},
-	{mapping = primitive.bit}	
+	{mapping = primitive.boolean}	
 })
 
 testSuccess(mapping,
@@ -107,7 +107,7 @@ local mapping = standard.tuple(
 {
 	{key = "name", mapping = primitive.stream},
 	{key = "rank", mapping = primitive.varint},
-	{key = "captain", mapping = primitive.bit}
+	{key = "captain", mapping = primitive.boolean}
 })
 
 testSuccess(mapping,

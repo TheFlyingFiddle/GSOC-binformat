@@ -3,7 +3,7 @@ local parser  	= require"encoding.parser"
 local testing 	= require"tests.testing"
 
 
-local tree      = parser.parsestring"TUPLE 03 VARINT STRING BIT"
+local tree      = parser.parsestring"TUPLE 03 VARINT STRING BOOLEAN"
 local generator = generating.generator()
 local mapping   = generator:fromtype(tree)
 
@@ -12,11 +12,11 @@ testing.testmapping(data, mapping)
 
 --Convinience of having generator generate code from a string.
 --Removes the need to create generator object
-local mapping = generating.fromstring"TUPLE 03 VARINT STRING BIT"
+local mapping = generating.fromstring"TUPLE 03 VARINT STRING BOOLEAN"
 testing.testmapping(data, mapping)
 
 --Simaraly avoiding having to parse explicitly
-local mapping = generator:fromstring"TUPLE 03 VARINT STRING BIT"
+local mapping = generator:fromstring"TUPLE 03 VARINT STRING BOOLEAN"
 testing.testmapping(data, mapping)
 
 

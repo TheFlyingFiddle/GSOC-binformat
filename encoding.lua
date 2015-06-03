@@ -2,59 +2,77 @@ local format = require"format"
 
 local encoding = { } 
 local tags     = { }
---Standard tags
+
+--Standard empty
 tags.VOID    = string.pack("B", 0x00) 
 tags.NULL    = string.pack("B", 0x01) 
 
-tags.BIT     = string.pack("B", 0x02) 
-tags.BOOLEAN = string.pack("B", 0x03) 
+--Terminated Multi-Byte (ALIGN 0x08)
+tags.VARINT    = string.pack("B",  0x03)
+tags.VARINTZZ  = string.pack("B",  0x04)
 
---NUMBERS
-tags.BYTE     = string.pack("B", 0x04) 
-tags.UINT16   = string.pack("B", 0x05)
-tags.SINT16   = string.pack("B", 0x06)
-tags.UINT32   = string.pack("B", 0x07)
-tags.SINT32   = string.pack("B", 0x08)
-tags.UINT64   = string.pack("B", 0x09)
-tags.SINT64   = string.pack("B", 0x0A)
-tags.SINGLE   = string.pack("B", 0x0B)
-tags.DOUBLE   = string.pack("B", 0x0C)
-tags.QUAD     = string.pack("B", 0x0D)
-tags.VARINT   = string.pack("B", 0x0E)
-tags.VARINTZZ = string.pack("B", 0x0F)
+--Characters (ALIGN 0x08)
+tags.CHAR      = string.pack("B", 0x05)
+tags.WCHAR     = string.pack("B", 0x06)
 
---CHARS, STREAM and STRINGS
-tags.CHAR     = string.pack("B", 0x10)
-tags.WCHAR    = string.pack("B", 0x11)
-tags.STREAM   = string.pack("B", 0x12)
-tags.STRING   = string.pack("B", 0x13)
-tags.WSTRING  = string.pack("B", 0x14)
+--Types (ALIGN 0x08)
+tags.TYPE      = string.pack("B", 0x07)
+tags.TYPEREF   = string.pack("B", 0x08)
+tags.DYNAMIC   = string.pack("B", 0x09)
 
--- Encode changing
-tags.DYNAMIC  = string.pack("B", 0x15)
-tags.OBJECT   = string.pack("B", 0x16)
-tags.EMBEDDED = string.pack("B", 0x17)
-tags.SEMANTIC = string.pack("B", 0x18)
+--Sub-Byte
+tags.UINT      = string.pack("B", 0x0A)
+tags.SINT      = string.pack("B", 0x0B)
 
---Aggregate types
-tags.LIST     = string.pack("B", 0x19)
-tags.SET      = string.pack("B", 0x1A)
-tags.ARRAY    = string.pack("B", 0x1B)
-tags.TUPLE    = string.pack("B", 0x1C)
-tags.UNION    = string.pack("B", 0x1D)
-tags.MAP      = string.pack("B", 0x1E)
+--Composition (Variable alignment)
+tags.ARRAY     = string.pack("B", 0x0C)
+tags.TUPLE     = string.pack("B", 0x0D)
 
---Types
-tags.TYPEREF  = string.pack("B", 0x1F)
-tags.TYPE     = string.pack("B", 0x20) 
+--Counted Compositions (Variable alignment)
+tags.UNION     = string.pack("B", 0x0E)
+tags.LIST      = string.pack("B", 0x0F)
+tags.SET       = string.pack("B", 0x10)
+tags.MAP       = string.pack("B", 0x11)
 
+--Structure modifiers
+tags.ALIGN     = string.pack("B", 0x12)
+tags.OBJECT    = string.pack("B", 0x13)
+tags.EMBEDDED  = string.pack("B", 0x14)
+tags.SEMANTIC  = string.pack("B", 0x15)
 
---Possible extension that have not gotten approved by Renato yet.
---Universal unique identifiers. (128-bit integers used to represent unique values)
---tags.UUID     = string.pack("B", 0x23)
---tags.PACKED   = string.pack("B", 0x24)
---tags.UINT     = string.pack("B", 0x25)
---tags.SINT     = string.pack("B", 0x26) 
+--Aliases Bits
+tags.FLAG      = string.pack("B", 0x16) -- UINT 0x00 
+tags.SIGN      = string.pack("B", 0x17) -- SINT 0x00
+
+--Aliases Alignments
+tags.ALIGN8    = string.pack("B", 0x18) -- ALIGN 0x08
+tags.ALIGN16   = string.pack("B", 0x19) -- ALIGN 0x10
+tags.ALIGN32   = string.pack("B", 0x1A) -- ALIGN 0x20
+tags.ALIGN64   = string.pack("B", 0x1B) -- ALIGN 0x40
+
+--Common Aliases
+
+--Boleans
+tags.BOOLEAN   = string.pack("B", 0x1C) -- ALIGN0 FLAG ALIGN 0x08 So we can use this inside a byte but that byte is then aligned to 8bits
+
+--Integers
+tags.BYTE      = string.pack("B", 0x1D) -- ALIGN8 UINT 0x08
+tags.UINT16    = string.pack("B", 0x1F) -- ALIGN8 UINT 0x10
+tags.UINT32    = string.pack("B", 0x20) -- ALIGN8 UINT 0x20
+tags.UINT64    = string.pack("B", 0x21) -- ALIGN8 UINT 0x40
+tags.SINT16    = string.pack("B", 0x22) -- ALIGN8 SINT 0x10
+tags.SINT32    = string.pack("B", 0x23) -- ALIGN8 SINT 0x20
+tags.SINT64    = string.pack("B", 0x24) -- ALIGN8 SINT 0x40
+
+--Floats
+tags.SINGLE    = string.pack("B", 0x25) -- SEMANTIC "floating" ALIGN8 UINT 0x20
+tags.DOUBLE    = string.pack("B", 0x26) -- SEMANTIC "floating" ALIGN8 UINT 0x40
+tags.QUAD      = string.pack("B", 0x27) -- SEMANTIC "floating" ALIGN8 UINT 0x80
+
+--Strings
+tags.STREAM    = string.pack("B", 0x28) -- LIST size BYTE
+tags.STRING    = string.pack("B", 0x29) -- LIST size CHAR
+tags.WSTRING   = string.pack("B", 0x2A) -- LIST size WCHAR
 
 encoding.tags = tags;
 
@@ -180,13 +198,22 @@ function Encoder:writevarintzz(number)
    self.stream:writevarintzz(number)
 end
 
---Encodes a boolean value. This value could be encoded as 
---a single bit. But I do not really like that. Since it affects
+--Encodes a boolean value.  
 --All write functions if that is the case. 
-function Encoder:writebit(bit)
-   self.stream:writebit(bit)
+function Encoder:writebool(bool)
+   if bool then bool = 1 else bool = 0 end
+   self.stream:writebyte(bool)
 end
 
+--Encodes a signed integer of (size) bits
+function Encoder:writeint(size, number)
+   self.stream:writeint(size, number)
+end
+
+--Encodes an unsigned integer of (size) bits
+function Encoder:writeuint(size, number)
+   self.stream:writeuint(size, number)
+end
 
 --Finishes any pending operations and closes 
 --the encoder. After this operation the encoder can no longer be used.
@@ -199,6 +226,7 @@ end
 
 --Encodes data using the specified mapping.
 function Encoder:encode(mapping, data)
+   self.stream:flushbits()
    if self.usemetadata then 
       self:writeraw(mapping.tag)
    end
@@ -288,9 +316,20 @@ function Decoder:readdouble()
    return self.stream:readdouble()
 end
 
---Reads a boolean value from the stream.
-function Decoder:readbit()
-   return self.stream:readbit()
+--Reads a boolean value
+function Decoder:readbool()
+   local value = self.stream:readbyte()
+   if value == 1 then
+      value = true
+   else
+      value = false
+   end
+   return value
+end
+
+--Alignes the stream to the specified size
+function Decoder:align(size)
+   self.stream:align(size)
 end
 
 --Reads a variable integer encoded using the encoding
@@ -305,6 +344,14 @@ function Decoder:readvarintzz()
    return self.stream:readvarintzz()
 end
 
+function Decoder:readuint(size)
+   return self.stream:readuint(size)
+end
+
+function Decoder:readint(size)
+   return self.stream:readint(size)
+end
+
 --Closes the decoder.
 --After this operation is performed the decoder can no longer be used.
 function Decoder:close()
@@ -315,6 +362,7 @@ end
 
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
+   self.stream:discardbits()   
    if self.usemetadata then 
       local meta_types = self:readraw(string.len(mapping.tag))
       assert(meta_types == mapping.tag)

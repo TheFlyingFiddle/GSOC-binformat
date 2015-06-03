@@ -23,6 +23,7 @@ function testSuccess(encodeFunc, decodeFunc, args)
 				tostring(v), encodeFunc, decodeFunc, err))
 		end
 	end
+	encoder:close()
 	
 	local mockIn = testing.instream(mockOut.buffer)
 	local decoder = encoding.decoder(mockIn)
@@ -69,7 +70,7 @@ end
 print("Testing encoding.")
 
 --Tests that we can write/read bits (booleans)
-testSuccess("writebit", "readbit", {true, false});
+testSuccess("writebool", "readbool", {true, false});
 
 --Test that we can write/read floats.
 --Singles are abit tricky since you lose precisions.

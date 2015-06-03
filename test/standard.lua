@@ -1,5 +1,5 @@
 runtest{
-	mapping = standard.list(primitive.bit),
+	mapping = standard.list(primitive.boolean),
 	{
 		{ actual = {} },
 		{ actual = { false } },
@@ -23,7 +23,7 @@ runtest{
 	mapping = standard.tuple{
 		{mapping = primitive.stream},
 		{mapping = primitive.varint},
-		{mapping = primitive.bit}	
+		{mapping = primitive.boolean}	
 	},
 	{
 		{ actual = { "Picard", 20, true } },
@@ -37,7 +37,7 @@ runtest{
 	mapping = standard.tuple{
 		{ key = "name", mapping = primitive.stream },
 		{ key = "rank", mapping = primitive.varint },
-		{ key = "captain", mapping = primitive.bit },
+		{ key = "captain", mapping = primitive.boolean },
 	},
 	{
 		{ actual = { name="Picard", rank=20, captain=true } },

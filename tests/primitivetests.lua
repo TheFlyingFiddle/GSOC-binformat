@@ -22,6 +22,8 @@ function testSuccess(mapper, args)
 		end
 	end
 	
+	encoder:close()
+	
 	local mockIn = testing.instream(mockOut.buffer)
 	local decoder = encoding.decoder(mockIn)
 
@@ -45,7 +47,8 @@ end
 
 print("Starting encoding.primitive tests")
 
-testSuccess(primitives.bit, {true, false})
+testSuccess(primitives.flag, {1, 0, 1, 1, 0, 1, 0, 0})
+testSuccess(primitives.sign, {-1, 1, -1, 1, 1, 1, -1, -1})
 testSuccess(primitives.boolean, {true, false})
 
 --Test that we can write/read floats.
