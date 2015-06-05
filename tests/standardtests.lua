@@ -16,7 +16,7 @@ function testSuccess(mapper, args, equals)
 
 	local mockOut = testing.outstream()
 	local encoder = encoding.encoder(mockOut)
-
+	
 	--Start by encoding the values in args
 	for _, v in pairs(args) do
 		local status, err = pcall(encoder.encode, encoder, mapper, v);
@@ -27,6 +27,8 @@ function testSuccess(mapper, args, equals)
 		end
 	end
 	
+	encoder:close()
+	
 	local mockIn = testing.instream(mockOut.buffer)
 	local decoder = encoding.decoder(mockIn)
 	--Then we decode them and make sure they are the same.
@@ -34,10 +36,15 @@ function testSuccess(mapper, args, equals)
 		local status, decodedOrErr = pcall(decoder.decode, decoder, mapper);
 		if status then 
 			if not equals(decodedOrErr, v) then 
+				
+				testing.prettyPrint(v)
+				testing.prettyPrint(decodedOrErr)
+				
 				error(string.format(
 					"Did not decode input correctly. Input:%s Output:%s" ..
 					"Using mapper %s",
 					tostring(v), decodeOrErr, mapper, decoderFunc));
+					
 			end
 		else 
 			error(string.format(
@@ -134,16 +141,27 @@ testSuccess(mapping,
 	}
 }, testing.deepEquals)
 
-local mapping = standard.list(standard.union(
+local mapping = standard.array(primitive.byte, 5)
+
+testSuccess(mapping, 
+{
+	{ 1, 2, 3, 4, 5, 6 },
+	{ 0, 3, 123, 25, 51 }
+}, testing.deepEquals)
+
+local mapping = standard.array(standard.union(
 {
 	{ type = "string", mapping = primitive.stream },
 	{ type = "nil",    mapping = primitive.null }
-}))
+}), 5)
+
 
 testSuccess(mapping, 
 {
 	{ "A", nil, "B", nil, "C" },
 	{ "D", "E", nil, nil, "F" }
 }, testing.deepEquals)
+
+
 
 print("All tests succeeded.")

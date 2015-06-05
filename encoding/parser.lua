@@ -1,6 +1,5 @@
-local encoding = require"encoding"
 local format   = require"format"
-local tags = encoding.tags
+local tags 	   = require"encoding.tags"
 
 local LIST  	= tags.LIST
 local SET   	= tags.SET
@@ -12,41 +11,68 @@ local MAP 		= tags.MAP
 local TUPLE     = tags.TUPLE
 local UNION     = tags.UNION
 local TYPEREF   = tags.TYPEREF
+local UINT		= tags.UINT
+local SINT		= tags.SINT
+
+local ALIGN		= tags.ALIGN
+local ALIGN8	= tags.ALIGN8
+local ALIGN16	= tags.ALIGN16
+local ALIGN32	= tags.ALIGN32
+local ALIGN64	= tags.ALIGN64
 
 local parser = { }
+
+local unpackvar = format.unpackvarint
 local function parsenode(metastring, index)
-	local tag  = string.sub(metastring, index, index)
+	local tag  = unpackvar(string.sub(metastring, index, index))
 	local node = { }
 	node.tag   = tag
 	node.sindex = index
 	
-	local children = 0;
-	if tag == LIST 	   or tag == ARRAY  or 
-	   tag == SET  	   or tag == OBJECT or
-	   tag == EMBEDDED or tag == SEMANTIC then
+	local children = 0;	
+	if tag == LIST 	   or tag == ARRAY    or 
+	   tag == SET  	   or tag == OBJECT   or
+	   tag == EMBEDDED or tag == SEMANTIC or 
+	   tag == ALIGN	   or tag == ALIGN8   or
+	   tag == ALIGN16  or tag == ALIGN32  or
+	   tag == ALIGN64 then
 	   children = 1
 	elseif tag == MAP then
 		children = 2
 	end
 		
-	if tag == ARRAY 	or tag == TUPLE or 
-	   tag == UNION 	or tag == TYPEREF or 
-	   tag == SEMANTIC then
-		local size, off = format.unpackvarint(string.sub(metastring, index + 1))
+	if tag == ARRAY   or tag == TUPLE or 
+	   tag == TYPEREF or tag == ALIGN or
+	   tag == UINT	  or tag == SINT then
+		local size, off = unpackvar(string.sub(metastring, index + 1))
 		index 	 	= index + off
-	 
-	    if tag == TYPEREF then
-			node.offset = size + 1
-		elseif tag == SEMANTIC then
-			node.id = string.sub(metastring, index, index + size)
-			index   = index + size
+		
+		if tag == TYPEREF then
+			node.offset = size
 		else
-			node.size	= size
-		end
-			
-		if tag == UNION or tag == TUPLE then
+			node.size = size
+		end		
+		
+		if tag == TUPLE then
 			children = size
-		end 
+		end
+	elseif tag == LIST or tag == SET or
+		   tag == MAP  or tag == UNION then 
+		local size, off = unpackvar(string.sub(metastring, index + 1))
+		index 	= index + off
+		node.bitsize = size		
+		
+		if tag == UNION then
+			size, off = unpackvar(string.sub(metastring, index + 1))
+			index = index + off
+			node.size = size
+			children = size
+		end
+	elseif tag == SEMANTIC then
+		local size, off = unpackvar(string.sub(metastring, index + 1))
+		index 	= index + off
+		node.identifier = string.sub(metastring, index + 1, index + size)		
+		index   = index + size
 	end
 	
 	index = index + 1
@@ -57,39 +83,7 @@ local function parsenode(metastring, index)
 	end	
 	
 	node.eindex = index - 1;
-	return node		
-end
-
-local function tometatype(str)
-	local rep = { }
-	local iter = string.gmatch(str, "%S+")
-	while true do
-		local w = iter()
-		if not w then break end	
-		local u = string.upper(w)
-		local tag = tags[u]
-		if not tag then
-			error(u .. " is not a valid tag!")
-		end
-		
-		table.insert(rep, tag)
-		if tag == ARRAY or tag == TUPLE   or 
-		   tag == UNION or tag == TYPEREF then 
-			local n = tonumber(iter())
-			table.insert(rep, format.packvarint(n))
-		elseif tag == SEMANTIC then
-			local id = iter()
-			table.insert(rep, format.packvarint(#id))
-			table.insert(rep, id)
-		end											
-	end
-		
-	return table.concat(rep)
-end
-
-function parser.parsestring(str)
-	local metastr = tometatype(str)
-	return parser.parsemetatype(metastr)
+	return node, size --It's possible that the metastring contains concatenated values.
 end
 
 function parser.parsemetatype(metatype)

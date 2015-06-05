@@ -225,7 +225,7 @@ runtest{ mapping = primitive.varint, encodeerror = "has no integer representatio
 	SinglePrecisionCases,
 	DoublePrecisionCases,
 }
-runtest{ mapping = primitive.varint, encodeerror = "attempt to compare number",
+runtest{ mapping = primitive.varint, encodeerror = "number expected",
 	NonNumberCases,
 }
 -- signed integer of 16-bit

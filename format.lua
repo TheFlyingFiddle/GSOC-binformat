@@ -3,6 +3,9 @@ local format = { }
 local Writer = { }
 Writer.__index = Writer;
 
+function Writer:getposition()
+   return self.position
+end
 
 --Writes the bytes contained in a raw string,
 --to the output stream.
@@ -75,6 +78,8 @@ end
 --Writes a number in the variable integer encoding
 --used by google protocol buffers. 
 function Writer:varint(number)
+   assert(type(number) == "number", "number expected")
+
    while number >= 0x80 or number < 0 do
       local byte = (number | 0x80) & 0x00000000000000FF
       number = number >> 7;
@@ -193,6 +198,10 @@ end
 
 local Reader = { }
 Reader.__index = Reader
+
+function Reader:getposition()
+   return self.position
+end
 
 --Reads a string of length count from the input stream.
 function Reader:raw(count)
@@ -399,5 +408,24 @@ function format.unpackvarint(str)
    return number, count + 1    
 end
 
+
+local MemoryStream = {}
+MemoryStream.__index = MemoryStream
+
+local insert = table.insert
+function MemoryStream:write(string)
+   insert(self.buffer, string)
+end
+
+function MemoryStream:flush() end
+
+local concat = table.concat
+function MemoryStream:getdata()
+   return concat(self.buffer)
+end
+
+function format.memorystream()
+   return setmetatable( { buffer = { } }, MemoryStream )
+end
 
 return format

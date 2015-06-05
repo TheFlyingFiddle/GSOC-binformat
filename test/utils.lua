@@ -6,6 +6,7 @@ local Viewer = require "loop.debug.Viewer"
 local Matcher = require "loop.debug.Matcher"
 
 encoding 	= require "encoding"
+custom		= require "encoding.custom"
 primitive 	= encoding.primitive
 standard 	= encoding.standard 
 
@@ -103,7 +104,7 @@ end
 local function asserterror(pattern, func, ...)
 	local errorok
 	local function handler(errmsg)
-		if errmsg:match(pattern) then
+		if errmsg:match(pattern) or pattern == "any" then
 			errorok = true
 			return errmsg
 		end
@@ -124,7 +125,7 @@ function runtest(test)
 		for cid, case in ipairs(group) do
 			local basename = basedir.."/out_t"..tid.."g"..gid.."c"..cid
 			local outpath = basename..".dat"
-			local regression = not test.noregression and io.open(outpath)
+			local regression = false  --not test.noregression and io.open(outpath)
 			if regression then
 				regression:close()
 				outpath = basename..".new"
@@ -164,10 +165,19 @@ function runtest(test)
 				if test.rounderror ~= nil then
 					assert(math.abs((recovered-expected)/expected) < test.rounderror,
 						"recovered value is too different from the expected")
+				elseif test.matcher ~= nil then
+					local ok, errmgs = test.matcher(recovered, expected)
+					if not ok then 
+						--viewer:write(expected)
+						--viewer:write(recovered)
+					end					
+					assert(ok, errmsg)
 				else
 					local matcher = Matcher(table.copy(test.compareopts or {}))
 					local ok, errmsg = matcher:match(recovered, expected)
-					if not ok then print(recovered, expected) end
+					if not ok then 
+						print(recovered, expected)
+					end
 					assert(ok, errmsg)
 				end
 			end

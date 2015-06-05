@@ -1,9 +1,10 @@
 local encoding  = require"encoding"
 local primitive = encoding.primitive
 local standard  = encoding.standard
+local custom	= require"encoding.custom"
 local testing   = require"tests.testing"
+local tags		= require"encoding.tags"
 
---[[
 --Inout dynamic encoding
 local data = 
 {
@@ -18,21 +19,23 @@ local data =
 	}
 }
 
-local dynamic  = standard.dynamic()
+local dynamic = standard.dynamic
 testing.testmapping(data, dynamic)
 
 local function testdynamicmapping(data, mapping)
 	local out = testing.outstream()
 	encoding.encode(out, data, mapping)
 
+	testing.prettyPrint(data)
 	local in_ 	= testing.instream(out.buffer)
 	local value = encoding.decode(in_, dynamic, false)
+	testing.prettyPrint(value)
 	assert(testing.deepEquals(data, value))
 end
 
 --Dynamic readout of varint list. 
 local list = standard.list(primitive.varint)
-local data = {0,1,32,1512,123,412,31,251,235,1235,1235,123,123,512}
+local data = {0,1,32,1512,123,412,31,251,235,135,1235,123,123,512}
 testdynamicmapping(data, list)
 
 --Dynamic readout of tuple 
@@ -49,7 +52,6 @@ local union = standard.list(standard.union(
 
 local data = { "Hello", 23, "Hello Again", 42, 42, 1512, "Yes", "No", "Please", 312, 123 }
 testdynamicmapping(data, union)
-
 
 --Dynamic readout of more complex type.
 local vec3 = standard.tuple(
@@ -85,39 +87,37 @@ local data =
 testdynamicmapping(data, monster)
 
 --This will not work right now since the typeref problem is not solved. 
-local noderef = composed.typeref()
+local noderef = custom.typeref()
 local node = standard.nullable(standard.tuple(
-	{ key = "payload", mapping = primitive.fpdouble },
-	{ key = "left",    mapping = noderef },
-	{ key = "right",   mapping = noderef }
-))
+{
+	{ mapping = primitive.fpdouble },
+	{ mapping = noderef },
+	{ mapping = noderef }
+}))
 noderef:setref(node)
 
 local tree = standard.tuple(
 {
-	{ key = "count",   mapping = primitive.varint },
-	{ key = "root",    mapping = node }	
+	{ mapping = primitive.varint },
+	{ mapping = node }	
 })
+
 
 local data = 
 {
-	nodecount = 4,
-	root = 
+	4,
 	{
-		payload = 3,
-		left = 
+		3,
 		{
-			payload = 8,
-			left = 
+			5,
 			{
-				payload = 21
+				21
 			}	
 		},
-		right = 
 		{
-			payload = 32	
+			32	
 		}
 	}
 }
 
---testdynamicmapping(data, tree) --]]
+testdynamicmapping(data, tree)

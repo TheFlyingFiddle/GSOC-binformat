@@ -17,12 +17,12 @@ print("Starting tests for typeref")
 -- }
 --
 --Metadata: 
---UNION 05
+--UNION 0x00 05
 --	VOID
 --  STRING
 --  DOUBLE
 --  BOOLEAN
---  OBJECT MAP 
+--  OBJECT MAP 0x00
 --		TYPEREF 06
 --      TYPEREF 08
 --  (Could possebly include functions aswell)
@@ -37,6 +37,8 @@ local luamapping = standard.union(
 })
 
 luaref:setref(luamapping)
+
+
 
 local data = 
 {
