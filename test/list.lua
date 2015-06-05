@@ -14,7 +14,6 @@ local WrongElementTypeCases =
 {
 	{ actual = {"A", "B", "C", "D", "E"} },
 	{ actual = { false, true, true, true, true } },
-	{ actual = { {}, {}, {}, {}, {} } },
 	{ actual = { print, print, print, print, print } },
 	{ actual = { function() end, function() end, function() end, 
 				 function() end, function() end} },

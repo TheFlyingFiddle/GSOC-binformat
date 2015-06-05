@@ -7,8 +7,8 @@ table.sort(PrimitiveCases, function(a,b) return a.actual.tag < b.actual.tag end)
 
 local SimpleComposedCases = 
 {
-	{ actual = standard.array(primitive.varint, 5) },
-	{ actual = standard.list(primitive.varint) },
+	{ actual = standard.array(primitive.varint, 5) , id = "standard_array"},
+	{ actual = standard.list(primitive.varint),      id = "standerd_list" },  
 	{ actual = standard.set(primitive.varint) },
 	{ actual = standard.map(primitive.varint, primitive.varint) },
 	{ actual = standard.nullable(primitive.varint) },
@@ -75,10 +75,10 @@ local treemapping = standard.tuple(
 
 local TyperefCases = 
 {
-	{ actual = linkedlist },
-	{ actual = luaunion },
-	{ actual = node },
-	{ actual = treemapping }	
+	{ actual = linkedlist, id = "linked lists" },
+	{ actual = luaunion, id = "luaunion" },
+	{ actual = node , id = "treenode"},
+	{ actual = treemapping , id = "tree"}	
 }
 
 local function idmatcher(actual, expected)

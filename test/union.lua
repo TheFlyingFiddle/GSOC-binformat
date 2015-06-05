@@ -13,12 +13,12 @@ local NoNumberOrNilCases =
 
 local LuaValueCases =  
 {
-	{ actual = 1   	 },
-	{ actual = true  },
-	{ actual = false },
-	{ actual = "A"   },
-	{ actual = { }   },
-	{ actual = { "A", "B", "C" } }
+	{ actual = 3451	 },
+	{ actual = true  , id = "luatrue"},
+	{ actual = false , id = "luafalse"},
+	{ actual = "QQQ" },
+	{ actual = { }   , id = "lua_emptytable"},
+	{ actual = { "QWE", "EWQ", "WEQ" } }
 }
 
 local NonStandardUnionCases = 
@@ -31,7 +31,7 @@ local NonStandardUnionCases =
 
 local NumberOrList = 
 {
-	{ actual = 1 },
+	{ actual = 512351 },
 	{ actual = { 0, 1, 2, 3, 4, 5 } }
 }
 
@@ -44,8 +44,8 @@ local intornil = standard.union
 
 local numberorlist = standard.union
 {
-	{ type = "number", mapping = primitive.varint },
-	{ type = "table",  mapping = standard.list(primitive.varint) }
+	{ type = "table",  mapping = standard.list(primitive.varint) },
+	{ type = "number", mapping = primitive.varint }
 }
 
 
@@ -63,8 +63,6 @@ luaref:setref(luaunion)
 
 runtest { mapping = intornil, IntOrNilCases }
 runtest { mapping = intornil, encodeerror = "any", NoNumberOrNilCases }
-
 runtest { mapping = numberorlist, NumberOrList }
-
 runtest { mapping = luaunion, LuaValueCases}
 runtest { mapping = luaunion, encodeerror = "any", NonStandardUnionCases }

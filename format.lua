@@ -132,22 +132,26 @@ end
 
 --Writes an unsigned integer of (size) bits
 function Writer:uint(size, value)
-   local max = 1 << size - 1
-   assert(value <= max)
+   local max = (1 << size) - 1
+   assert(type(value) == "number", "number expected")
+   assert(math.type(value) == "integer", "has no integer representation")
+   assert(value >= 0 and value <= max, "unsigned overflow " .. max .. " " .. size)
    self:bits(size, value)
 end
 
 --Writes a signed integer of (size) bits
 function Writer:int(size, value)
+   assert(type(value) == "number", "number expected")
+   assert(math.type(value) == "integer", "has no integer representation")
    local half = 1 << (size - 1)
    
    if value < 0 then
-      assert(-half <= value, "value to small")
+      assert(-half <= value, "integer overflow")
       local offset = (1 << size)
       local nval   = offset + value
       self:bits(size, nval)   
    else
-      assert(half > value, "value to large")
+      assert(half > value, "integer overflow")
       self:bits(size, value)
    end
 end

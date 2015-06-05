@@ -164,8 +164,8 @@ function Void:decode(decoder) end
 primitive.void = Void
 
 local Null = { tag = tags.NULL, id = format.packvarint(tags.NULL) }
-function Null:encode(encoder, value) end
-function Null:decode(decoder) end
+function Null:encode(encoder, value) assert(value == nil, "nil expected") end
+function Null:decode(decoder) return nil end
 primitive.null = Null
 
 --CHAR should read as a 1 char string.
@@ -227,48 +227,29 @@ function WString:decode(decoder)
 end
 primitive.wstring = WString;
 
-
 local Flag = { tag = tags.FLAG, id = format.packvarint(tags.FLAG)}
 function Flag:encode(encoder, value)
-    if value == 1 or value == true then
-        encoder.writer:uint(1, 1)
-    elseif value == 0 or value == false then
-        encoder.writer:uint(1, 0)
-    else
-        error("Expected bool or number that is 0 or 1")
-    end 
+    encoder.writer:uint(1, value and 1 or 0)
 end
 
 function Flag:decode(decoder)
-    return decoder.reader:uint(1)
+    return decoder.reader:uint(1) ~= 0
 end
 primitive.flag     = Flag
 
 local Sign = { tag = tags.SIGN, id = format.packvarint(tags.SIGN)}
 function Sign:encode(encoder, value)
-    if value == 1 or value == true then
-        encoder.writer:uint(1, 1)
-    elseif value == -1 or value == false then
-        encoder.writer:uint(1, 0)
-    else
-        error("Expected bool or number that is -1 or 1")
-    end
+    encoder.writer:uint(1, value < 0 and 1 or 0)
 end
 
 function Sign:decode(decoder)
-    local sign = decoder.reader:uint(1)
-    if sign == 1 then
-        return 1
-    else
-        return -1
-    end
+    return decoder.reader:uint(1) ~= 0 and -1 or 1
 end
 primitive.sign     = Sign
 
 local function createBitInts(tag, name, count)
     for i=1, count do
-        local name = name .. i
-        if not primitive[name] then
+        if not primitive[name .. i] then
             local mapping = {  }
             mapping.tag = tag 
             mapping.bitsize = i
@@ -470,8 +451,8 @@ function Nullable:select(value)
    end
 end
 
-function Nullable:create(kind, value)
-   return value;
+function Nullable:create(kind, ...)
+   return ...
 end
 
 function standard.nullable(mapper)

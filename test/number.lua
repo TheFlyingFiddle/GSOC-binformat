@@ -108,6 +108,14 @@ local NonNumberCases = {
 	{ actual = io.stdout },
 }
 
+local SignCases =
+{
+	{ actual = 1,     expected = 1 },
+	{ actual = -1,    expected = -1 }
+}
+
+runtest{ mapping = primitive.sign, SignCases }
+
 -- unsigned integer of 8-bit
 runtest{ mapping = primitive.byte,
 	Int8Cases,

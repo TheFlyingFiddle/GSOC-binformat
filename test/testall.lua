@@ -1,7 +1,9 @@
 require "test.utils"
 
+dofile("test/empty.lua")
 dofile("test/bool.lua")
 dofile("test/number.lua")
+dofile("test/bitnumbers.lua")
 dofile("test/text.lua")
 dofile("test/standard.lua")
 dofile("test/array.lua")

@@ -255,8 +255,7 @@ function Union:decode(decoder)
     local kind    = readsize(decoder.reader, self.sizebits)
     local mapper  = self.mappers[kind]
     
-    local decoded = mapper:decode(decoder)
-    return self.handler:create(kind, decoded)
+    return self.handler:create(kind, mapper:decode(decoder))
 end
 
 function Union:encodemeta(encoder)

@@ -9,9 +9,8 @@ runtest{
 	},
 }
 
-runtest{
+runtest{ noregression = true,
 	mapping = standard.map(primitive.stream, primitive.varint),
-	noregression = true,
 	{
 		{ actual = {}, },
 		{ actual = { ["John Doe"]=25, ["Jane Doe"]=25, ["Baby Doe"]=1 } },
@@ -21,9 +20,9 @@ runtest{
 
 runtest{
 	mapping = standard.tuple{
-		{mapping = primitive.stream},
-		{mapping = primitive.varint},
-		{mapping = primitive.boolean}	
+		{ mapping = primitive.stream },
+		{ mapping = primitive.varint },
+		{ mapping = primitive.boolean },
 	},
 	{
 		{ actual = { "Picard", 20, true } },
@@ -33,7 +32,7 @@ runtest{
 	},
 }
 
-runtest{
+runtest{ noregression = true,
 	mapping = standard.tuple{
 		{ key = "name", mapping = primitive.stream },
 		{ key = "rank", mapping = primitive.varint },
@@ -50,7 +49,7 @@ runtest{
 runtest{
 	mapping = standard.array(standard.union{
 		{ type = "string", mapping = primitive.stream },
-		{ type = "nil",    mapping = primitive.null }
+		{ type = "nil", mapping = primitive.null }
 	}, 5),
 	{
 		{ actual = { "A", nil, "B", nil, "C" } },

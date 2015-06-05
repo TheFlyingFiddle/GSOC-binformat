@@ -32,12 +32,11 @@ for i = 0, 255 do
 	allchars[#allchars+1] = string.char(i)
 end
 local StreamCases = {
-	{ actual = "0123456789" },
-	{ actual = "abcdefghijklmnopqrstuvxywz" },
-	{ actual = "ABCDEFGHIJKLMNOPQRSTUVXYWZ" },
-	{ actual = "'\"!@#$%¨&*()-_=+´`[{]}~^,<.>;:/?\\|" },
-	{ actual = "\b\f\n\t\v\0" },
-	{ actual = table.concat(allchars) },
+	{ actual = "0123456789", id = "digits" },
+	{ actual = "abcdefghijklmnopqrstuvxywzABCDEFGHIJKLMNOPQRSTUVXYWZ", id = "letters" },
+	{ actual = "'\"!@#$%¨&*()-_=+´`[{]}~^,<.>;:/?\\|", id = "punctuation" },
+	{ actual = "\b\f\n\t\v\0", id = "escaped" },
+	{ actual = table.concat(allchars), id = "allchars" },
 	{ actual = [[
 Lorem ipsum dolor
 sit amet, consectetur
@@ -45,7 +44,7 @@ Ut lobortis
 placerat mi vel tempor
 Il et felis eu sapien interdum
 sollicitudin sit anet quis mi. Proin
-iaculis vehicula ultrices]] },
+iaculis vehicula ultrices]], id = "multiline" },
 }
 -- non-textual values
 local NonTextualCases = {
@@ -54,16 +53,17 @@ local NonTextualCases = {
 	{ actual = true },
 	{ actual = {} },
 	{ actual = print },
-	{ actual = function() end },
+	{ actual = function () end },
 	{ actual = coroutine.running() },
 	{ actual = io.stdout },
 }
 
+
+
 -- single byte characters
 runtest{ mapping = primitive.char, CharCases }
---runtest{ mapping = primitive.char, defaultexpected = "\255", WideCharCases }
+runtest{ mapping = primitive.char, encodeerror = "invalid character", WideCharCases }
 runtest{ mapping = primitive.char, encodeerror = "string expected", NonTextualCases }
-
 -- double byte characters
 runtest{ mapping = primitive.wchar, WideCharCases }
 runtest{ mapping = primitive.wchar, encodeerror = "invalid wide character", CharCases }
@@ -79,12 +79,11 @@ runtest{ mapping = primitive.string, encodeerror = "string expected", NonTextual
 -- double byte string
 runtest{ mapping = primitive.wstring,
 	WideCharCases,
+	StreamCases,
 }
-
 runtest{ mapping = primitive.wstring, encodeerror = "invalid wide string",
 	CharCases,
 }
-
 runtest{ mapping = primitive.wstring, encodeerror = "string expected", NonTextualCases }
 -- byte stream
 runtest{ mapping = primitive.stream,
