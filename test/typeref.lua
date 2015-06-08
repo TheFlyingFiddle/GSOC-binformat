@@ -16,16 +16,16 @@ local newtyperef = custom.typeref
 local listref 	  = newtyperef()
 local listmapping = standard.tuple(
 {
-	{ key = "payload", mapping = primitive.varint },
-	{ key = "next",    mapping = standard.nullable(listref) } 
+	{ mapping = primitive.varint },
+	{ mapping = standard.nullable(listref) } 
 })
 listref:setref(listmapping)
 
 local LinkedListCases = 
 {
-	{ actual = { payload = 2} },
-	{ actual = { payload = 2, next = { payload = 3 } } },
-	{ actual = { payload = 2, next = { payload = 3, next = { payload = 2 } } } },
+	{ actual = { 2 } },
+	{ actual = { 3 , { 5 } } },
+	{ actual = { 4, { 6, { 7 } } } },
 }
 
 runtest { mapping = listmapping, LinkedListCases }
@@ -121,7 +121,7 @@ local TreeCases =
 	}}
 }
 
-runtest { mapping = treemapping, TreeCases }
+runtest { nodynamic = true, mapping = treemapping, TreeCases }
 
 -- Linked list with cycle
 -- tuple List
@@ -163,4 +163,4 @@ last.next = data;
 
 local CyclicCases = { {actual = data} }
 
-runtest { mapping = listmapping, CyclicCases}
+runtest { nodynamic = true, mapping = listmapping, CyclicCases}

@@ -159,6 +159,62 @@ function BufferStream:read(count)
 	return self.stream:sub(pos+1, finish)
 end
 
+
+
+local function rundynamictest(test)
+	local mapping = test.mapping
+	local basedir = test.basedir or "streams"
+	for gid, group in ipairs(test) do
+		for cid, case in ipairs(group) do
+			io.write("Dyn_" .. tags[mapping.tag], ": "); viewer:write(case.actual); io.write(" ... "); io.flush()
+			local output = BufferStream()
+			
+			do
+				local encoder = encoding.encoder(output, true)
+				encoder:encode(mapping, case.actual)
+				encoder:close()
+				output:close()
+			end
+			
+			do 
+				local decoder = encoding.decoder(output, false)
+				local recovered = assertcount(test.countexpected, decoder:decode(standard.dynamic))
+				decoder:close()
+				output:close()	
+				
+				if test.countexpected == nil or test.countexpected > 0 then
+					local expected = case.expected
+					if expected == nil then
+						if test.defaultexpected ~= nil then
+							expected = test.defaultexpected
+						else
+							expected = case.actual
+						end
+					end
+					if test.rounderror ~= nil then
+						assert(math.abs((recovered-expected)/expected) < test.rounderror,
+							"recovered value is too different from the expected")
+					elseif test.matcher ~= nil then
+						local ok, errmgs = test.matcher(recovered, expected)
+						if not ok then 
+							print(recovered, excpected)
+						end					
+						assert(ok, errmsg)
+					else
+						local matcher = Matcher(table.copy(test.compareopts or {}))
+						local ok, errmsg = matcher:match(recovered, expected)
+						if not ok then print(recovered, expected) end
+						assert(ok, errmsg)
+					end
+					viewer:write(recovered)
+				end
+				print()
+			end
+		end
+	end
+end
+
+
 local tid = 0
 function runtest(test)
 	tid = tid+1
@@ -201,6 +257,7 @@ function runtest(test)
 				local recovered = assertcount(test.countexpected, decoder:decode(mapping))
 				decoder:close()
 				input:close()
+				
 				if test.countexpected == nil or test.countexpected > 0 then
 					local expected = case.expected
 					if expected == nil then
@@ -232,5 +289,9 @@ function runtest(test)
 				print("error: "..encodeerror)
 			end
 		end
+	end
+	
+	if encodeerror == nil and not test.nodynamic then
+		rundynamictest(test)
 	end
 end

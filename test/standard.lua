@@ -33,6 +33,7 @@ runtest{
 }
 
 runtest{ noregression = true,
+		 nodynamic = true,
 	mapping = standard.tuple{
 		{ key = "name", mapping = primitive.stream },
 		{ key = "rank", mapping = primitive.varint },

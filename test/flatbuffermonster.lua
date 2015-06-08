@@ -66,4 +66,4 @@ local MonsterCases =
 	}}
 }
 
-runtest { mapping = monster, MonsterCases}
+runtest { nodynamic = true, mapping = monster, MonsterCases}

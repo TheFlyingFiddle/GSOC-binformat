@@ -25,7 +25,7 @@ local keyedintandstring = standard.tuple
 }
 
 runtest { mapping = intandstring, IntAndStringCases }
-runtest { mapping = keyedintandstring, KeyIntAndStringCases }
+runtest { nodynamic = true, mapping = keyedintandstring, KeyIntAndStringCases }
 
 runtest { mapping = intandstring, encodeerror = "any", KeyIntAndStringCases }
 runtest { mapping = keyedintandstring, encodeerror = "any", IntAndStringCases }
