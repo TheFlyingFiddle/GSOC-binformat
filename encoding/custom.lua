@@ -415,7 +415,9 @@ end
 --Will fix this. It's not hard. 
 local Embedded = { }
 Embedded.__index = Embedded;
-function Embedded:encode(encoder, value) end
+function Embedded:encode(encoder, value) 
+end
+
 function Embedded:decode(encoder, value) end
 function Embedded:encodemeta(encoder) end 
 function composed.embeded(mapper) end
