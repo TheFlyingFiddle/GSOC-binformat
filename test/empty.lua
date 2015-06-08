@@ -27,4 +27,6 @@ runtest{ mapping = primitive.null, encodeerror = "nil expected",
 
 local mapping = standard.nullable(primitive.void)
 runtest{ mapping = mapping, NilCases, }
---runtest{ mapping = mapping, countexpected = 0, NonNilCases, }
+
+--I am unsure about this. How do I do this correctly?
+runtest{ nodynamic = true, mapping = mapping, countexpected = 0, NonNilCases, }

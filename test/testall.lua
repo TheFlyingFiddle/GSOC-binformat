@@ -1,5 +1,6 @@
 require "test.utils"
 
+dofile("test/dynamic.lua")
 dofile("test/empty.lua")
 dofile("test/bool.lua")
 dofile("test/number.lua")
