@@ -27,8 +27,19 @@ local LinkedListCases =
 	{ actual = { 3 , { 5 } } },
 	{ actual = { 4, { 6, { 7 } } } },
 }
+runtest { mapping = listmapping, LinkedListCases }
+
+
+local listref 	  = newtyperef()
+local listmapping = standard.nullable(standard.tuple(
+{
+	{ mapping = primitive.varint },
+	{ mapping = listref } 
+}))
+listref:setref(listmapping)
 
 runtest { mapping = listmapping, LinkedListCases }
+
 
 --A binary tree
 -- tuple Tree 

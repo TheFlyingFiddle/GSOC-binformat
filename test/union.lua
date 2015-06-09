@@ -61,7 +61,9 @@ local luaunion = standard.union
 luaref:setref(luaunion)
 
 
+
 runtest { mapping = intornil, IntOrNilCases }
+runtest { mapping = standard.nullable(primitive.varint), IntOrNilCases}
 runtest { mapping = intornil, encodeerror = "any", NoNumberOrNilCases }
 runtest { mapping = numberorlist, NumberOrList }
 runtest { mapping = luaunion, LuaValueCases}

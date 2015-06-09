@@ -413,23 +413,42 @@ function format.unpackvarint(str)
 end
 
 
-local MemoryStream = {}
-MemoryStream.__index = MemoryStream
+local MemoryOutStream = {}
+MemoryOutStream.__index = MemoryOutStream
 
 local insert = table.insert
-function MemoryStream:write(string)
+function MemoryOutStream:write(string)
    insert(self.buffer, string)
 end
 
-function MemoryStream:flush() end
+function MemoryOutStream:flush() end
+
+function MemoryOutStream:close() end
 
 local concat = table.concat
-function MemoryStream:getdata()
+function MemoryOutStream:getdata()
    return concat(self.buffer)
 end
-
-function format.memorystream()
-   return setmetatable( { buffer = { } }, MemoryStream )
+function format.memoryoutstream()
+   return setmetatable( { buffer = { } }, MemoryOutStream )
 end
+
+local MemoryInStream = { }
+MemoryInStream.__index = MemoryInStream
+function MemoryInStream:read(count)
+      local pos = self.position
+      self.position = pos + count
+      return string.sub(self.buffer, pos, self.position - 1)
+end
+
+function MemoryInStream:close() end
+
+function format.memoryinstream(buffer)
+    local stream = setmetatable({}, MemoryInStream)
+    stream.buffer   = buffer
+    stream.position = 1
+    return stream
+end
+
 
 return format

@@ -1,5 +1,8 @@
 local format = require"format"
+local core   = require"encoding.core"
 local tags   = require"encoding.tags"
+
+local pack = format.packvarint
 
 local function writemeta(encoder, mapping) 
     local writer = encoder.writer
@@ -23,7 +26,7 @@ end
 
 
 
-local composed = { }
+local custom = { }
 
 --Mapper for the ARRAY <T> tag.
 local Array = { }
@@ -51,7 +54,7 @@ function Array:encodemeta(encoder)
     writemeta(encoder, self.mapper)
 end
 
-function composed.array(handler, mapper, size)
+function custom.array(handler, mapper, size)
     local array = { }
     setmetatable(array, Array)
     array.tag     = tags.ARRAY 
@@ -105,7 +108,7 @@ function List:encodemeta(encoder)
     writemeta(encoder, self.mapper)
 end
 
-function composed.list(handler, mapper, sizebits)
+function custom.list(handler, mapper, sizebits)
     if sizebits == nil then sizebits = 0 end
 
     local list = {  }
@@ -144,7 +147,7 @@ function Set:encodemeta(encoder)
     writemeta(encoder, self.mapper)
 end
 
-function composed.set(handler, mapper, sizebits)
+function custom.set(handler, mapper, sizebits)
     if sizebits == nil then sizebits = 0 end
     local set = {  }
     setmetatable(set, Set)
@@ -188,7 +191,7 @@ function Map:decode(decoder)
     return value;
 end
 
-function composed.map(handler, keymapper, itemmapper, sizebits)
+function custom.map(handler, keymapper, itemmapper, sizebits)
     if sizebits == nil then sizebits = 0 end
     
     local map = { }
@@ -230,7 +233,7 @@ function Tuple:encodemeta(encoder)
     end
 end
 
-function composed.tuple(handler, mappers)
+function custom.tuple(handler, mappers)
     local tuple = { }
     setmetatable(tuple, Tuple)
     tuple.mappers = mappers
@@ -254,7 +257,6 @@ end
 function Union:decode(decoder)
     local kind    = readsize(decoder.reader, self.sizebits)
     local mapper  = self.mappers[kind]
-    
     return self.handler:create(kind, mapper:decode(decoder))
 end
 
@@ -267,8 +269,9 @@ function Union:encodemeta(encoder)
     end
 end
 
-function composed.union(handler, mappers, sizebits)
+function custom.union(handler, mappers, sizebits)
     if sizebits == nil then sizebits = 0 end
+    
     
     local union = { }
     setmetatable(union, Union)
@@ -296,7 +299,7 @@ function Semantic:encodemeta(encoder)
     writemeta(encoder, self.mapper)
 end
 
-function composed.semantic(id, mapper)
+function custom.semantic(id, mapper)
     local semantic = { }
     setmetatable(semantic, Semantic)
     semantic.tag    = tags.SEMANTIC
@@ -363,7 +366,7 @@ function Object:encodemeta(encoder)
     writemeta(encoder, self.mapper)
 end
 
-function composed.object(handler, mapper)
+function custom.object(handler, mapper)
     local object = { }
     setmetatable(object, Object)
     object.mapper  = mapper
@@ -392,7 +395,7 @@ function Align:encodemeta(encoder)
     writemeta(encoder, self.mapper)    
 end
 
-function composed.align(size, mapping)
+function custom.align(size, mapping)
     local aligner = setmetatable({}, Align)
     aligner.alignof = size
     aligner.mapper = mapping
@@ -415,12 +418,42 @@ end
 --Will fix this. It's not hard. 
 local Embedded = { }
 Embedded.__index = Embedded;
-function Embedded:encode(encoder, value) 
+function Embedded:encode(encoder, value)
+    local outstream = self.handler:getoutstream()
+    local enco = core.encoder(outstream, false)
+    self.mapper:encode(enco, value)
+    enco:close()
+    
+    local data    = outstream:getdata()
+    print(data)
+    encoder.writer:stream(data)
+    outstream:close()
 end
 
-function Embedded:decode(encoder, value) end
-function Embedded:encodemeta(encoder) end 
-function composed.embeded(mapper) end
+function Embedded:decode(decoder) 
+    local data      = decoder.reader:stream() 
+    local instream  = self.handler:getinstream(data)
+    local deco      = core.decoder(instream, false)
+    local value     = self.mapper:decode(deco) 
+        
+    deco:close()
+    instream:close()
+    return value
+end
+
+function Embedded:encodemeta(encoder) 
+    writemeta(encoder, self.mapper)
+end 
+
+function custom.embedded(handler, mapper, dontgenerateid) 
+    local embedded = setmetatable({}, Embedded)
+    embedded.handler    = handler
+    embedded.mapper     = mapper
+    embedded.tag        = tags.EMBEDDED
+    
+    return embedded
+end
+
 
 
 local Typeref = { }
@@ -438,7 +471,7 @@ function Typeref:setref(mapper)
     self.mapper = mapper
 end
 
-function composed.typeref()
+function custom.typeref()
     local typeref = { }
     setmetatable(typeref, Typeref);
     typeref.tag = tags.TYPEREF
@@ -448,7 +481,7 @@ end
 local Type = { }
 Type.__index = Type
 function Type:encode(encoder, value) --Value would be a tag here.
-    encoder.writer:raw(encoder:getid(value))
+    encoder.writer:raw(core.getid(value))
 end
  
 function Type:decode(decoder)
@@ -469,22 +502,22 @@ function Type:decode(decoder)
        tag == tags.EMBEDDED or
        tag == tags.SEMANTIC then
         local size = decoder.reader:varint()
-        id = format.packvarint(tag) .. decoder.reader:raw(size)                                   
+        id = pack(tag) .. decoder.reader:raw(size)                                   
      elseif tag == tags.UINT or tag == tags.SINT then
         local size = decoder.reader:varint()
-        id = format.packvarint(tag) .. format.packvarint(size)  
+        id = pack(tag) .. pack(size)  
      else
-        id = format.packvarint(tag)
+        id = pack(tag)
      end
      
     local mapping = self.handler:getmapping(id)
     return mapping     
 end
 
-function composed.type(handler)
+function custom.type(handler)
     local typ       = setmetatable({ }, Type)
     typ.tag         = tags.TYPE
-    typ.id          = format.packvarint(typ.tag)
+    typ.id          = pack(typ.tag)
     typ.handler     = handler
     return typ               
 end
@@ -503,7 +536,7 @@ function Dynamic:decode(decoder)
     return mapping:decode(decoder)
 end
 
-function composed.dynamic(handler, type_mapping)
+function custom.dynamic(handler, type_mapping)
     assert(type_mapping.tag == tags.TYPE)
 
     local dynamic = { }
@@ -511,9 +544,9 @@ function composed.dynamic(handler, type_mapping)
     dynamic.handler     = handler
     dynamic.mapper      = type_mapping
     dynamic.tag         = tags.DYNAMIC
-    dynamic.id          = format.packvarint(tags.DYNAMIC)
+    dynamic.id          = pack(tags.DYNAMIC)
     
     return dynamic
 end
 
-return composed
+return custom

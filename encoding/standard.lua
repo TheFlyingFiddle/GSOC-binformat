@@ -1,3 +1,4 @@
+local format    = require"format"
 local tags      = require"encoding.tags"
 local custom	= require"encoding.custom"
 local primitive = require"encoding.primitive"
@@ -131,6 +132,18 @@ function LuaValueAsObject:identify(value)
     return value; 
 end
 
+local EmbeddedHandler = { }
+local newinstream  = format.memoryinstream
+local newoutstream = format.memoryoutstream
+
+function EmbeddedHandler:getinstream(data)
+    return newinstream(data)
+end
+
+function EmbeddedHandler:getoutstream()
+    return newoutstream()
+end
+
 --Creators
 local newlist = custom.list;
 function standard.list(...)
@@ -199,6 +212,11 @@ end
 local newobject = custom.object
 function standard.object(mapper)
     return newobject(LuaValueAsObject, mapper)
+end
+
+local newembedded = custom.embedded
+function standard.embedded(mapper)
+    return newembedded(EmbeddedHandler, mapper)
 end
 
 
@@ -325,7 +343,7 @@ do --Generator scoping block
     end
     
     local function genembedded(generator, node)
-    	return custom.embedded(generator:generate(node[1]))
+    	return standard.embedded(generator:generate(node[1]))
     end
     
     local function genaligned(generator, node)

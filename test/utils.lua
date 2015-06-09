@@ -159,8 +159,6 @@ function BufferStream:read(count)
 	return self.stream:sub(pos+1, finish)
 end
 
-
-
 local function rundynamictest(test)
 	local mapping = test.mapping
 	local basedir = test.basedir or "streams"
@@ -279,7 +277,10 @@ function runtest(test)
 					else
 						local matcher = Matcher(table.copy(test.compareopts or {}))
 						local ok, errmsg = matcher:match(recovered, expected)
+						viewer:write(recovered) print()
+						
 						if not ok then print(recovered, expected) end
+						
 						assert(ok, errmsg)
 					end
 					viewer:write(recovered)
