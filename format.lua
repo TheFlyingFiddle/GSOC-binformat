@@ -7,11 +7,16 @@ function Writer:getposition()
    return self.position
 end
 
+local function writeraw(writer, string)
+      writer.inner:write(string)
+      writer.position = writer.position + #string
+end
+
 --Writes the bytes contained in a raw string,
 --to the output stream.
 function Writer:raw(string)
-   self.inner:write(string)
-   self.position = self.position + #string
+   self:flushbits()
+   writeraw(self, string)
 end
 
 --Writes a length delimted stream of bytes
@@ -79,14 +84,15 @@ end
 --used by google protocol buffers. 
 function Writer:varint(number)
    assert(type(number) == "number", "number expected")
-
+   
+   self:flushbits()
    while number >= 0x80 or number < 0 do
       local byte = (number | 0x80) & 0x00000000000000FF
       number = number >> 7;
-      self:byte(byte);
+      writeraw(self, string.pack("B", byte))
    end
-   
-   self:byte(number)
+
+   writeraw(self, string.pack("B", number))
 end
 
 --Writes a number in zigzag encoded format 
@@ -123,7 +129,7 @@ function Writer:bits(size, value)
 		count = count - 8
 		value = value >> (size-count)
 		size = count
-		self:byte(bits & 0xFF)
+            writeraw(self, string.pack("B", bits & 0xFF))
 		bits = value
 	end
 	self.bit_count = count
@@ -161,7 +167,7 @@ end
 function Writer:flushbits()
    local count = self.bit_count
 	if count > 0 then
-		self:byte(self.bit_buffer & 0xFF)
+            writeraw(self, string.pack("B", self.bit_buffer & 0xFF))
 		self.bit_count = 0
 		self.bit_buffer = 0
 	end
@@ -177,11 +183,9 @@ local alignbytes =
 
 --Alignes the output to the specified number of bytes.
 function Writer:align(to)
-   local extra = self.position % to
-   
-   self:flushbits()
+   local extra = self.position % to   
    if extra ~= 0 then
-      self:writeraw(alignbytes[to - extra + 1])   
+      self:raw(alignbytes[to - extra + 1])   
    end
 end
 
@@ -207,10 +211,15 @@ function Reader:getposition()
    return self.position
 end
 
+local function readraw(reader, count)
+   reader.position = reader.position + count
+   return reader.inner:read(count)
+end   
+
 --Reads a string of length count from the input stream.
 function Reader:raw(count)
-   self.position = self.position + count;
-   return self.inner:read(count);
+   self:discardbits()
+   return readraw(self, count)
 end
 
 --Reads a length prefixed stream of bytes from the input stream.
@@ -291,8 +300,10 @@ end
 function Reader:varint()
    local number = 0;
    local count  = 0;
+
+   self:discardbits()
    while true do
-      local byte = self:byte()
+      local byte = string.unpack("B", readraw(self, 1))
       number = number | ((byte & 0x7F) << (7 * count))
       if byte < 0x80 then break end
       count = count + 1;
@@ -302,8 +313,7 @@ function Reader:varint()
          error("stream is corrupt!");	
       end
    end
-   
-   self.position = self.position + count + 1      
+    
    return number;
 end
 
@@ -325,7 +335,7 @@ function Reader:bits(size)
    while count < size - ready do
       value = value | (bits << ready)
       ready = ready + count
-      bits  = self:byte()
+      bits  = string.unpack("B", readraw(self, 1))
       count = 8
    end
    
@@ -357,8 +367,6 @@ end
 --Alignes the stream to the specified byte size
 function Reader:align(to) 
    local extra = self.position % to
-     
-   self:discardbits()
    if extra ~= 0 then
       local toremove = to - extra
       self:raw(toremove)
@@ -449,6 +457,5 @@ function format.memoryinstream(buffer)
     stream.position = 1
     return stream
 end
-
 
 return format
