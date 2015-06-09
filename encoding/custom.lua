@@ -9,8 +9,9 @@ local function writemeta(encoder, mapping)
     if mapping.tag == tags.TYPEREF then    --Typerefs are special 
         assert(mapping.mapper ~= nil, "incomplete typeref")
         writemeta(encoder, mapping.mapper)
-    elseif mapping.encodemeta == nil then         --Simple single byte mapping.
-        writer:varint(mapping.tag)
+    elseif mapping.encodemeta == nil then  --Simple single or predefined byte mapping.
+        assert(mapping.id ~= nil, "invalid mapping")
+        writer:raw(mapping.id)
     else
         local index = encoder.types[mapping]
         if index == nil then -- Type is described for the first time
@@ -384,7 +385,7 @@ function Align:encode(encoder, value)
 end
 
 function Align:decode(decoder)
-    decoder.reader.align(self.alignof)
+    decoder.reader:align(self.alignof)
     return self.mapper:decode(decoder)
 end
 
@@ -392,6 +393,7 @@ function Align:encodemeta(encoder)
     if self.tag == tags.ALIGN then
         encoder.writer:varint(self.alignof)
     end
+    
     writemeta(encoder, self.mapper)    
 end
 

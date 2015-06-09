@@ -142,7 +142,6 @@ local function createBitInts(tag, name, count)
             mapping.tag = tag 
             mapping.bitsize = i
             mapping.id  = pack(tag) .. pack(i)
-            
             function mapping:encode(encoder, value)
                 local writer = encoder.writer;
                 writer[name](writer, i, value)

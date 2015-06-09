@@ -1,11 +1,9 @@
 local EmbeddedInt = standard.embedded(primitive.varint)
-
 local IntCases =
 {
 	{ actual = 1 , id = "Embedded_1"},
 	{ actual = 13518274 }
 }
-
 
 local listref 	  = custom.typeref()
 local listmapping = standard.nullable(standard.tuple(

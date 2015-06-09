@@ -183,9 +183,11 @@ local alignbytes =
 
 --Alignes the output to the specified number of bytes.
 function Writer:align(to)
-   local extra = self.position % to   
-   if extra ~= 0 then
-      self:raw(alignbytes[to - extra + 1])   
+   local pos     = self.position
+   local aligned = pos + (to - 1) & ~(to - 1)
+   print(pos, aligned)
+   if aligned > 0 then
+      self:raw(alignbytes[aligned - pos])   
    end
 end
 
@@ -366,9 +368,10 @@ end
 
 --Alignes the stream to the specified byte size
 function Reader:align(to) 
-   local extra = self.position % to
+   local pos = self.position
+   local aligned = pos + (to - 1) & ~(to - 1)
    if extra ~= 0 then
-      local toremove = to - extra
+      local toremove = aligned - pos
       self:raw(toremove)
    end
 end

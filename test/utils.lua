@@ -172,6 +172,7 @@ local function rundynamictest(test)
 				encoder:encode(mapping, case.actual)
 				encoder:close()
 				output:close()
+				--hexastream(io.stdout, output.stream)
 			end
 			
 			do 
@@ -179,6 +180,7 @@ local function rundynamictest(test)
 				local recovered = assertcount(test.countexpected, decoder:decode(standard.dynamic))
 				decoder:close()
 				output:close()	
+				
 				
 				if test.countexpected == nil or test.countexpected > 0 then
 					local expected = case.expected
@@ -241,6 +243,10 @@ function runtest(test)
 				end
 				encoder:close() -- do we expect this can be called after 'encode' raised an error?
 				output:close()
+				
+				--local afile = io.open(outpath)
+				--hexastream(io.stdout, afile:read("*a"))
+				--local tmp = io.read()
 			end
 
 			if regression then
