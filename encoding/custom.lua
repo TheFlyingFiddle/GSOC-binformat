@@ -29,6 +29,40 @@ end
 
 local custom = { }
 
+local Int = { } 
+Int.__index = Int
+function Int:encode(encoder, value)
+    encoder.writer:int(self.bits, value)
+end
+
+function Int:decode(decoder)
+    return encoder.reader:int(self.bits)
+end
+
+function custom.int(numbits)
+    local int = setmetatable({ bits = numbits}, Int)
+    int.tag   = tags.SINT
+    int.id    = format.packvarint(tags.SINT) .. format.packvarint(numbits)
+    return int
+end
+
+local Uint = { } 
+Uint.__index = Uint
+function Int:encode(encoder, value)
+    encoder.writer:uint(self.bits, value)
+end
+
+function Int:decode(decoder)
+    return encoder.reader:uint(self.bits)
+end
+
+function custom.uint(numbits)
+    local uint = setmetatable({ bits = numbits}, Int)
+    uint.tag   = tags.UINT
+    uint.id    = format.packvarint(tags.UINT) .. format.packvarint(numbits)
+    return uint
+end
+
 --Mapper for the ARRAY <T> tag.
 local Array = { }
 Array.__index = Array
@@ -403,13 +437,13 @@ function custom.align(size, mapping)
     aligner.mapper = mapping
     
     if size == 1 then
-        aligner.tag = tags.ALIGN8    
+        aligner.tag = tags.ALIGN1    
     elseif size == 2 then
-        aligner.tag = tags.ALIGN16
+        aligner.tag = tags.ALIGN2
     elseif size == 4 then 
-        aligner.tag = tags.ALIGN32
+        aligner.tag = tags.ALIGN4
     elseif size == 8 then
-        aligner.tag = tags.ALIGN64
+        aligner.tag = tags.ALIGN8
     else
         aligner.tag  = tags.ALIGN
     end
@@ -456,8 +490,6 @@ function custom.embedded(handler, mapper, dontgenerateid)
     return embedded
 end
 
-
-
 local Typeref = { }
 Typeref.__index = Typeref
 function Typeref:encode(encoder, value)
@@ -496,10 +528,10 @@ function Type:decode(decoder)
        tag == tags.UNION or
        tag == tags.TUPLE or
        tag == tags.ALIGN or 
+       tag == tags.ALIGN1 or
+       tag == tags.ALIGN2 or
+       tag == tags.ALIGN4 or
        tag == tags.ALIGN8 or
-       tag == tags.ALIGN16 or
-       tag == tags.ALIGN32 or
-       tag == tags.ALIGN64 or
        tag == tags.OBJECT or
        tag == tags.EMBEDDED or
        tag == tags.SEMANTIC then

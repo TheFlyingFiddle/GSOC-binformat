@@ -348,11 +348,12 @@ do --Generator scoping block
     
     local function genaligned(generator, node)
         local size
-        if      node.tag == tags.ALIGN8  then size = 1
-        elseif  node.tag == tags.ALIGN16 then size = 2
-        elseif  node.tag == tags.ALIGN32 then size = 4
-        elseif  node.tag == tags.ALIGN64 then size = 8
+        if      node.tag == tags.ALIGN1  then size = 1
+        elseif  node.tag == tags.ALIGN2 then size = 2
+        elseif  node.tag == tags.ALIGN4 then size = 4
+        elseif  node.tag == tags.ALIGN8 then size = 8
         else    size = node.size end
+        
         
         return custom.align(size, generator:generate(node[1]))
     end
@@ -384,10 +385,10 @@ do --Generator scoping block
         tags.TYPEREF,
         
         tags.ALIGN,
-        tags.ALIGN8,
-        tags.ALIGN16,
-        tags.ALIGN32,
-        tags.ALIGN64
+        tags.ALIGN1,
+        tags.ALIGN2,
+        tags.ALIGN4,
+        tags.ALIGN8
     }
     
     local standardGenerators = 

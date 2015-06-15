@@ -42,34 +42,33 @@ tags.FLAG      = 0x15   tags[0x15] = "FLAG" -- UINT 0x00
 tags.SIGN      = 0x16   tags[0x16] = "SIGN" -- SINT 0x00
 
 --Aliases Alignments
-tags.ALIGN8    = 0x17   tags[0x17] = "ALIGN8"   -- ALIGN 0x08
-tags.ALIGN16   = 0x18   tags[0x18] = "ALIGN16"  -- ALIGN 0x10
-tags.ALIGN32   = 0x19   tags[0x19] = "ALIGN32"  -- ALIGN 0x20
-tags.ALIGN64   = 0x1A   tags[0x1A] = "ALIGN64"  -- ALIGN 0x40
+tags.ALIGN1    = 0x17  tags[0x17] = "ALIGN1"   -- ALIGN 0x08
+tags.ALIGN2   = 0x18   tags[0x18] = "ALIGN2"  -- ALIGN 0x10
+tags.ALIGN4   = 0x19   tags[0x19] = "ALIGN4"  -- ALIGN 0x20
+tags.ALIGN8   = 0x1A   tags[0x1A] = "ALIGN8"  -- ALIGN 0x40
 
 --Common Aliases
 --Boleans
-tags.BOOLEAN   = 0x1B   tags[0x1B] = "BOOLEAN" -- ALIGN8 UINT 0x08
+tags.BOOLEAN   = 0x1B   tags[0x1B] = "BOOLEAN" -- ALIGN1 UINT 0x08
 
 --Integers
-tags.BYTE      = 0x1C   tags[0x1C] = "BYTE"    -- ALIGN8 UINT 0x08
-tags.UINT16    = 0x1D   tags[0x1D] = "UINT16"  -- ALIGN8 UINT 0x10
-tags.UINT32    = 0x1E   tags[0x1E] = "UINT32"  -- ALIGN8 UINT 0x20
-tags.UINT64    = 0x1F   tags[0x1F] = "UINT64"  -- ALIGN8 UINT 0x40
-tags.SINT16    = 0x20   tags[0x20] = "SINT16"  -- ALIGN8 SINT 0x10
-tags.SINT32    = 0x21   tags[0x21] = "SINT32"  -- ALIGN8 SINT 0x20
-tags.SINT64    = 0x22   tags[0x22] = "SINT64"  -- ALIGN8 SINT 0x40
+tags.BYTE      = 0x1C   tags[0x1C] = "BYTE"    -- ALIGN1 UINT 0x08
+tags.UINT16    = 0x1D   tags[0x1D] = "UINT16"  -- ALIGN1 UINT 0x10
+tags.UINT32    = 0x1E   tags[0x1E] = "UINT32"  -- ALIGN1 UINT 0x20
+tags.UINT64    = 0x1F   tags[0x1F] = "UINT64"  -- ALIGN1 UINT 0x40
+tags.SINT16    = 0x20   tags[0x20] = "SINT16"  -- ALIGN1 SINT 0x10
+tags.SINT32    = 0x21   tags[0x21] = "SINT32"  -- ALIGN1 SINT 0x20
+tags.SINT64    = 0x22   tags[0x22] = "SINT64"  -- ALIGN1 SINT 0x40
 
 --Floats
-tags.SINGLE    = 0x23   tags[0x23] = "SINGLE"  -- SEMANTIC "floating" ALIGN8 UINT 0x20
-tags.DOUBLE    = 0x24   tags[0x24] = "DOUBLE"  -- SEMANTIC "floating" ALIGN8 UINT 0x40
-tags.QUAD      = 0x25   tags[0x25] = "QUAD"    -- SEMANTIC "floating" ALIGN8 UINT 0x80
+tags.SINGLE    = 0x23   tags[0x23] = "SINGLE"  -- SEMANTIC "floating" ALIGN1 UINT 0x20
+tags.DOUBLE    = 0x24   tags[0x24] = "DOUBLE"  -- SEMANTIC "floating" ALIGN1 UINT 0x40
+tags.QUAD      = 0x25   tags[0x25] = "QUAD"    -- SEMANTIC "floating" ALIGN1 UINT 0x80
 
 --Strings
 tags.STREAM    = 0x26   tags[0x26] = "STREAM"   -- LIST size BYTE
 tags.STRING    = 0x27   tags[0x27] = "STRING"   -- LIST size CHAR
 tags.WSTRING   = 0x28   tags[0x28] = "WSTRING"  -- LIST size WCHAR
-
 
 
 --Standard generator functions

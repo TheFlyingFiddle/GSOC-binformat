@@ -15,10 +15,10 @@ local UINT		= tags.UINT
 local SINT		= tags.SINT
 
 local ALIGN		= tags.ALIGN
+local ALIGN1	= tags.ALIGN1
+local ALIGN2	= tags.ALIGN2
+local ALIGN4	= tags.ALIGN4
 local ALIGN8	= tags.ALIGN8
-local ALIGN16	= tags.ALIGN16
-local ALIGN32	= tags.ALIGN32
-local ALIGN64	= tags.ALIGN64
 
 local parser = { }
 
@@ -33,9 +33,9 @@ local function parsenode(metastring, index)
 	if tag == LIST 	   or tag == ARRAY    or 
 	   tag == SET  	   or tag == OBJECT   or
 	   tag == EMBEDDED or tag == SEMANTIC or 
-	   tag == ALIGN	   or tag == ALIGN8   or
-	   tag == ALIGN16  or tag == ALIGN32  or
-	   tag == ALIGN64 then
+	   tag == ALIGN	   or tag == ALIGN1   or
+	   tag == ALIGN2  or tag == ALIGN4  or
+	   tag == ALIGN8 then
 	   children = 1
 	elseif tag == MAP then
 		children = 2
@@ -83,7 +83,7 @@ local function parsenode(metastring, index)
 	end	
 	
 	node.eindex = index - 1;
-	return node, size --It's possible that the metastring contains concatenated values.
+	return node --It's possible that the metastring contains concatenated values.
 end
 
 function parser.parsemetatype(metatype)

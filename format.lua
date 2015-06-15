@@ -141,7 +141,7 @@ function Writer:uint(size, value)
    local max = (1 << size) - 1
    assert(type(value) == "number", "number expected")
    assert(math.type(value) == "integer", "has no integer representation")
-   assert(value >= 0 and value <= max, "unsigned overflow " .. max .. " " .. size)
+   assert((value >= 0 and value <= max) or size == 64, "unsigned overflow ")
    self:bits(size, value)
 end
 
@@ -152,12 +152,12 @@ function Writer:int(size, value)
    local half = 1 << (size - 1)
    
    if value < 0 then
-      assert(-half <= value, "integer overflow")
+      assert(-half <= value or size == 64, "integer overflow")
       local offset = (1 << size)
       local nval   = offset + value
       self:bits(size, nval)   
    else
-      assert(half > value, "integer overflow")
+      assert(half > value or size == 64, "integer overflow")
       self:bits(size, value)
    end
 end
@@ -185,7 +185,6 @@ local alignbytes =
 function Writer:align(to)
    local pos     = self.position
    local aligned = pos + (to - 1) & ~(to - 1)
-   print(pos, aligned)
    if aligned > 0 then
       self:raw(alignbytes[aligned - pos])   
    end
