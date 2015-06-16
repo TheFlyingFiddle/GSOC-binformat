@@ -244,7 +244,7 @@ do
     }
  
     function lua2tag:getmappingof(value)
-        return self[type(value)] or error("no mapping for value " .. type(value))
+        return self[type(value)] or error("no mapping for value of type" .. type(value))
     end
  
     standard.dynamic = custom.dynamic(lua2tag, standard.type)

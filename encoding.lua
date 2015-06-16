@@ -9,7 +9,7 @@ function encoding.encode(outStream, value, mapping, usemetadata)
    if mapping == nil then
       mapping = encoding.standard.dynamic
    end
-   
+      
    local encoder = encoding.encoder(outStream, usemetadata)
    encoder:encode(mapping, value)
    encoder:close()   

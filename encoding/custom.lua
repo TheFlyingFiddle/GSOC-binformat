@@ -90,6 +90,8 @@ function Array:encodemeta(encoder)
 end
 
 function custom.array(handler, mapper, size)
+    assert(mapper, "expected a mapping")
+
     local array = { }
     setmetatable(array, Array)
     array.tag     = tags.ARRAY 
@@ -144,6 +146,7 @@ function List:encodemeta(encoder)
 end
 
 function custom.list(handler, mapper, sizebits)
+    assert(mapper, "expected a mapping")
     if sizebits == nil then sizebits = 0 end
 
     local list = {  }
@@ -183,6 +186,7 @@ function Set:encodemeta(encoder)
 end
 
 function custom.set(handler, mapper, sizebits)
+    assert(mapper, "expected a mapping")
     if sizebits == nil then sizebits = 0 end
     local set = {  }
     setmetatable(set, Set)
@@ -227,6 +231,8 @@ function Map:decode(decoder)
 end
 
 function custom.map(handler, keymapper, itemmapper, sizebits)
+    assert(keymapper, "expected a mapping")
+    assert(itemmapper, "expected a mapping")
     if sizebits == nil then sizebits = 0 end
     
     local map = { }
@@ -335,6 +341,8 @@ function Semantic:encodemeta(encoder)
 end
 
 function custom.semantic(id, mapper)
+    assert(mapper, "expected a mapping")
+
     local semantic = { }
     setmetatable(semantic, Semantic)
     semantic.tag    = tags.SEMANTIC
@@ -402,6 +410,7 @@ function Object:encodemeta(encoder)
 end
 
 function custom.object(handler, mapper)
+    assert(mapper, "expected a mapping")
     local object = { }
     setmetatable(object, Object)
     object.mapper  = mapper
@@ -432,6 +441,7 @@ function Align:encodemeta(encoder)
 end
 
 function custom.align(size, mapping)
+    assert(mapper, "expected a mapping")
     local aligner = setmetatable({}, Align)
     aligner.alignof = size
     aligner.mapper = mapping
@@ -482,6 +492,7 @@ function Embedded:encodemeta(encoder)
 end 
 
 function custom.embedded(handler, mapper, dontgenerateid) 
+    assert(mapper, "expected a mapping")
     local embedded = setmetatable({}, Embedded)
     embedded.handler    = handler
     embedded.mapper     = mapper
