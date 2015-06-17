@@ -7,7 +7,7 @@ local primitive = encoding.primitive
 
 local array = { }
 --Create a million elements
-for i=1, 1000 do
+for i=1, 10000 do
 	table.insert(array, i)
 end
 

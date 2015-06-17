@@ -441,7 +441,7 @@ function Align:encodemeta(encoder)
 end
 
 function custom.align(size, mapping)
-    assert(mapper, "expected a mapping")
+    assert(mapping, "expected a mapping")
     local aligner = setmetatable({}, Align)
     aligner.alignof = size
     aligner.mapper = mapping
