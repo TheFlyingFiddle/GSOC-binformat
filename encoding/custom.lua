@@ -204,10 +204,9 @@ Map.__index = Map
 function Map:encode(encoder, value)
     local size = self.handler:getsize(value)
     writesize(encoder.writer, self.sizebits, size)
-    for i=1, size, 1 do
-        local key, item = self.handler:getitem(value, i);
-        self.keymapper:encode(encoder, key)
-        self.itemmapper:encode(encoder, item);
+    for k, v in self.handler:getitems(value) do
+        self.keymapper:encode(encoder, k)
+        self.itemmapper:encode(encoder, v);
     end
 end
 
@@ -466,7 +465,7 @@ local Embedded = { }
 Embedded.__index = Embedded;
 function Embedded:encode(encoder, value)
     local outstream = self.handler:getoutstream()
-    local enco = core.encoder(outstream, false)
+    local enco = core.encoder(format.writer(outstream), false)
     self.mapper:encode(enco, value)
     enco:close()
     
@@ -479,7 +478,7 @@ end
 function Embedded:decode(decoder) 
     local data      = decoder.reader:stream() 
     local instream  = self.handler:getinstream(data)
-    local deco      = core.decoder(instream, false)
+    local deco      = core.decoder(format.reader(instream), false)
     local value     = self.mapper:decode(deco) 
         
     deco:close()

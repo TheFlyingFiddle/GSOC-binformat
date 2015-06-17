@@ -168,7 +168,7 @@ local function rundynamictest(test)
 			local output = BufferStream()
 			
 			do
-				local encoder = encoding.encoder(output, true)
+				local encoder = encoding.encoder(encoding.writer(output), true)
 				encoder:encode(mapping, case.actual)
 				encoder:close()
 				output:close()
@@ -176,7 +176,7 @@ local function rundynamictest(test)
 			end
 			
 			do 
-				local decoder = encoding.decoder(output, false)
+				local decoder = encoding.decoder(encoding.reader(output), false)
 				local recovered = assertcount(test.countexpected, decoder:decode(standard.dynamic))
 				decoder:close()
 				output:close()	
@@ -235,7 +235,7 @@ function runtest(test)
 			local output = test.noregression and BufferStream()
 			                                  or assert(io.open(outpath, "wb"), "no such file\n\n\n" .. outpath)
 			do
-				local encoder = encoding.encoder(output, false)
+				local encoder = encoding.encoder(encoding.writer(output), false)
 				if encodeerror == nil then
 					encoder:encode(mapping, case.actual)
 				else
@@ -257,7 +257,7 @@ function runtest(test)
 			if encodeerror == nil then
 				local input = test.noregression and output
 				                                 or assert(io.open(outpath, "rb"))
-				local decoder = encoding.decoder(input, false)
+				local decoder = encoding.decoder(encoding.reader(input), false)
 				local recovered = assertcount(test.countexpected, decoder:decode(mapping))
 				decoder:close()
 				input:close()

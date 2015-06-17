@@ -54,7 +54,7 @@ function TableAsMap:getsize(value)
     return counter
 end
 
-function TableAsMap:getitem(value, i)
+function TableAsMap:getitems(value, i)
     local counter = 1;
     for k, v in pairs(value) do 
         if counter == i then
@@ -64,6 +64,10 @@ function TableAsMap:getitem(value, i)
     end
     
     return nil;
+end
+
+function TableAsMap:getitems(value)
+    return pairs(value)
 end
 
 function TableAsMap:create(size)

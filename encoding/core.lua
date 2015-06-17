@@ -5,7 +5,7 @@ function core.getid(mapping)
     local id = mapping.id
     if id == nil then
         local buffer  = format.memoryoutstream()
-        local encoder = core.encoder(buffer, false)
+        local encoder = core.encoder(format.writer(buffer), false)
         encoder.types = { }
         encoder.types[mapping] = encoder.writer:getposition()
         mapping:encodemeta(encoder)
@@ -38,8 +38,9 @@ function Encoder:close()
    setmetatable(self, nil);
 end
 
-function core.encoder(outstream, usemetadata)
-	local encoder = setmetatable({ writer = format.writer(outstream) }, Encoder)
+function core.encoder(writer, usemetadata)
+	local encoder = setmetatable({ }, Encoder)
+    encoder.writer = writer;
 	encoder.objects = { }
 	encoder.usemetadata = usemetadata
 	return encoder	
@@ -70,8 +71,9 @@ function Decoder:close()
 end
 
 --Creates a decoder
-function core.decoder(instream, usemetadata)
-	local decoder = setmetatable({reader = format.reader(instream)}, Decoder)
+function core.decoder(reader, usemetadata)
+	local decoder = setmetatable({ }, Decoder)
+    decoder.reader  = reader
 	decoder.objects = { }
 	decoder.usemetadata = usemetadata
 	return decoder
