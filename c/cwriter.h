@@ -7,23 +7,33 @@
 
 typedef size_t (*stream_write_t)(void* buffer, size_t element_size,  
 							     size_t element_count, void* handle);
-
+typedef int (*stream_flush_t)(void* buffer); 
 
 typedef struct 
 {
 	void* stream; 		//The stream we are writing to. 
 	stream_write_t write;
+	stream_flush_t flush;
+	
 	uint32_t position;	//Stream position
 } writer_t;
 
-writer_t writer_create(void* stream, stream_write_t write)
+writer_t writer_create(void* stream, 
+					   stream_write_t write,
+					   stream_flush_t flush)
 {
 	writer_t writer;
 	writer.stream   = stream;
 	writer.write	= write;
+	writer.flush	= flush;
 	writer.position = 0;
 	
 	return writer;
+}
+
+void writer_flush(writer_t* writer)
+{
+	
 }
 
 void write_raw(writer_t* writer, uint8_t* bytes, size_t size)

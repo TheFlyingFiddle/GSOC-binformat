@@ -8,17 +8,19 @@
 
 static int new_file_writer(lua_State* L)
 {
-	FILE* f = fopen("c_file.dat", "wb");
-	
+	const char* file = luaL_checkstring(L, 1);
+	FILE* f = fopen(file, "wb");
+			
 	//First get the stream data.
 	writer_t* writer	= lua_newuserdata(L, sizeof(writer_t));
-	*writer = writer_create((void*)f, (stream_write_t)&fwrite);
+	*writer = writer_create((void*)f, (stream_write_t)&fwrite, (stream_flush_t)&fflush);
 
 	printf("New file writer.\n");
 	luaL_getmetatable(L, WRITER_META_TABLE);
 	lua_setmetatable(L, -2);
 	return 1;
 }
+
 
 static int close_file_writer(lua_State* L)
 {
@@ -153,7 +155,8 @@ static int writer_varintzz(lua_State* L)
 
 static int new_file_reader(lua_State* L)
 {
-	FILE* f = fopen("c_file.dat", "rb");
+	const char* file = luaL_checkstring(L, 1);
+	FILE* f = fopen(file, "rb");
 	
 	char* 	  data		= lua_newuserdata(L, sizeof(reader_t) + 4096);
 	reader_t* reader 	= (reader_t*)data;
@@ -250,11 +253,10 @@ static int reader_varintzz(lua_State* L)
 	return 1;
 }
 
-
 static const luaL_Reg format_lib[] =
 {
-	{ "writer", new_file_writer },
-	{ "reader", new_file_reader },
+	{ "file_writer", new_file_writer },
+	{ "file_reader", new_file_reader },
 	{ NULL,		NULL}
 };
 
@@ -278,7 +280,6 @@ static const luaL_Reg write_m[] =
 
 static const luaL_Reg read_m[ ] = 
 {
-	{ "new", 	new_file_reader },
 	{ "int8",	reader_int8		  	},
 	{ "int16",	reader_int16	  	},
 	{ "int32",	reader_int32		},

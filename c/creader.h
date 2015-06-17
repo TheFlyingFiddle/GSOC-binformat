@@ -51,6 +51,7 @@ reader_t reader_create(void* stream, stream_read_t read, uint8_t* buffer, uint32
 	return reader;
 }
 
+
 size_t reader_can_read_inplace(reader_t* reader, size_t size)
 {
 	return reader->buffer_capacity <= size;
