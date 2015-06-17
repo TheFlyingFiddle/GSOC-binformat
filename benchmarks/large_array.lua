@@ -7,7 +7,7 @@ local primitive = encoding.primitive
 
 local array = { }
 --Create a million elements
-for i=1, 10000 do
+for i=1, 100000 do
 	table.insert(array, i)
 end
 
@@ -19,13 +19,13 @@ local varint_mapping = standard.list(primitive.varint)
 function timemapping(name, count, to_encode, mapping)
 	collectgarbage()
 
-	local outstream = format.memoryoutstream()
+	local outstream = format.writer(format.memoryoutstream())
 	bench.benchmark("encode of " .. name, count, function()
 		encoding.encode(outstream, to_encode, mapping)
 	end)
 
-	local data = outstream:getdata()
-	local instream = format.memoryinstream(data)
+	local data = outstream.inner:getdata()
+	local instream = format.reader(format.memoryinstream(data))
 	bench.benchmark("decode of " .. name, count, function()	
 		encoding.decode(instream, mapping)	
 	end)
@@ -35,7 +35,7 @@ end
 timemapping("uint32", 10, array, uint_mapping)
 timemapping("uint20", 10, array, bit_mapping)
 timemapping("varint", 10, array, varint_mapping)
-timemapping("dynamic", 1, array, standard.dynamic)
+timemapping("dynamic", 10, array, standard.dynamic)
 
 --bench.timemapping("dynamic", 1,  array, standard.dynamic)
 
