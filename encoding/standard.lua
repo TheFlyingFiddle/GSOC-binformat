@@ -137,8 +137,8 @@ function LuaValueAsObject:identify(value)
 end
 
 local EmbeddedHandler = { }
-local newinstream  = format.memoryinstream
-local newoutstream = format.memoryoutstream
+local newinstream  = format.inmemorystream
+local newoutstream = format.outmemorystream
 
 function EmbeddedHandler:getinstream(data)
     return newinstream(data)

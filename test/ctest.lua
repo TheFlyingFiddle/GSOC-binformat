@@ -1,6 +1,6 @@
-local format = require"c.cformat"
 
-local writer = format.file_writer("c_data.dat");
+
+--[[
 writer:int8(10);
 writer:int16(20);
 writer:int32(30);
@@ -14,7 +14,9 @@ writer:double(100.0);
 writer:varint(110);
 writer:varintzz(120);
 writer:close();
+]]--
 
+--[[
 local reader = format.file_reader("c_data.dat")
 assert(reader:int8()  == 10);
 assert(reader:int16()  == 20);
@@ -28,3 +30,4 @@ assert(reader:float()  == 90.0);
 assert(reader:double() == 100.0);
 assert(reader:varint() == 110);
 assert(reader:varintzz() == 120);
+]]--

@@ -12,6 +12,7 @@ encoding = require "encoding"
 primitive = encoding.primitive
 standard = encoding.standard
 custom   = require"encoding.custom"
+format	 = require"c.format"
 
 local function hexastream(output, stream, prefix, start)
 	local cursor = {}
@@ -165,22 +166,23 @@ local function rundynamictest(test)
 	for gid, group in ipairs(test) do
 		for cid, case in ipairs(group) do
 			io.write("Dyn_" .. tags[mapping.tag], ": "); viewer:write(case.actual); io.write(" ... "); io.flush()
-			local output = BufferStream()
+			local output = format.outmemorystream()
 			
 			do
 				local encoder = encoding.encoder(encoding.writer(output), true)
 				encoder:encode(mapping, case.actual)
 				encoder:close()
-				output:close()
-				--hexastream(io.stdout, output.stream)
+				hexastream(io.stdout, output:getdata())
 			end
 			
 			do 
-				local decoder = encoding.decoder(encoding.reader(output), false)
+				local data	  = output:getdata();
+				local instream = format.inmemorystream(data);
+				local decoder = encoding.decoder(encoding.reader(instream), false)
 				local recovered = assertcount(test.countexpected, decoder:decode(standard.dynamic))
 				decoder:close()
 				output:close()	
-				
+				viewer:write(recovered)				
 				
 				if test.countexpected == nil or test.countexpected > 0 then
 					local expected = case.expected
@@ -203,10 +205,11 @@ local function rundynamictest(test)
 					else
 						local matcher = Matcher(table.copy(test.compareopts or {}))
 						local ok, errmsg = matcher:match(recovered, expected)
-						if not ok then print(recovered, expected) end
+						if not ok then 
+							print(recovered, expected) 
+						end
 						assert(ok, errmsg)
 					end
-					viewer:write(recovered)
 				end
 				print()
 			end
@@ -226,14 +229,15 @@ function runtest(test)
 			io.write(tags[mapping.tag],": "); viewer:write(case.actual); io.write(" ... "); io.flush()
 			local basename = basedir.."/"..tofilename(mapping, case)
 			local outpath = basename..".dat"
+			
 			local regression = not test.noregression and io.open(outpath)
 			if regression then
 				regression:close()
 				outpath = basename..".new"
 			end
 
-			local output = test.noregression and BufferStream()
-			                                  or assert(io.open(outpath, "wb"), "no such file\n\n\n" .. outpath)
+			local output = test.noregression and format.outmemorystream()
+			                                  or assert(io.open(outpath, "wb"))
 			do
 				local encoder = encoding.encoder(encoding.writer(output), false)
 				if encodeerror == nil then
@@ -241,12 +245,16 @@ function runtest(test)
 				else
 					asserterror(encodeerror, encoder.encode, encoder, mapping, case.actual)
 				end
-				encoder:close() -- do we expect this can be called after 'encode' raised an error?
-				output:close()
 				
-				--local afile = io.open(outpath)
-				--hexastream(io.stdout, afile:read("*a"))
-				--local tmp = io.read()
+				encoder:close()
+				if test.noregression then					
+					local txt = output:getdata();
+					output:close()
+					output = txt;
+				else		
+					output:close()
+					--local tmp = io.read()
+				end
 			end
 
 			if regression then
@@ -255,7 +263,7 @@ function runtest(test)
 			end
 
 			if encodeerror == nil then
-				local input = test.noregression and output
+				local input = test.noregression and format.inmemorystream(output)
 				                                 or assert(io.open(outpath, "rb"))
 				local decoder = encoding.decoder(encoding.reader(input), false)
 				local recovered = assertcount(test.countexpected, decoder:decode(mapping))

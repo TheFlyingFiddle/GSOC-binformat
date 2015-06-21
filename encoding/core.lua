@@ -4,7 +4,7 @@ local core = { }
 function core.getid(mapping)
     local id = mapping.id
     if id == nil then
-        local buffer  = format.memoryoutstream()
+        local buffer  = format.outmemorystream()
         local encoder = core.encoder(format.writer(buffer), false)
         encoder.types = { }
         encoder.types[mapping] = encoder.writer:getposition()
@@ -27,6 +27,7 @@ function Encoder:encode(mapping, data)
    end
    
    mapping:encode(self, data)	
+   self.writer:flush()
 end
 
 --Finishes any pending operations and closes 

@@ -63,6 +63,7 @@ function custom.uint(numbits)
     return uint
 end
 
+
 --Mapper for the ARRAY <T> tag.
 local Array = { }
 Array.__index = Array
@@ -470,7 +471,6 @@ function Embedded:encode(encoder, value)
     enco:close()
     
     local data    = outstream:getdata()
-    print(data)
     encoder.writer:stream(data)
     outstream:close()
 end

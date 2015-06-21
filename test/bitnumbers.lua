@@ -157,6 +157,7 @@ local function numbers(...)
 end
 
 local function testuint(mapping, bits)
+	print("Num bits: ", bits)
 	runtest{ mapping = mapping,
 		numbers(int.positive, nil, bits),
 	}
@@ -179,6 +180,7 @@ local function testuint(mapping, bits)
 end
 
 local function testsint(mapping, bits)
+	print("Num bits: ", bits)
 	runtest{ mapping = mapping,
 		numbers(int.positive, nil, bits and bits-1),
 		numbers(int.negative, nil, bits),

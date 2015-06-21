@@ -24,8 +24,7 @@ local function createMapper(typeTag, func)
 end
 
 --Need to enforce alignment restrictions here
-primitive.boolean  = createMapper(tags.BOOLEAN,   "bool")
-primitive.byte     = createMapper(tags.BYTE,      "byte")
+primitive.byte     = createMapper(tags.BYTE,      "uint8")
 primitive.varint   = createMapper(tags.VARINT,    "varint")
 primitive.varintzz = createMapper(tags.VARINTZZ,  "varintzz")
 primitive.uint16   = createMapper(tags.UINT16,    "uint16")
@@ -34,7 +33,7 @@ primitive.uint64   = createMapper(tags.UINT64,    "uint64")
 primitive.int16    = createMapper(tags.SINT16,    "int16")
 primitive.int32    = createMapper(tags.SINT32,    "int32")
 primitive.int64    = createMapper(tags.SINT64,    "int64")
-primitive.fpsingle = createMapper(tags.SINGLE,    "single")
+primitive.fpsingle = createMapper(tags.SINGLE,    "float")
 primitive.fpdouble = createMapper(tags.DOUBLE,    "double")
 
 --Not yet implemented primitive.fpquad = createMapper(QUAD, "writequad", "readquad");
@@ -49,6 +48,25 @@ function Void:decode(decoder) end
 local Null = { tag = tags.NULL, id = pack(tags.NULL) }
 function Null:encode(encoder, value) assert(value == nil, "nil expected") end
 function Null:decode(decoder) return nil end
+
+local Bool = { tag = tags.BOOLEAN, id = pack(tags.BOOLEAN) }
+function Bool:encode(encoder, value)
+    if value then
+        encoder.writer:uint8(1)     
+    else 
+        encoder.writer:uint8(0)
+    end
+end
+
+function Bool:decode(decoder)
+    local val = decoder.reader:uint8();
+    if val == 1 then 
+        return true
+    else
+        return false
+    end
+end
+
 
 --CHAR should read as a 1 char string.
 local Char = { tag = tags.CHAR, id = pack(tags.CHAR)}
@@ -128,6 +146,7 @@ end
 
 primitive.void 		= Void
 primitive.null 		= Null
+primitive.boolean   = Bool
 primitive.char 		= Char
 primitive.wchar 	= WChar
 primitive.string 	= String

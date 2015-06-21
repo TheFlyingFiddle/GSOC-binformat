@@ -30,6 +30,27 @@ function bench.benchmark(name, count, fun)
 	print(string.format("Benchmarking %s:(msec) min %s max %s mean %s", name, min, max, mean))	
 end
 
+function bench.mapping(format, name, count, to_encode, mapping)
+	collectgarbage()
+	
+	local memstream = format.outmemorystream();
+	local writer    = format.writer(memstream)
+	bench.benchmark("encode of " .. name, count, function()
+		encoding.encode(writer, to_encode, mapping)
+	end)
+
+	local data = memstream:getdata();
+	local in_mem_stream = format.inmemorystream(data);
+	local reader 		= format.reader(in_mem_stream)
+	
+	bench.benchmark("decode of " .. name, count, function()	
+		local arr = encoding.decode(reader, mapping)	
+	end)
+	
+	print(string.format("Outstream size is: %s", #data / count))
+end
+
+
 
 
 return bench

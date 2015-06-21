@@ -15,7 +15,6 @@ end
 --Writes the bytes contained in a raw string,
 --to the output stream.
 function Writer:raw(string)
-   self:flushbits()
    writeraw(self, string)
 end
 
@@ -26,8 +25,8 @@ function Writer:stream(s)
    self:raw(s)
 end
 
---Encodes an integer that is in the range [0 .. 0xffff].
-function Writer:byte(byte)
+--Encodes an integer that is in the range [0 .. 0xff].
+function Writer:uint8(byte)
    local rep = string.pack("B", byte)
    self:raw(rep);
 end
@@ -50,6 +49,13 @@ function Writer:uint64(number)
    self:raw(rep);
 end
 
+--Writes an integer  that is in the range [-0x80 .. 0x7F]
+function Writer:int8(byte)
+   local rep = string.pack("b", byte)
+   self:raw(rep);
+end
+
+
 --Writes an integer that is in the range [-0x8000 .. 0x7fff].
 function Writer:int16(number)
    local rep = string.pack("i2", number)
@@ -69,7 +75,7 @@ function Writer:int64(number)
 end
 
 --Writes a float point value with 32-bit precision in IEEE 754 format.
-function Writer:single(number)
+function Writer:float(number)
    local rep = string.pack("f", number)
    self:raw(rep)
 end
@@ -116,14 +122,14 @@ end
 --Writes a boolean value.   
 function Writer:bool(bool)
    if bool then bool = 1 else bool = 0 end
-   self:byte(bool)
+   self:uint8(bool)
 end
 
 --Writes the first size bits in value
 function Writer:bits(size, value)
    local count = self.bit_count
 	local bits = self.bit_buffer
-	bits = bits | value << count
+	bits = bits | (value << count)
 	count = count + size
 	while count >= 8 do
 		count = count - 8
@@ -186,6 +192,7 @@ function Writer:align(to)
    local pos     = self.position
    local aligned = pos + (to - 1) & ~(to - 1)
    if aligned > 0 then
+      self:flushbits()
       self:raw(alignbytes[aligned - pos])   
    end
 end
@@ -230,7 +237,7 @@ function Reader:stream()
 end
 
 --Reads a byte from the input stream.
-function Reader:byte()
+function Reader:uint8()
    local rep = self:raw(1);
    return string.unpack("B", rep);	
 end
@@ -253,6 +260,13 @@ function Reader:uint64()
    return string.unpack("I8", rep)
 end
 
+--Reads a signed byte from the input stream.
+function Reader:int8()
+   local rep = self:raw(1);
+   return string.unpack("b", rep);	
+end
+
+
 --Reads a number between [-0x8000 .. 0x7fff] from the input stream.
 function Reader:int16()
    local rep = self:raw(2)
@@ -273,7 +287,7 @@ end
 
 --Reads a floting point number of precision 32-bit in 
 --IEEE 754 single precision format.
-function Reader:single()
+function Reader:float()
    local rep = self:raw(4)
    return string.unpack("f", rep)
 end
@@ -439,7 +453,7 @@ local concat = table.concat
 function MemoryOutStream:getdata()
    return concat(self.buffer)
 end
-function format.memoryoutstream()
+function format.outmemorystream()
    return setmetatable( { buffer = { } }, MemoryOutStream )
 end
 
@@ -453,7 +467,7 @@ end
 
 function MemoryInStream:close() end
 
-function format.memoryinstream(buffer)
+function format.inmemorystream(buffer)
     local stream = setmetatable({}, MemoryInStream)
     stream.buffer   = buffer
     stream.position = 1

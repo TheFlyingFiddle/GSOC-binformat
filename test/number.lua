@@ -325,7 +325,7 @@ runtest{ mapping = primitive.varintzz, encodeerror = "has no integer representat
 	SinglePrecisionCases,
 	DoublePrecisionCases,
 }
-runtest{ mapping = primitive.varintzz, encodeerror = "attempt to compare number",
+runtest{ mapping = primitive.varintzz, encodeerror = "any",
 	NonNumberCases,
 }
 -- single precision floats

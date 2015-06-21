@@ -1,42 +1,37 @@
-local format	= require"format"
+
 local bench		= require"benchmarks.bench"
 local encoding  = require"encoding"
 local standard  = encoding.standard
 local primitive = encoding.primitive
 
 
+local SIZE = 100000
+
 local array = { }
 --Create a million elements
-for i=1, 100000 do
-	table.insert(array, i)
+for i=1, SIZE do
+	array[i] = i;
 end
 
 local uint_mapping 	 = standard.list(primitive.uint32)
 local bit_mapping    = standard.list(primitive.uint20)
 local varint_mapping = standard.list(primitive.varint)
+local float_mapping  = standard.list(primitive.fpsingle)
 
 
-function timemapping(name, count, to_encode, mapping)
-	collectgarbage()
+local cformat   = require"c.format"
+local luaformat = require"format"
 
-	local outstream = format.writer(format.memoryoutstream())
-	bench.benchmark("encode of " .. name, count, function()
-		encoding.encode(outstream, to_encode, mapping)
-	end)
+bench.mapping(cformat, "C FLOAT", 10, array, float_mapping)
+bench.mapping(cformat, "C UINT32", 10, array, uint_mapping)
+bench.mapping(cformat, "C UINT20", 10, array, bit_mapping)
+bench.mapping(cformat, "C VARINT", 10, array, varint_mapping)
+bench.mapping(cformat, "C DYNAMIC", 10, array, standard.dynamic)
 
-	local data = outstream.inner:getdata()
-	local instream = format.reader(format.memoryinstream(data))
-	bench.benchmark("decode of " .. name, count, function()	
-		encoding.decode(instream, mapping)	
-	end)
-	print(string.format("Outstream size is: %s", #data / count))
-end
-
-timemapping("uint32", 10, array, uint_mapping)
-timemapping("uint20", 10, array, bit_mapping)
-timemapping("varint", 10, array, varint_mapping)
-timemapping("dynamic", 10, array, standard.dynamic)
-
---bench.timemapping("dynamic", 1,  array, standard.dynamic)
+bench.mapping(luaformat, "LUA FLOAT", 10, array, float_mapping)
+bench.mapping(luaformat, "LUA UINT32", 10, array, uint_mapping)
+bench.mapping(luaformat, "LUA UINT20", 10, array, bit_mapping)
+bench.mapping(luaformat, "LUA VARINT", 10, array, varint_mapping)
+bench.mapping(luaformat, "LUA DYNAMIC", 10, array, standard.dynamic)
 
 --Time encoding.

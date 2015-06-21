@@ -23,8 +23,8 @@ struct A
 	uint8_t  second; --Will be some invisible padding here. 
 	uint32_t third;
 }
-
 ]]--
+
 
 local cstructmapper = standard.tuple
 {
