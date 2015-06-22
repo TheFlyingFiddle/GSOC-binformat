@@ -48,3 +48,11 @@ on how to use the format. The exact encoding format is not yet set in stone but 
 complete specification document. 
 
 ##How to get TIER
+TIER is avaliable from this github repo. Simply clone the repo and extract the contents of the tier directory
+to the standard lua path on your system. When the format and implementation has reached a more stable state
+the format will be avaliable as a LuaRocks moonrock. 
+
+##Version Alpa 0
+TIER is currently in an alpha stage. It is not ready for production use. Anything from the code to the 
+encoding format is stil subject to change. Changes are however more likely to be additions to the 
+format or background changes that do not affect the end user api.
