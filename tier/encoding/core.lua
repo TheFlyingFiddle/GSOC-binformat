@@ -27,7 +27,6 @@ function Encoder:encode(mapping, data)
    end
    
    mapping:encode(self, data)	
-   self.writer:flush()
 end
 
 --Finishes any pending operations and closes 

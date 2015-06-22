@@ -92,6 +92,12 @@ end
 
 function custom.array(handler, mapper, size)
     assert(mapper, "expected a mapping")
+    assert(mapper, "mapping missing function encode")
+    assert(mapper, "mapping missing function decode")
+    assert(handler.getsize, "Array handler missing function getsize")
+    assert(handler.create, "Array handler missing function create")
+    assert(handler.setitem, "Array handler missing function setitem")
+    assert(handler.getitem, "Array handler missing function getitem")
 
     local array = { }
     setmetatable(array, Array)
@@ -148,6 +154,14 @@ end
 
 function custom.list(handler, mapper, sizebits)
     assert(mapper, "expected a mapping")
+    assert(mapper, "mapping missing function encode")
+    assert(mapper, "mapping missing function decode")
+    assert(handler.getsize, "List handler missing function getsize")
+    assert(handler.create,  "List handler missing function create")
+    assert(handler.setitem, "List handler missing function setitem")
+    assert(handler.getitem, "List handler missing function getitem")
+
+    
     if sizebits == nil then sizebits = 0 end
 
     local list = {  }
@@ -165,7 +179,6 @@ Set.__index = Set;
 function Set:encode(encoder, value)
     local size = self.handler:getsize(value)
     writesize(encoder.writer, self.sizebits, size)
-    
     for i=1,size, 1 do
         self.mapper:encode(encoder, self.handler:getitem(value, i)) 
     end 
@@ -188,6 +201,14 @@ end
 
 function custom.set(handler, mapper, sizebits)
     assert(mapper, "expected a mapping")
+    assert(mapper, "mapping missing function encode")
+    assert(mapper, "mapping missing function decode")
+    assert(handler.getsize, "Set handler missing function getsize")
+    assert(handler.create,  "Set handler missing function create")
+    assert(handler.putitem, "Set handler missing function setitem")
+    assert(handler.getitem, "Set handler missing function getitem")
+
+    
     if sizebits == nil then sizebits = 0 end
     local set = {  }
     setmetatable(set, Set)
@@ -233,6 +254,16 @@ end
 function custom.map(handler, keymapper, itemmapper, sizebits)
     assert(keymapper, "expected a mapping")
     assert(itemmapper, "expected a mapping")
+    assert(keymapper, "mapping missing function encode")
+    assert(keymapper, "mapping missing function decode")
+    assert(itemmapper, "mapping missing function encode")
+    assert(itemmapper, "mapping missing function decode")
+      
+    assert(handler.getsize,  "Map handler missing function getsize")
+    assert(handler.create,   "Map handler missing function create")
+    assert(handler.putitem,  "Map handler missing function putitem")
+    assert(handler.getitems, "Map handler missing function getitems")
+    
     if sizebits == nil then sizebits = 0 end
     
     local map = { }
@@ -275,12 +306,21 @@ function Tuple:encodemeta(encoder)
 end
 
 function custom.tuple(handler, mappers)
+    for i=1, #mappers do
+        assert(mappers[i], "mapping missing function encode")
+        assert(mappers[i], "mapping missing function decode")
+    end
+    
+    assert(handler.create,  "Tuple handler missing function create")
+    assert(handler.getitem, "Tuple handler missing function getitem")
+    assert(handler.setitem, "Tuple handler missing function setitem")
+
     local tuple = { }
     setmetatable(tuple, Tuple)
+        
     tuple.mappers = mappers
     tuple.handler = handler
     tuple.tag     = tags.TUPLE
-    
     return tuple;
 end
 
@@ -313,6 +353,14 @@ end
 function custom.union(handler, mappers, sizebits)
     if sizebits == nil then sizebits = 0 end
     
+    for i=1, #mappers do
+        assert(mappers[i], "mapping missing function encode")
+        assert(mappers[i], "mapping missing function decode")
+    end
+
+    assert(handler.create,  "Union handler missing function create")
+    assert(handler.getitem, "Union handler missing function getitem")
+    assert(handler.setitem, "Union handler missing function setitem")
     
     local union = { }
     setmetatable(union, Union)
@@ -342,6 +390,8 @@ end
 
 function custom.semantic(id, mapper)
     assert(mapper, "expected a mapping")
+    assert(mapper, "mapping missing function encode")
+    assert(mapper, "mapping missing function decode")
 
     local semantic = { }
     setmetatable(semantic, Semantic)
@@ -411,6 +461,9 @@ end
 
 function custom.object(handler, mapper)
     assert(mapper, "expected a mapping")
+    assert(mapper, "mapping missing function encode")
+    assert(mapper, "mapping missing function decode")
+    
     local object = { }
     setmetatable(object, Object)
     object.mapper  = mapper
@@ -441,7 +494,10 @@ function Align:encodemeta(encoder)
 end
 
 function custom.align(size, mapping)
-    assert(mapping, "expected a mapping")
+    assert(mapper, "expected a mapping")
+    assert(mapper, "mapping missing function encode")
+    assert(mapper, "mapping missing function decode")
+    
     local aligner = setmetatable({}, Align)
     aligner.alignof = size
     aligner.mapper = mapping
@@ -492,6 +548,9 @@ end
 
 function custom.embedded(handler, mapper, dontgenerateid) 
     assert(mapper, "expected a mapping")
+    assert(mapper, "mapping missing function encode")
+    assert(mapper, "mapping missing function decode")
+    
     local embedded = setmetatable({}, Embedded)
     embedded.handler    = handler
     embedded.mapper     = mapper
@@ -528,23 +587,28 @@ function Type:encode(encoder, value) --Value would be a tag here.
     encoder.writer:raw(core.getid(value))
 end
  
+local typeWithSizeLookup =
+{
+    [tags.ARRAY] = true,
+    [tags.LIST]  = true,
+    [tags.SET]   = true,
+    [tags.MAP]   = true,
+    [tags.UNION] = true,
+    [tags.TUPLE] = true,
+    [tags.ALIGN] = true,
+    [tags.ALIGN1] = true,
+    [tags.ALIGN2] = true,
+    [tags.ALIGN4] = true,
+    [tags.ALIGN8] = true,
+    [tags.EMBEDDED] = true,
+    [tags.SEMANTIC] = true
+}
+ 
+ 
 function Type:decode(decoder)
     local tag     = decoder.reader:varint()
     local id      
-    if tag == tags.ARRAY or
-       tag == tags.LIST  or
-       tag == tags.SET   or
-       tag == tags.MAP   or
-       tag == tags.UNION or
-       tag == tags.TUPLE or
-       tag == tags.ALIGN or 
-       tag == tags.ALIGN1 or
-       tag == tags.ALIGN2 or
-       tag == tags.ALIGN4 or
-       tag == tags.ALIGN8 or
-       tag == tags.OBJECT or
-       tag == tags.EMBEDDED or
-       tag == tags.SEMANTIC then
+    if typeWithSizeLookup[tag] then
         local size = decoder.reader:varint()
         id = pack(tag) .. decoder.reader:raw(size)                                   
      elseif tag == tags.UINT or tag == tags.SINT then
@@ -559,6 +623,9 @@ function Type:decode(decoder)
 end
 
 function custom.type(handler)
+    assert(handler, "expected a mapping")
+    assert(handler.getmapping, "Type handler missing function getmapping")
+
     local typ       = setmetatable({ }, Type)
     typ.tag         = tags.TYPE
     typ.id          = pack(typ.tag)

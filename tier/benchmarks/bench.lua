@@ -38,6 +38,7 @@ function bench.mapping(format, name, count, to_encode, mapping)
 	bench.benchmark("encode of " .. name, count, function()
 		local encoder = encoding.encoder(writer)
 		encoder:encode(mapping, to_encode);
+		encoder:close();
 	end)
 
 	local data = memstream:getdata();
@@ -47,6 +48,7 @@ function bench.mapping(format, name, count, to_encode, mapping)
 	bench.benchmark("decode of " .. name, count, function()	
 		local decoder = encoding.decoder(reader)
 		decoder:decode(mapping)
+		decoder:close()
 	end)
 	
 	print(string.format("Outstream size is: %s", #data / count))

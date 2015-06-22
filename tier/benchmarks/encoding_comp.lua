@@ -10,6 +10,7 @@ bench.benchmark("Writing 10 million varints inmemory from C", 5,  function()
 	for i=1, 10^7 do
 		write(writer, i);
 	end
+	writer:flush();
 	file:close();
 end);
 
@@ -23,6 +24,7 @@ bench.benchmark("Writing 10 million varints to a file in C", 5,  function()
 	for i=1, 10^7 do
 		write(writer, i);
 	end
+	writer:flush();
 	file:close();
 end)
 
@@ -35,6 +37,7 @@ bench.benchmark("Reading 10 million varints froma a file in C", 5, function()
 	for i=1, 10^7 do
 		read(reader);
 	end
+	writer:flush();	
 	
 	file:close();
 end)
@@ -51,7 +54,7 @@ bench.benchmark("Writing 10 million varints to a file in Lua", 5, function()
 	for i=1, 10^7 do
 		write(writer, i);
 	end
-	
+	writer:flush();	
 	file:close();
 end);
 
