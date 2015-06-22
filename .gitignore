@@ -9,5 +9,5 @@ Thumbs.db
 *.obj
 
 #Test files
-*.dat 
+*.dat
 /tier/streams
