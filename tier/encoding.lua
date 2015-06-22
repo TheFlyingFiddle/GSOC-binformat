@@ -1,4 +1,4 @@
-local format	= require"c.format"
+local format    = require"format"
 local encoding  = require"encoding.core"
 
 encoding.primitive = require"encoding.primitive"
