@@ -12,7 +12,7 @@ encoding = require "encoding"
 primitive = encoding.primitive
 standard = encoding.standard
 custom   = require"encoding.custom"
-format	 = require"c.format"
+format	 = require"format"
 
 local function hexastream(output, stream, prefix, start)
 	local cursor = {}
