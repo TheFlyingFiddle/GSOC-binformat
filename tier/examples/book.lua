@@ -16,7 +16,7 @@ outfile:close()
 
 --Open a file and read back the book information from it.
 local infile    = assert(io.open("EncodingHelloWorld.dat", "rb"))
-local book      = encoding:decode(infile)
+local book      = encoding.decode(infile)
 infile:close()
 
 --Ensure that the decoded book contains the same data as the encoded book. 
