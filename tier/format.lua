@@ -3,6 +3,10 @@ local format = { }
 local Writer = { }
 Writer.__index = Writer;
 
+local spack   = string.pack
+local sunpack = string.unpack
+local tunpack = table.unpack
+
 function Writer:getposition()
    return self.position
 end
@@ -12,94 +16,127 @@ local function writeraw(writer, string)
       writer.position = writer.position + #string
 end
 
+local varintBytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } 
+local varintPacks = { "B", "BB", "BBB", "BBBB", "BBBBB",
+                      "BBBBBB", "BBBBBBB", "BBBBBBBB",
+                      "BBBBBBBBB", "BBBBBBBBBB" }
+
+
+local function writevarint(writer, number)
+   assert(type(number) == "number", "number expected")
+   
+   local count = 1
+   while number >= 0x80 or number < 0 do
+      local byte = (number | 0x80) & 0x00000000000000FF
+      number = number >> 7;
+      varintBytes[count] = byte
+      count = count + 1
+   end
+   
+   varintBytes[count] = number
+   writeraw(writer, spack(varintPacks[count], tunpack(varintBytes)))
+end
+
+
 --Writes the bytes contained in a raw string,
 --to the output stream.
 function Writer:raw(string)
-   writeraw(self, string)
+   self.inner:write(string)
+   self.position = writer.position + #string
 end
 
 --Writes a length delimted stream of bytes
 function Writer:stream(s)
    local length = string.len(s)
-   self:varint(length)
-   self:raw(s)
+   writevarint(length)
+
+   self.inner:write(s)
+   self.position = self.position + length
 end
 
 --Encodes an integer that is in the range [0 .. 0xff].
 function Writer:uint8(byte)
-   local rep = string.pack("B", byte)
-   self:raw(rep);
+   local rep = spack("B", byte)
+   self.inner:write(rep)
+   self.position = self.position + 1
 end
 
 --Writes an integer that is in the range [0 .. 0xffff].
 function Writer:uint16(number)
-   local rep = string.pack("I2", number)
-   self:raw(rep);
+   local rep = spack("I2", number)
+   self.inner:write(rep)
+   self.position = self.position + 2
 end
 
 --Writes an integer that is in the range [0 .. 0xffffffff].
 function Writer:uint32(number)
-   local rep = string.pack("I4", number)
-   self:raw(rep);
+   local rep = spack("I4", number)   
+   self.inner:write(rep)
+   self.position = self.position + 4
+
 end
 
 --Writes an integer that is in the range [0 .. 0xffffffffffffffff].
 function Writer:uint64(number)
-   local rep = string.pack("I8", number)
-   self:raw(rep);
+   local rep = spack("I8", number)
+   
+   self.inner:write(rep)
+   self.position = self.position + 8
 end
 
 --Writes an integer  that is in the range [-0x80 .. 0x7F]
 function Writer:int8(byte)
-   local rep = string.pack("b", byte)
-   self:raw(rep);
+   local rep = spack("b", byte)
+   
+   self.inner:write(rep)
+   self.position = self.position + 1
 end
 
 
 --Writes an integer that is in the range [-0x8000 .. 0x7fff].
 function Writer:int16(number)
-   local rep = string.pack("i2", number)
-   self:raw(rep)	
+   local rep = spack("i2", number)
+   
+   self.inner:write(rep)
+   self.position = self.position + 2
 end
 
 --Writes integer that is in the range [-0x80000000 .. 0x7fffffff].
 function Writer:int32(number)
-   local rep = string.pack("i4", number)
-   self:raw(rep)
+   local rep = spack("i4", number)
+   
+   self.inner:write(rep)
+   self.position = self.position + 4
 end
 
 --Writes an integer that is in the range [-0x8000000000000000 .. 0x7fffffffffffffff].
 function Writer:int64(number)
-   local rep = string.pack("i8", number)
-   self:raw(rep)
+   local rep = spack("i8", number)
+   
+   self.inner:write(rep)
+   self.position = self.position + 8
 end
 
 --Writes a float point value with 32-bit precision in IEEE 754 format.
 function Writer:float(number)
-   local rep = string.pack("f", number)
-   self:raw(rep)
+   local rep = spack("f", number)
+   
+   self.inner:write(rep)
+   self.position = self.position + 4
 end
 
 --Writes a float point value with 64-bit precision in IEEE 754 format.
 function Writer:double(number)
-   local rep = string.pack("d", number);
-   self:raw(rep);
+   local rep = spack("d", number);
+   
+   self.inner:write(rep)
+   self.position = self.position + 8
 end
+
 
 --Writes a number in the variable integer encoding
 --used by google protocol buffers. 
-function Writer:varint(number)
-   assert(type(number) == "number", "number expected")
-   
-   self:flushbits()
-   while number >= 0x80 or number < 0 do
-      local byte = (number | 0x80) & 0x00000000000000FF
-      number = number >> 7;
-      writeraw(self, string.pack("B", byte))
-   end
-
-   writeraw(self, string.pack("B", number))
-end
+Writer.varint = writevarint
 
 --Writes a number in zigzag encoded format 
 --used for zigzag variable integer encoding used in 
@@ -116,13 +153,15 @@ function Writer:varintzz(number)
    end
    
    local zigzaged = (number << 1) ~ bits
-   self:varint(zigzaged)
+   writevarint(self, zigzaged)
 end
 
 --Writes a boolean value.   
 function Writer:bool(bool)
    if bool then bool = 1 else bool = 0 end
-   self:uint8(bool)
+   local rep = spack("B", bool)
+   self.inner:write(rep)
+   self.position = self.position + 1
 end
 
 --Writes the first size bits in value
@@ -135,7 +174,7 @@ function Writer:bits(size, value)
 		count = count - 8
 		value = value >> (size-count)
 		size = count
-            writeraw(self, string.pack("B", bits & 0xFF))
+            writeraw(self, spack("B", bits & 0xFF))
 		bits = value
 	end
 	self.bit_count = count
@@ -173,7 +212,7 @@ end
 function Writer:flushbits()
    local count = self.bit_count
 	if count > 0 then
-            writeraw(self, string.pack("B", self.bit_buffer & 0xFF))
+            writeraw(self, spack("B", self.bit_buffer & 0xFF))
 		self.bit_count = 0
 		self.bit_buffer = 0
 	end
@@ -181,10 +220,10 @@ end
 
 local alignbytes = 
 {  
-   string.pack("I1", 0), string.pack("I2", 0),   
-   string.pack("I3", 0), string.pack("I4", 0),
-   string.pack("I5", 0), string.pack("I6", 0),  
-   string.pack("I7", 0), string.pack("I8", 0) 
+   spack("I1", 0), spack("I2", 0),   
+   spack("I3", 0), spack("I4", 0),
+   spack("I5", 0), spack("I6", 0),  
+   spack("I7", 0), spack("I8", 0) 
 }
 
 --Alignes the output to the specified number of bytes.
@@ -239,64 +278,64 @@ end
 --Reads a byte from the input stream.
 function Reader:uint8()
    local rep = self:raw(1);
-   return string.unpack("B", rep);	
+   return sunpack("B", rep);	
 end
 
 --Reads a number between [0 .. 0xffff] from the input stream.
 function Reader:uint16()
    local rep = self:raw(2)
-   return string.unpack("I2", rep)
+   return sunpack("I2", rep)
 end
 
 --Reads a number between [0 .. 0xffffffff] from the input stream.
 function Reader:uint32()
    local rep = self:raw(4)
-   return string.unpack("I4", rep)
+   return sunpack("I4", rep)
 end
 
 --Reads a number between [0 .. 0xffffffffffff] from the input stream.
 function Reader:uint64()
    local rep = self:raw(8);
-   return string.unpack("I8", rep)
+   return sunpack("I8", rep)
 end
 
 --Reads a signed byte from the input stream.
 function Reader:int8()
    local rep = self:raw(1);
-   return string.unpack("b", rep);	
+   return sunpack("b", rep);	
 end
 
 
 --Reads a number between [-0x8000 .. 0x7fff] from the input stream.
 function Reader:int16()
    local rep = self:raw(2)
-   return string.unpack("i2", rep)
+   return sunpack("i2", rep)
 end
 
 --Reads a number between [-0x80000000 .. 0x7fffffff] from the input stream.
 function Reader:int32()
    local rep = self:raw(4)
-   return string.unpack("i4", rep)
+   return sunpack("i4", rep)
 end
 
 --Reads a number between [-0x8000000000000000 .. 0x7fffffffffffffff]  from the input stream.
 function Reader:int64()
    local rep = self:raw(8);
-   return string.unpack("i8", rep)
+   return sunpack("i8", rep)
 end
 
 --Reads a floting point number of precision 32-bit in 
 --IEEE 754 single precision format.
 function Reader:float()
    local rep = self:raw(4)
-   return string.unpack("f", rep)
+   return sunpack("f", rep)
 end
 
 --Reads a floting point number of precision 64-bit in 
 --IEEE 754 double precision format.
 function Reader:double()
    local rep = self:raw(8)
-   return string.unpack("d", rep)
+   return sunpack("d", rep)
 end
 
 --Reads a boolean value
@@ -318,7 +357,7 @@ function Reader:varint()
 
    self:discardbits()
    while true do
-      local byte = string.unpack("B", readraw(self, 1))
+      local byte = sunpack("B", readraw(self, 1))
       number = number | ((byte & 0x7F) << (7 * count))
       if byte < 0x80 then break end
       count = count + 1;
@@ -350,7 +389,7 @@ function Reader:bits(size)
    while count < size - ready do
       value = value | (bits << ready)
       ready = ready + count
-      bits  = string.unpack("B", readraw(self, 1))
+      bits  = sunpack("B", readraw(self, 1))
       count = 8
    end
    
@@ -410,10 +449,10 @@ function format.packvarint(number)
    while number >= 0x80 or number < 0 do
       local byte = (number | 0x80) & 0x00000000000000FF
       number = number >> 7;
-      s = s .. string.pack("B", byte)
+      s = s .. spack("B", byte)
    end
       
-   s = s .. string.pack("B", number)
+   s = s .. spack("B", number)
    return s;     
 end
 

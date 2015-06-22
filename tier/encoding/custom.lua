@@ -600,6 +600,7 @@ local typeWithSizeLookup =
     [tags.ALIGN2] = true,
     [tags.ALIGN4] = true,
     [tags.ALIGN8] = true,
+    [tags.OBJECT] = true,
     [tags.EMBEDDED] = true,
     [tags.SEMANTIC] = true
 }
@@ -649,6 +650,7 @@ end
 
 function custom.dynamic(handler, type_mapping)
     assert(type_mapping.tag == tags.TYPE)
+    assert(handler.getmappingof, "Dynamic handler missing function getmappingof")
 
     local dynamic = { }
     setmetatable(dynamic, Dynamic)
@@ -656,7 +658,6 @@ function custom.dynamic(handler, type_mapping)
     dynamic.mapper      = type_mapping
     dynamic.tag         = tags.DYNAMIC
     dynamic.id          = pack(tags.DYNAMIC)
-    
     return dynamic
 end
 
