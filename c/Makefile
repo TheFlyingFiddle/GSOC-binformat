@@ -1,6 +1,6 @@
-LUA_DIR     = C:/Users/Lukas/Documents/Lua
+LUA_DIR     = C:/LUA
 LUA_INCLUDE = ${LUA_DIR}/include
-LUA_DLL_DIR	= ${LUA_DIR}/bin/
+LUA_DLL_DIR	= ${LUA_DIR}
 
 C_FILES		= writer.c
 C_FILES	   += reader.c
