@@ -1,6 +1,7 @@
 local format = require"format"
 local core   = require"encoding.core"
 local tags   = require"encoding.tags"
+local util   = require"encoding.util"
 
 local pack = format.packvarint
 
@@ -91,9 +92,8 @@ function Array:encodemeta(encoder)
 end
 
 function custom.array(handler, mapper, size)
-    assert(mapper, "expected a mapping")
-    assert(mapper, "mapping missing function encode")
-    assert(mapper, "mapping missing function decode")
+    util.ismapping(mapper)
+    
     assert(handler.getsize, "Array handler missing function getsize")
     assert(handler.create, "Array handler missing function create")
     assert(handler.setitem, "Array handler missing function setitem")
@@ -153,9 +153,8 @@ function List:encodemeta(encoder)
 end
 
 function custom.list(handler, mapper, sizebits)
-    assert(mapper, "expected a mapping")
-    assert(mapper, "mapping missing function encode")
-    assert(mapper, "mapping missing function decode")
+    util.ismapping(mapper)
+    
     assert(handler.getsize, "List handler missing function getsize")
     assert(handler.create,  "List handler missing function create")
     assert(handler.setitem, "List handler missing function setitem")
@@ -200,9 +199,8 @@ function Set:encodemeta(encoder)
 end
 
 function custom.set(handler, mapper, sizebits)
-    assert(mapper, "expected a mapping")
-    assert(mapper, "mapping missing function encode")
-    assert(mapper, "mapping missing function decode")
+    util.ismapping(mapper)
+    
     assert(handler.getsize, "Set handler missing function getsize")
     assert(handler.create,  "Set handler missing function create")
     assert(handler.putitem, "Set handler missing function setitem")
@@ -252,13 +250,9 @@ function Map:decode(decoder)
 end
 
 function custom.map(handler, keymapper, itemmapper, sizebits)
-    assert(keymapper, "expected a mapping")
-    assert(itemmapper, "expected a mapping")
-    assert(keymapper, "mapping missing function encode")
-    assert(keymapper, "mapping missing function decode")
-    assert(itemmapper, "mapping missing function encode")
-    assert(itemmapper, "mapping missing function decode")
-      
+    util.ismapping(keymapper)
+    util.ismapping(itemmapper)
+    
     assert(handler.getsize,  "Map handler missing function getsize")
     assert(handler.create,   "Map handler missing function create")
     assert(handler.putitem,  "Map handler missing function putitem")
@@ -307,8 +301,7 @@ end
 
 function custom.tuple(handler, mappers)
     for i=1, #mappers do
-        assert(mappers[i], "mapping missing function encode")
-        assert(mappers[i], "mapping missing function decode")
+        util.ismapping(mappers[i])
     end
     
     assert(handler.create,  "Tuple handler missing function create")
@@ -354,13 +347,11 @@ function custom.union(handler, mappers, sizebits)
     if sizebits == nil then sizebits = 0 end
     
     for i=1, #mappers do
-        assert(mappers[i], "mapping missing function encode")
-        assert(mappers[i], "mapping missing function decode")
+        util.ismapping(mappers[i])
     end
 
     assert(handler.create,  "Union handler missing function create")
-    assert(handler.getitem, "Union handler missing function getitem")
-    assert(handler.setitem, "Union handler missing function setitem")
+    assert(handler.select, "Union handler missing function select")
     
     local union = { }
     setmetatable(union, Union)
@@ -389,9 +380,7 @@ function Semantic:encodemeta(encoder)
 end
 
 function custom.semantic(id, mapper)
-    assert(mapper, "expected a mapping")
-    assert(mapper, "mapping missing function encode")
-    assert(mapper, "mapping missing function decode")
+    util.ismapping(mapper)
 
     local semantic = { }
     setmetatable(semantic, Semantic)
@@ -460,9 +449,7 @@ function Object:encodemeta(encoder)
 end
 
 function custom.object(handler, mapper)
-    assert(mapper, "expected a mapping")
-    assert(mapper, "mapping missing function encode")
-    assert(mapper, "mapping missing function decode")
+    util.ismapping(mapper)
     
     local object = { }
     setmetatable(object, Object)
@@ -494,9 +481,7 @@ function Align:encodemeta(encoder)
 end
 
 function custom.align(size, mapping)
-    assert(mapper, "expected a mapping")
-    assert(mapper, "mapping missing function encode")
-    assert(mapper, "mapping missing function decode")
+    util.ismapping(mapping)
     
     local aligner = setmetatable({}, Align)
     aligner.alignof = size
@@ -547,9 +532,7 @@ function Embedded:encodemeta(encoder)
 end 
 
 function custom.embedded(handler, mapper, dontgenerateid) 
-    assert(mapper, "expected a mapping")
-    assert(mapper, "mapping missing function encode")
-    assert(mapper, "mapping missing function decode")
+    util.ismapping(mapper)
     
     local embedded = setmetatable({}, Embedded)
     embedded.handler    = handler
@@ -624,7 +607,7 @@ function Type:decode(decoder)
 end
 
 function custom.type(handler)
-    assert(handler, "expected a mapping")
+    assert(handler, "expected a type handler")
     assert(handler.getmapping, "Type handler missing function getmapping")
 
     local typ       = setmetatable({ }, Type)

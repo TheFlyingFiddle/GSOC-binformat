@@ -42,13 +42,15 @@ end
 --to the output stream.
 function Writer:raw(string)
    self.inner:write(string)
-   self.position = writer.position + #string
+   self.position = self.position + #string
 end
 
 --Writes a length delimted stream of bytes
 function Writer:stream(s)
-   local length = string.len(s)
-   writevarint(length)
+   assert(type(s) == "string", "string expected")
+
+   local length = #s
+   writevarint(self, length)
 
    self.inner:write(s)
    self.position = self.position + length
@@ -167,7 +169,9 @@ function Writer:bits(size, value)
 	self.bit_count = count
 	self.bit_buffer = bits & ~(-1 << count)
       
-      writeraw(self, spack(bytesPack[nbytes], tunpack(tmpByteStorage)))
+      if nbytes ~= 0 then 
+            writeraw(self, spack(bytesPack[nbytes], tunpack(tmpByteStorage)))
+      end
 end
 
 --Writes an unsigned integer of (size) bits

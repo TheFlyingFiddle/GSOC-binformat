@@ -248,11 +248,11 @@ do
     }
  
     function lua2tag:getmappingof(value)
-        return self[type(value)] or error("no mapping for value of type" .. type(value))
+        return self[type(value)] or error("no mapping for value of type " .. type(value))
     end
  
     standard.dynamic = custom.dynamic(lua2tag, standard.type)
-    lua2tag["table"] = standard.object(standard.map(standard.dynamic, standard.dynamic))
+    lua2tag["table"] = standard.object(standard.map(standard.dynamic, standard.dynamic)) 
 end
 
 do --Generator scoping block
