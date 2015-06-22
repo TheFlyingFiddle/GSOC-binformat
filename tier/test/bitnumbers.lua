@@ -199,8 +199,6 @@ local function testsint(mapping, bits)
 	}
 end
 
-
-
 -- number sign
 runtest{ mapping = primitive.sign, defaultexpected =  1,
 	numbers(int.positive),

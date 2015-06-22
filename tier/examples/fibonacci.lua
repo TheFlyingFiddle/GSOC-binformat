@@ -1,5 +1,5 @@
 --Contains everything needed to encode simple things.
-local encoding = require"encoding"
+local encoding = require"tier.encoding"
 local standard = encoding.standard
 
 --A mapping object maps application value to and from TIER encodings.

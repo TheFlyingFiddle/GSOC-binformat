@@ -1,4 +1,4 @@
-local encoding = require"encoding"
+local encoding = require"tier.encoding"
 
 -- We are going to encode a simple book description. 
 local book = 

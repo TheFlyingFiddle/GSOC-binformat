@@ -145,21 +145,6 @@ local function tofilename(mapping, case)
 	  "_"..string.gsub(string.sub(id,1, 128), unsafe, "")
 end
 
-local BufferStream = oo.class{
-	position = 0,
-	write = array.insert,
-	flush = function () end,
-}
-function BufferStream:close()
-	self.stream = self.stream or array.concat(self)
-end
-function BufferStream:read(count)
-	local pos = self.position
-	local finish = pos+count
-	self.position = finish
-	return self.stream:sub(pos+1, finish)
-end
-
 local function rundynamictest(test)
 	local mapping = test.mapping
 	local basedir = test.basedir or "streams"
