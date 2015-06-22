@@ -16,7 +16,7 @@ end);
 
 
 --Time: min 1138ms max 1357ms average 1236ms
-bench.benchmark("Writing 10 million varints to a file in C", 5,  function()
+bench.benchmark("Writing 10 million varints to a file in C", 1,  function()
 	local file	 = io.open("c_data.dat", "wb")
 	local writer = cformat.writer(file)
 	
@@ -29,7 +29,7 @@ bench.benchmark("Writing 10 million varints to a file in C", 5,  function()
 end)
 
 --Time: min 904ms max 962ms average 936ms
-bench.benchmark("Reading 10 million varints froma a file in C", 5, function()
+bench.benchmark("Reading 10 million varints froma a file in C", 1, function()
 	local file	 = assert(io.open("c_data.dat", "rb"));
 	local reader = cformat.reader(file);
 	
@@ -37,7 +37,6 @@ bench.benchmark("Reading 10 million varints froma a file in C", 5, function()
 	for i=1, 10^7 do
 		read(reader);
 	end
-	writer:flush();	
 	
 	file:close();
 end)
@@ -46,7 +45,7 @@ end)
 local format = require"format"
 
 --Time: min 38392ms max 40337ms average 39325ms
-bench.benchmark("Writing 10 million varints to a file in Lua", 5, function()
+bench.benchmark("Writing 10 million varints to a file in Lua", 1, function()
 	local file		= io.open("c_data.dat", "wb");
 	local writer 	= format.writer(file);
 	

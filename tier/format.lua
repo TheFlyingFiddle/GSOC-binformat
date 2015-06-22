@@ -16,11 +16,10 @@ local function writeraw(writer, string)
       writer.position = writer.position + #string
 end
 
-local varintBytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } 
-local varintPacks = { "B", "BB", "BBB", "BBBB", "BBBBB",
-                      "BBBBBB", "BBBBBBB", "BBBBBBBB",
-                      "BBBBBBBBB", "BBBBBBBBBB" }
-
+local tmpByteStorage  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } 
+local bytesPack       = { "B", "BB", "BBB", "BBBB", "BBBBB",
+                          "BBBBBB", "BBBBBBB", "BBBBBBBB",
+                          "BBBBBBBBB", "BBBBBBBBBB" }
 
 local function writevarint(writer, number)
    assert(type(number) == "number", "number expected")
@@ -29,12 +28,13 @@ local function writevarint(writer, number)
    while number >= 0x80 or number < 0 do
       local byte = (number | 0x80) & 0x00000000000000FF
       number = number >> 7;
-      varintBytes[count] = byte
+      tmpByteStorage[count] = byte
       count = count + 1
    end
    
-   varintBytes[count] = number
-   writeraw(writer, spack(varintPacks[count], tunpack(varintBytes)))
+   tmpByteStorage[count] = number
+   writer.inner:write(spack(bytesPack[count], tunpack(tmpByteStorage)))
+   writer.position = writer.position + count
 end
 
 
@@ -56,83 +56,64 @@ end
 
 --Encodes an integer that is in the range [0 .. 0xff].
 function Writer:uint8(byte)
-   local rep = spack("B", byte)
-   self.inner:write(rep)
+   self.inner:write(spack("B", byte))
    self.position = self.position + 1
 end
 
 --Writes an integer that is in the range [0 .. 0xffff].
 function Writer:uint16(number)
-   local rep = spack("I2", number)
-   self.inner:write(rep)
+   self.inner:write(spack("I2", number))
    self.position = self.position + 2
 end
 
 --Writes an integer that is in the range [0 .. 0xffffffff].
 function Writer:uint32(number)
-   local rep = spack("I4", number)   
-   self.inner:write(rep)
+   self.inner:write(spack("I4", number)  )
    self.position = self.position + 4
-
 end
 
 --Writes an integer that is in the range [0 .. 0xffffffffffffffff].
-function Writer:uint64(number)
-   local rep = spack("I8", number)
-   
-   self.inner:write(rep)
+function Writer:uint64(number)   
+   self.inner:write(spack("I8", number))
    self.position = self.position + 8
 end
 
 --Writes an integer  that is in the range [-0x80 .. 0x7F]
-function Writer:int8(byte)
-   local rep = spack("b", byte)
-   
-   self.inner:write(rep)
+function Writer:int8(byte)   
+   self.inner:write(spack("b", byte))
    self.position = self.position + 1
 end
 
 
 --Writes an integer that is in the range [-0x8000 .. 0x7fff].
 function Writer:int16(number)
-   local rep = spack("i2", number)
-   
-   self.inner:write(rep)
+   self.inner:write(spack("i2", number))
    self.position = self.position + 2
 end
 
 --Writes integer that is in the range [-0x80000000 .. 0x7fffffff].
-function Writer:int32(number)
-   local rep = spack("i4", number)
-   
-   self.inner:write(rep)
+function Writer:int32(number)   
+   self.inner:write(spack("i4", number))
    self.position = self.position + 4
 end
 
 --Writes an integer that is in the range [-0x8000000000000000 .. 0x7fffffffffffffff].
 function Writer:int64(number)
-   local rep = spack("i8", number)
-   
-   self.inner:write(rep)
+   self.inner:write(spack("i8", number))
    self.position = self.position + 8
 end
 
 --Writes a float point value with 32-bit precision in IEEE 754 format.
 function Writer:float(number)
-   local rep = spack("f", number)
-   
-   self.inner:write(rep)
+   self.inner:write(spack("f", number))
    self.position = self.position + 4
 end
 
 --Writes a float point value with 64-bit precision in IEEE 754 format.
 function Writer:double(number)
-   local rep = spack("d", number);
-   
-   self.inner:write(rep)
+   self.inner:write(spack("d", number))
    self.position = self.position + 8
 end
-
 
 --Writes a number in the variable integer encoding
 --used by google protocol buffers. 
@@ -159,26 +140,34 @@ end
 --Writes a boolean value.   
 function Writer:bool(bool)
    if bool then bool = 1 else bool = 0 end
-   local rep = spack("B", bool)
-   self.inner:write(rep)
+   self.inner:write(spack("B", bool))
    self.position = self.position + 1
 end
 
+
 --Writes the first size bits in value
 function Writer:bits(size, value)
-   local count = self.bit_count
+      local count = self.bit_count
 	local bits = self.bit_buffer
-	bits = bits | (value << count)
+	local nbytes = 0
+      
+      bits = bits | (value << count)
 	count = count + size
 	while count >= 8 do
 		count = count - 8
 		value = value >> (size-count)
 		size = count
-            writeraw(self, spack("B", bits & 0xFF))
-		bits = value
+            
+		nbytes = nbytes + 1
+            tmpByteStorage[nbytes] = bits & 0xFF
+            
+            bits = value
 	end
+      
 	self.bit_count = count
 	self.bit_buffer = bits & ~(-1 << count)
+      
+      writeraw(self, spack(bytesPack[nbytes], tunpack(tmpByteStorage)))
 end
 
 --Writes an unsigned integer of (size) bits
