@@ -6,6 +6,7 @@ local bench = { }
 function bench.benchmark(name, count, fun)
 	local times = { }
 	for i=1, count do
+		collectgarbage()
 		local start = os.clock()
 		fun()
 		local stop  = os.clock()
@@ -31,8 +32,6 @@ function bench.benchmark(name, count, fun)
 end
 
 function bench.mapping(format, name, count, to_encode, mapping)
-	collectgarbage()
-	
 	local memstream = format.outmemorystream();
 	local writer    = format.writer(memstream)
 	bench.benchmark("encode of " .. name, count, function()

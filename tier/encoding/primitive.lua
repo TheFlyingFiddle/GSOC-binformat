@@ -33,8 +33,8 @@ primitive.uint64   = createMapper(tags.UINT64,    "uint64")
 primitive.int16    = createMapper(tags.SINT16,    "int16")
 primitive.int32    = createMapper(tags.SINT32,    "int32")
 primitive.int64    = createMapper(tags.SINT64,    "int64")
-primitive.fpsingle = createMapper(tags.SINGLE,    "float")
-primitive.fpdouble = createMapper(tags.DOUBLE,    "double")
+primitive.float    = createMapper(tags.FLOAT,    "float")
+primitive.double   = createMapper(tags.DOUBLE,    "double")
 
 --Not yet implemented primitive.fpquad = createMapper(QUAD, "writequad", "readquad");
 primitive.stream   = createMapper(tags.STREAM, "stream")

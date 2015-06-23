@@ -17,22 +17,26 @@ end
 local uint_mapping 	 = standard.list(primitive.uint32)
 local bit_mapping    = standard.list(primitive.uint20)
 local varint_mapping = standard.list(primitive.varint)
-local float_mapping  = standard.list(primitive.fpsingle)
+local float_mapping  = standard.list(primitive.float)
 
 local luaref   			= custom.typeref()
 local lua_value_mapping = standard.union
 {
 	{ type = "nil", 	mapping = primitive.null },
-	{ type = "number", 	mapping = primitive.varint },
+	{ type = "number", 	mapping = primitive.double },
 	{ type = "boolean", mapping = primitive.boolean },
 	{ type = "string",	mapping = primitive.string },
 	{ type = "table",   mapping = standard.object(standard.map(luaref, luaref)) }
 }
 luaref:setref(lua_value_mapping)
 
+
 local cformat   = require"c.format"
 local luaformat = require"format"
 
+bench.mapping(cformat, "C UNION", 1, array, lua_value_mapping)
+
+bench.mapping(luaformat, "LUA UNION", 1, array, lua_value_mapping)
 
 --Encoding: min 2722ms max 2900ms average 2775.8ms
 --Decoding: min 5673ms max 6288ms average 5954ms
@@ -42,12 +46,6 @@ bench.mapping(cformat, "C DYNAMIC", 5, array, standard.dynamic)
 --Encoding: min 9467ms max 10262ms average 9919ms
 --Decoding: min 14655ms max 15060ms average 14794ms
 bench.mapping(luaformat, "LUA DYNAMIC", 1, array, standard.dynamic)
-
-
-
-bench.mapping(cformat, "C UNION", 1, array, lua_value_mapping)
-
-bench.mapping(luaformat, "LUA UNION", 1, array, lua_value_mapping)
 
 
 --Encoding: min 2240ms max 2326ms average 2276ms 

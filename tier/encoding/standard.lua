@@ -42,7 +42,6 @@ function TableAsSet:putitem(value, item)
     value[item] = true
 end
 
-
 --Map handler
 local TableAsMap = { }
 function TableAsMap:getsize(value) 
@@ -54,7 +53,7 @@ function TableAsMap:getsize(value)
     return counter
 end
 
-function TableAsMap:getitems(value, i)
+function TableAsMap:getitem(value, i)
     local counter = 1;
     for k, v in pairs(value) do 
         if counter == i then
@@ -200,7 +199,7 @@ function standard.union(kinds, bitsize)
     local handler = { }
     setmetatable(handler, TypeUnion)
     handler.kinds = kinds;
-        
+                        
     local mappers = { }
     for i, v in ipairs(kinds) do
         table.insert(mappers, v.mapping)
@@ -240,7 +239,7 @@ do
     {
         ["nil"]      = primitive.null,
         ["boolean"]  = primitive.boolean,
-        ["number"]   = primitive.fpdouble,
+        ["number"]   = primitive.double,
         ["string"]   = primitive.string,
         ["function"] = nil,
         ["thread"]   = nil,

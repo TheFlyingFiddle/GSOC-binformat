@@ -329,7 +329,7 @@ runtest{ mapping = primitive.varintzz, encodeerror = "any",
 	NonNumberCases,
 }
 -- single precision floats
-runtest{ mapping = primitive.fpsingle,
+runtest{ mapping = primitive.float,
 	Int8Cases,
 	Int16Cases,
 	uInt8Cases,
@@ -338,7 +338,7 @@ runtest{ mapping = primitive.fpsingle,
 	sInt16Cases,
 	SinglePrecisionCases,
 }
-runtest{ mapping = primitive.fpsingle, rounderror = 0.001,
+runtest{ mapping = primitive.float, rounderror = 0.001,
 	Int32Cases,
 	Int64Cases,
 	uInt32Cases,
@@ -347,11 +347,11 @@ runtest{ mapping = primitive.fpsingle, rounderror = 0.001,
 	sInt64Cases,
 	DoublePrecisionCases,
 }
-runtest{ mapping = primitive.fpsingle, encodeerror = "number expected",
+runtest{ mapping = primitive.float, encodeerror = "number expected",
 	NonNumberCases,
 }
 -- double precision floats
-runtest{ mapping = primitive.fpdouble,
+runtest{ mapping = primitive.double,
 	Int8Cases,
 	Int16Cases,
 	Int32Cases,
@@ -367,6 +367,6 @@ runtest{ mapping = primitive.fpdouble,
 	SinglePrecisionCases,
 	DoublePrecisionCases,
 }
-runtest{ mapping = primitive.fpdouble, encodeerror = "number expected",
+runtest{ mapping = primitive.double, encodeerror = "number expected",
 	NonNumberCases,
 }

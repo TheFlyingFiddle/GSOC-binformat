@@ -61,7 +61,7 @@ tags.SINT32    = 0x21   tags[0x21] = "SINT32"  -- ALIGN1 SINT 0x20
 tags.SINT64    = 0x22   tags[0x22] = "SINT64"  -- ALIGN1 SINT 0x40
 
 --Floats
-tags.SINGLE    = 0x23   tags[0x23] = "SINGLE"  -- SEMANTIC "floating" ALIGN1 UINT 0x20
+tags.FLOAT     = 0x23   tags[0x23] = "FLOAT"  -- SEMANTIC "floating" ALIGN1 UINT 0x20
 tags.DOUBLE    = 0x24   tags[0x24] = "DOUBLE"  -- SEMANTIC "floating" ALIGN1 UINT 0x40
 tags.QUAD      = 0x25   tags[0x25] = "QUAD"    -- SEMANTIC "floating" ALIGN1 UINT 0x80
 
@@ -85,7 +85,7 @@ function tags.tagtoluatype(tag)
           tag == tags.SINT32 or
           tag == tags.UINT64 or
           tag == tags.SINT64 or
-          tag == tags.SINGLE or
+          tag == tags.FLOAT or
           tag == tags.DOUBLE or
           tag == tags.QUAD   or
           tag == tags.VARINT or

@@ -49,7 +49,7 @@ local luaref   = newtyperef()
 local luaunion = standard.union
 {
 	{ type = "nil", 	mapping = primitive.null },
-	{ type = "number", 	mapping = primitive.fpdouble },
+	{ type = "number", 	mapping = primitive.double },
 	{ type = "boolean", mapping = primitive.boolean },
 	{ type = "string",	mapping = primitive.string },
 	{ type = "table",   mapping = standard.object(standard.map(luaref, luaref)) }

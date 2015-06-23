@@ -26,9 +26,9 @@
 
 local vec3 = standard.tuple(
 {
-	{ key = "x", mapping = primitive.fpsingle },
-	{ key = "y", mapping = primitive.fpsingle },
-	{ key = "z", mapping = primitive.fpsingle }		
+	{ key = "x", mapping = primitive.float },
+	{ key = "y", mapping = primitive.float },
+	{ key = "z", mapping = primitive.float }		
 })
 
 local monster = standard.tuple(

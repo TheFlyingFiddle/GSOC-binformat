@@ -35,6 +35,7 @@ function Generator:fromtype(parsetree)
 	--Fix typerefs	
 	local len = #self.typerefs
 	for node, ref in pairs(self.typerefs) do
+		print("Fixing type ref")
 		ref:setref(self.tempmappings[node.sindex])
 	end
 

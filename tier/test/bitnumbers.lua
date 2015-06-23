@@ -238,26 +238,26 @@ testsint(primitive.int53, 53)
 testsint(primitive.int64)
 testsint(primitive.varintzz)
 -- single precision floats
-runtest{ mapping = primitive.fpsingle,
+runtest{ mapping = primitive.float,
 	numbers(int, nil, 24),
 	numbers(float, nil, 32),
 }
-runtest{ mapping = primitive.fpsingle, rounderror = 0.00001,
+runtest{ mapping = primitive.float, rounderror = 0.00001,
 	numbers(int, 24),
 }
-runtest{ mapping = primitive.fpsingle, defaultexpected =    0, numbers(float.positive.tiny, 32) }
-runtest{ mapping = primitive.fpsingle, defaultexpected =  1/0, numbers(float.positive.huge, 32) }
-runtest{ mapping = primitive.fpsingle, defaultexpected =   -0, numbers(float.negative.tiny, 32) }
-runtest{ mapping = primitive.fpsingle, defaultexpected = -1/0, numbers(float.negative.huge, 32) }
-runtest{ mapping = primitive.fpsingle, encodeerror = "number expected",
+runtest{ mapping = primitive.float, defaultexpected =    0, numbers(float.positive.tiny, 32) }
+runtest{ mapping = primitive.float, defaultexpected =  1/0, numbers(float.positive.huge, 32) }
+runtest{ mapping = primitive.float, defaultexpected =   -0, numbers(float.negative.tiny, 32) }
+runtest{ mapping = primitive.float, defaultexpected = -1/0, numbers(float.negative.huge, 32) }
+runtest{ mapping = primitive.float, encodeerror = "number expected",
 	nonnumber,
 }
 -- double precision floats
-runtest{ mapping = primitive.fpdouble,
+runtest{ mapping = primitive.double,
 	numbers(int),
 	numbers(float),
 }
-runtest{ mapping = primitive.fpdouble, encodeerror = "number expected",
+runtest{ mapping = primitive.double, encodeerror = "number expected",
 	nonnumber,
 }
 

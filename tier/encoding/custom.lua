@@ -26,8 +26,6 @@ local function writemeta(encoder, mapping)
     end
 end
 
-
-
 local custom = { }
 
 local Int = { } 
@@ -95,7 +93,7 @@ function custom.array(handler, mapper, size)
     util.ismapping(mapper)
     
     assert(handler.getsize, "Array handler missing function getsize")
-    assert(handler.create, "Array handler missing function create")
+    assert(handler.create,  "Array handler missing function create")
     assert(handler.setitem, "Array handler missing function setitem")
     assert(handler.getitem, "Array handler missing function getitem")
 
@@ -545,16 +543,30 @@ end
 local Typeref = { }
 Typeref.__index = Typeref
 function Typeref:encode(encoder, value)
-    self.mapper:encode(encoder, value)
+    error("typeref not yet initialized")
 end
 
 function Typeref:decode(decoder)
-    return self.mapper:decode(decoder)
+    error("typeref not yet initialized")
 end
 
 function Typeref:setref(mapper)
     assert(self.mapper == nil, "canot reseed a typeref")
     self.mapper = mapper
+    
+    local mencode = mapper.encode
+    function encode(tr, encoder, value)
+        mencode(mapper, encoder, value)
+    end
+    
+    local mdecode = mapper.decode
+    function decode(tr, decoder)
+       return mdecode(mapper, decoder)
+    end
+    
+    self.encode = encode
+    self.decode = decode    
+    
 end
 
 function custom.typeref()
