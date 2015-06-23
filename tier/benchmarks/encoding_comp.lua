@@ -58,7 +58,7 @@ bench.benchmark("Writing 10 million varints to a file in Lua", 1, function()
 end);
 
 --Time: 
-bench.benchmark("Reading 10 million varints from a file in Lua", 5, function()
+bench.benchmark("Reading 10 million varints from a file in Lua", 1, function()
 	local file		= io.open("c_data.dat", "rb");
 	local reader 	= format.reader(file);
 	

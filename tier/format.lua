@@ -265,70 +265,71 @@ end
 --Reads a length prefixed stream of bytes from the input stream.
 function Reader:stream()
    local size = self:varint()
-   return self:raw(size); 
+   self.position = self.position + size
+   return self.inner:read(size)
 end
 
 --Reads a byte from the input stream.
 function Reader:uint8()
-   local rep = self:raw(1);
-   return sunpack("B", rep);	
+   self.position = self.position + 1
+   return sunpack("B", self.inner:read(1));	
 end
 
 --Reads a number between [0 .. 0xffff] from the input stream.
 function Reader:uint16()
-   local rep = self:raw(2)
-   return sunpack("I2", rep)
+   self.position = self.position + 2
+   return sunpack("I2", self.inner:read(2))
 end
 
 --Reads a number between [0 .. 0xffffffff] from the input stream.
 function Reader:uint32()
-   local rep = self:raw(4)
-   return sunpack("I4", rep)
+   self.position = self.position + 4
+   return sunpack("I4", self.inner:read(4))
 end
 
 --Reads a number between [0 .. 0xffffffffffff] from the input stream.
 function Reader:uint64()
-   local rep = self:raw(8);
-   return sunpack("I8", rep)
+   self.position = self.position + 8
+   return sunpack("I8", self.inner:read(8))
 end
 
 --Reads a signed byte from the input stream.
 function Reader:int8()
-   local rep = self:raw(1);
-   return sunpack("b", rep);	
+   self.position = self.position + 1
+   return sunpack("b", self.inner:read(1));	
 end
 
 
 --Reads a number between [-0x8000 .. 0x7fff] from the input stream.
 function Reader:int16()
-   local rep = self:raw(2)
-   return sunpack("i2", rep)
+   self.position = self.position + 2
+   return sunpack("i2", self.inner:read(2))
 end
 
 --Reads a number between [-0x80000000 .. 0x7fffffff] from the input stream.
 function Reader:int32()
-   local rep = self:raw(4)
-   return sunpack("i4", rep)
+   self.position = self.position + 4
+   return sunpack("i4", self.inner:read(4))
 end
 
 --Reads a number between [-0x8000000000000000 .. 0x7fffffffffffffff]  from the input stream.
 function Reader:int64()
-   local rep = self:raw(8);
-   return sunpack("i8", rep)
+   self.position = self.position + 8
+   return sunpack("i8", self.inner:read(8))
 end
 
 --Reads a floting point number of precision 32-bit in 
 --IEEE 754 single precision format.
 function Reader:float()
-   local rep = self:raw(4)
-   return sunpack("f", rep)
+   self.position = self.position + 4
+   return sunpack("f", self.inner:read(4))
 end
 
 --Reads a floting point number of precision 64-bit in 
 --IEEE 754 double precision format.
 function Reader:double()
-   local rep = self:raw(8)
-   return sunpack("d", rep)
+   self.position = self.position + 8
+   return sunpack("d", self.inner:read(8))
 end
 
 --Reads a boolean value
