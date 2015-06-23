@@ -597,23 +597,25 @@ local typeWithSizeLookup =
     [tags.ALIGN8] = true,
     [tags.OBJECT] = true,
     [tags.EMBEDDED] = true,
-    [tags.SEMANTIC] = true
-}
+    [tags.SEMANTIC] = true,
+    [tags.UINT]     = true,
+    [tags.SINT]      = true
+ }
  
  
 function Type:decode(decoder)
     local tag     = decoder.reader:varint()
     local id      
-    if typeWithSizeLookup[tag] then
-        local size = decoder.reader:varint()
-        id = pack(tag) .. decoder.reader:raw(size)                                   
-     elseif tag == tags.UINT or tag == tags.SINT then
+    if not typeWithSizeLookup[tag] then
+        id = pack(tag)
+    elseif tag == tags.UINT or tag == tags.SINT then
         local size = decoder.reader:varint()
         id = pack(tag) .. pack(size)  
-     else
-        id = pack(tag)
-     end
-     
+    else
+        local size = decoder.reader:varint()
+        id = pack(tag) .. decoder.reader:raw(size)     
+    end
+    
     local mapping = self.handler:getmapping(id)
     return mapping     
 end

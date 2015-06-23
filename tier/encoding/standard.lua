@@ -374,49 +374,28 @@ do --Generator scoping block
     	return ref
     end
     
-    local standardTags  = 
+    local generators  = 
     {
-        tags.TUPLE,
-        tags.UNION,
-        tags.LIST,
-        tags.SET,
-        tags.MAP,
-        tags.ARRAY,
-        tags.OBJECT,
-        tags.SEMANTIC,
-        tags.EMBEDDED,
-        tags.TYPEREF,
+        [tags.TUPLE]    = gentuple,
+        [tags.UNION]    = genunion,
+        [tags.LIST]     = genlist,
+        [tags.SET]      = genset,
+        [tags.MAP]      = genmap,
+        [tags.ARRAY]    = genarray,
+        [tags.OBJECT]   = genobject,
+        [tags.SEMANTIC] = gensemantic,
+        [tags.EMBEDDED] = genembedded,
+        [tags.TYPEREF]  = gentyperef,
         
-        tags.ALIGN,
-        tags.ALIGN1,
-        tags.ALIGN2,
-        tags.ALIGN4,
-        tags.ALIGN8
+        [tags.ALIGN]  = genaligned,
+        [tags.ALIGN1] = genaligned,
+        [tags.ALIGN2] = genaligned,
+        [tags.ALIGN4] = genaligned,
+        [tags.ALIGN8] = genaligned
     }
     
-    local standardGenerators = 
-    {
-        gentuple,
-        genunion,
-        genlist,
-        genset,
-        genmap,
-        genarray,
-        genobject,
-        gensemantic,
-        genembedded,
-        gentyperef,
-        genaligned,
-        genaligned,
-        genaligned,
-        genaligned,
-        genaligned
-    }
-    
-    local format     = require"format"   
     local generating = require"encoding.generating"
-    
-    standard.generator = generating.generator(standardTags, standardGenerators, primitive)
+    standard.generator = generating.generator(generators, primitive)
     TypeRepoHandler.generator = standard.generator
     standard.generator.mappings[format.packvarint(tags.TYPE)]    = standard.type
     standard.generator.mappings[format.packvarint(tags.DYNAMIC)] = standard.dynamic

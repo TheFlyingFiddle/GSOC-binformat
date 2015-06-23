@@ -34,19 +34,6 @@ luaref:setref(lua_value_mapping)
 local cformat   = require"c.format"
 local luaformat = require"format"
 
-bench.mapping(cformat, "C UNION", 1, array, lua_value_mapping)
-
-bench.mapping(luaformat, "LUA UNION", 1, array, lua_value_mapping)
-
---Encoding: min 2722ms max 2900ms average 2775.8ms
---Decoding: min 5673ms max 6288ms average 5954ms
---Stream length: 18000010.0 bytes
-bench.mapping(cformat, "C DYNAMIC", 5, array, standard.dynamic)
-
---Encoding: min 9467ms max 10262ms average 9919ms
---Decoding: min 14655ms max 15060ms average 14794ms
-bench.mapping(luaformat, "LUA DYNAMIC", 1, array, standard.dynamic)
-
 
 --Encoding: min 2240ms max 2326ms average 2276ms 
 --Decoding: min 2112ms max 2324ms average 2218ms
@@ -88,3 +75,16 @@ bench.mapping(cformat, "C UINT20", 5, array, bit_mapping)
 --Decoding: min 559ms max 610ms average 581ms
 --Stream length: 2983493 bytes
 bench.mapping(cformat, "C VARINT", 5, array, varint_mapping)
+
+bench.mapping(cformat, "C UNION", 1, array, lua_value_mapping)
+
+bench.mapping(luaformat, "LUA UNION", 1, array, lua_value_mapping)
+
+--Encoding: min 2722ms max 2900ms average 2775.8ms
+--Decoding: min 5673ms max 6288ms average 5954ms
+--Stream length: 18000010.0 bytes
+bench.mapping(cformat, "C DYNAMIC", 5, array, standard.dynamic)
+
+--Encoding: min 9467ms max 10262ms average 9919ms
+--Decoding: min 14655ms max 15060ms average 14794ms
+bench.mapping(luaformat, "LUA DYNAMIC", 1, array, standard.dynamic)

@@ -35,7 +35,6 @@ function Generator:fromtype(parsetree)
 	--Fix typerefs	
 	local len = #self.typerefs
 	for node, ref in pairs(self.typerefs) do
-		print("Fixing type ref")
 		ref:setref(self.tempmappings[node.sindex])
 	end
 
@@ -61,19 +60,16 @@ function Generator:fromstring(str)
 	return self:fromtype(parsetree)
 end
 
-function generating.generator(tags, generators, mappings)
+function generating.generator(generators, mappings)
 	local gen = { }
 	setmetatable(gen, Generator)
-	gen.generators = { }
+	gen.generators = generators
 	gen.mappings   = { }
 	
-	for _, v in pairs(mappings) do
+	for _, v in pairs(mappings)  do
 		gen.mappings[v.id] = v
 	end
 	
-	for i=1, #tags do
-		gen.generators[tags[i]] = generators[i]
-	end
 	return gen
 end
 
