@@ -157,7 +157,7 @@ local function rundynamictest(test)
 				local encoder = encoding.encoder(encoding.writer(output), true)
 				encoder:encode(mapping, case.actual)
 				encoder:close()
-				hexastream(io.stdout, output:getdata())
+				--hexastream(io.stdout, output:getdata())
 			end
 			
 			do 

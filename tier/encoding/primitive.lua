@@ -23,21 +23,29 @@ local function createMapper(typeTag, func)
     return primitive
 end
 
---Need to enforce alignment restrictions here
-primitive.byte     = createMapper(tags.BYTE,      "uint8")
-primitive.varint   = createMapper(tags.VARINT,    "varint")
-primitive.varintzz = createMapper(tags.VARINTZZ,  "varintzz")
-primitive.uint16   = createMapper(tags.UINT16,    "uint16")
-primitive.uint32   = createMapper(tags.UINT32,    "uint32")
-primitive.uint64   = createMapper(tags.UINT64,    "uint64")
-primitive.int16    = createMapper(tags.SINT16,    "int16")
-primitive.int32    = createMapper(tags.SINT32,    "int32")
-primitive.int64    = createMapper(tags.SINT64,    "int64")
-primitive.float    = createMapper(tags.FLOAT,    "float")
-primitive.double   = createMapper(tags.DOUBLE,    "double")
-
---Not yet implemented primitive.fpquad = createMapper(QUAD, "writequad", "readquad");
-primitive.stream   = createMapper(tags.STREAM, "stream")
+--This function creates mappings for the INT bitsize and 
+--UINT bitsize tags. 
+local function createBitInts(tag, name, count)
+    for i=1, count do
+        if not primitive[name .. i] then
+            local mapping = {  }
+            mapping.tag = tag 
+            mapping.bitsize = i
+            mapping.id  = pack(tag) .. pack(i)
+            function mapping:encode(encoder, value)
+                local writer = encoder.writer;
+                writer[name](writer, i, value)
+            end
+            
+            function mapping:decode(decoder)
+                local reader = decoder.reader
+                return reader[name](reader, i)            
+            end
+            
+            primitive[name .. i] = mapping
+        end
+    end
+end
 
 --Void should be interpreted as NO VALUE
 local Void = { tag = tags.VOID, id = pack(tags.VOID) }
@@ -144,6 +152,29 @@ function Sign:decode(decoder)
     return decoder.reader:uint(1) ~= 0 and -1 or 1
 end
 
+
+--Need to enforce alignment restrictions here
+--Should probably remove this.
+primitive.byte     = createMapper(tags.UINT8,   "uint8") 
+
+primitive.varint   = createMapper(tags.VARINT,   "varint")
+primitive.varintzz = createMapper(tags.VARINTZZ, "varintzz")
+primitive.uint8    = createMapper(tags.UINT8,    "uint8")
+primitive.uint16   = createMapper(tags.UINT16,   "uint16")
+primitive.uint32   = createMapper(tags.UINT32,   "uint32")
+primitive.uint64   = createMapper(tags.UINT64,   "uint64")
+primitive.int8     = createMapper(tags.SINT8,    "int8")
+primitive.int16    = createMapper(tags.SINT16,   "int16")
+primitive.int32    = createMapper(tags.SINT32,   "int32")
+primitive.int64    = createMapper(tags.SINT64,   "int64")
+primitive.float    = createMapper(tags.FLOAT,    "float")
+primitive.double   = createMapper(tags.DOUBLE,   "double")
+
+--Not yet implemented primitive.half = createMapper(tags.HALF, "half")
+--Not yet implemented primitive.quad = createMapper(tags.QUAD, "quad");
+
+primitive.stream   = createMapper(tags.STREAM, "stream")
+
 primitive.void 		= Void
 primitive.null 		= Null
 primitive.boolean   = Bool
@@ -153,28 +184,6 @@ primitive.string 	= String
 primitive.wstring	= WString
 primitive.flag		= Flag
 primitive.sign		= Sign
-
-local function createBitInts(tag, name, count)
-    for i=1, count do
-        if not primitive[name .. i] then
-            local mapping = {  }
-            mapping.tag = tag 
-            mapping.bitsize = i
-            mapping.id  = pack(tag) .. pack(i)
-            function mapping:encode(encoder, value)
-                local writer = encoder.writer;
-                writer[name](writer, i, value)
-            end
-            
-            function mapping:decode(decoder)
-                local reader = decoder.reader
-                return reader[name](reader, i)            
-            end
-            
-            primitive[name .. i] = mapping
-        end
-    end
-end
 
 createBitInts(tags.UINT, "uint", 64)
 createBitInts(tags.SINT, "int",  64)

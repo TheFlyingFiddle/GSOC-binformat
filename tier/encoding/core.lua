@@ -1,4 +1,5 @@
 local format	= require"format"
+local tags      = require"encoding.tags"
 
 local core = { }
 function core.getid(mapping)
@@ -14,6 +15,27 @@ function core.getid(mapping)
         id = format.packvarint(mapping.tag) .. format.packvarint(#body) .. body
     end
     return id
+end
+
+function core.writemeta(encoder, mapping) 
+    local writer = encoder.writer
+    if mapping.tag == tags.TYPEREF then    --Typerefs are special 
+        assert(mapping.mapper ~= nil, "incomplete typeref")
+        core.writemeta(encoder, mapping.mapper)
+    elseif mapping.encodemeta == nil then  --Simple single or predefined byte mapping.
+        assert(mapping.id ~= nil, "invalid mapping")
+        writer:raw(mapping.id)
+    else
+        local index = encoder.types[mapping]
+        if index == nil then -- Type is described for the first time
+            writer:varint(mapping.tag)
+            encoder.types[mapping]  = writer:getposition()
+            mapping:encodemeta(encoder)
+        else
+            writer:varint(tags.TYPEREF)
+            writer:varint(writer:getposition() - index)
+        end
+    end
 end
 
 local Encoder = { }

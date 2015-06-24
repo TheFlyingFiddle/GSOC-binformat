@@ -34,7 +34,7 @@ local function parsenode(metastring, index)
 	   tag == SET  	   or tag == OBJECT   or
 	   tag == EMBEDDED or tag == SEMANTIC or 
 	   tag == ALIGN	   or tag == ALIGN1   or
-	   tag == ALIGN2  or tag == ALIGN4  or
+	   tag == ALIGN2   or tag == ALIGN4  or
 	   tag == ALIGN8 then
 	   children = 1
 	elseif tag == MAP then
@@ -83,7 +83,7 @@ local function parsenode(metastring, index)
 	end	
 	
 	node.eindex = index - 1;
-	return node --It's possible that the metastring contains concatenated values.
+	return node 
 end
 
 function parser.parsemetatype(metatype)

@@ -3,28 +3,8 @@ local core   = require"encoding.core"
 local tags   = require"encoding.tags"
 local util   = require"encoding.util"
 
-local pack = format.packvarint
-
-local function writemeta(encoder, mapping) 
-    local writer = encoder.writer
-    if mapping.tag == tags.TYPEREF then    --Typerefs are special 
-        assert(mapping.mapper ~= nil, "incomplete typeref")
-        writemeta(encoder, mapping.mapper)
-    elseif mapping.encodemeta == nil then  --Simple single or predefined byte mapping.
-        assert(mapping.id ~= nil, "invalid mapping")
-        writer:raw(mapping.id)
-    else
-        local index = encoder.types[mapping]
-        if index == nil then -- Type is described for the first time
-            writer:varint(mapping.tag)
-            encoder.types[mapping]  = writer:getposition()
-            mapping:encodemeta(encoder)
-        else
-            writer:varint(tags.TYPEREF)
-            writer:varint(writer:getposition() - index)
-        end
-    end
-end
+local pack      = format.packvarint
+local writemeta = core.writemeta
 
 local custom = { }
 
@@ -99,7 +79,7 @@ function custom.array(handler, mapper, size)
 
     local array = { }
     setmetatable(array, Array)
-    array.tag     = tags.ARRAY 
+    array.tag     = tags.ARRAY --pri
     array.size    = size
     array.handler = handler
     array.mapper  = mapper
@@ -657,5 +637,38 @@ function custom.dynamic(handler, type_mapping)
     dynamic.id          = pack(tags.DYNAMIC)
     return dynamic
 end
+
+--Should this be here?
+local Transform = { }
+Transform.__index = Transform
+function Transform:encode(encoder, value)
+    local val = self.handler:to(value)
+    self.mapping:encode(encoder, val)
+end
+
+function Transform:decode(decoder)
+    local val = self.mapping:decode(decoder)
+    return self.handler:from(val)
+end
+
+function Transform:encodemeta(encoder)
+    writemeta(encoder, self.mapping)
+end
+
+function custom.transform(handler, mapping)
+    assert(handler, "expected transform handler")
+    util.ismapping(mapping)
+    
+    assert(handler.to, "Transform handler missing function to")
+    assert(handler.from, "Transform handler missing function from")
+    
+    local transform = { }
+    setmetatable(transform, Transform)
+    transform.handler = handler
+    transform.mapping = mapping
+    transform.tag     = mapping.tag
+    return transform
+end
+
 
 return custom

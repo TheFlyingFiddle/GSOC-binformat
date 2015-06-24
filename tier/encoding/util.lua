@@ -27,7 +27,7 @@ end
 function util.ismapping(mapping)
 	local typ = type(mapping)
 	assert(typ == "table" or typ == "userdata", "mapping expected")
-	assert(mapping.tag, "mapping missing field tag")
+	assert(mapping.tag ~= nil, "mapping missing field tag")
 	assert(type(mapping.tag) == "number", "mapping.tag must be a number")
 	checkcallable(mapping.encode, "mapping", "encode")
 	checkcallable(mapping.decode, "mapping", "decode")

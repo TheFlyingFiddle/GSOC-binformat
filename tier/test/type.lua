@@ -75,10 +75,10 @@ local treemapping = standard.tuple(
 
 local TyperefCases = 
 {
-	{ actual = linkedlist, id = "linked lists" },
-	{ actual = luaunion, id = "luaunion" },
-	{ actual = node , id = "treenode"},
-	{ actual = treemapping , id = "tree"}	
+	{ actual = linkedlist, 	 id = "linked lists" },
+	{ actual = node , 		 id = "treenode"},
+	{ actual = treemapping , id = "tree"},
+	{ actual = luaunion, 	 id = "luaunion" },
 }
 
 local function idmatcher(actual, expected)
@@ -89,9 +89,12 @@ local function idmatcher(actual, expected)
 	return false, "metadata mismatch"		
 end
 
+runtest { mapping = standard.type, matcher = idmatcher, SemanticCases }
 runtest { mapping = standard.type, noregression = true, PrimitiveCases }
 runtest { mapping = standard.type, matcher = idmatcher, SimpleComposedCases }
 runtest { mapping = standard.type, matcher = idmatcher, AlignCases }
 runtest { mapping = standard.type, matcher = idmatcher, ObjectCases }
-runtest { mapping = standard.type, matcher = idmatcher, SemanticCases }
+
+
+
 runtest { mapping = standard.type, matcher = idmatcher, TyperefCases }

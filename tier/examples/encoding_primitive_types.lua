@@ -35,12 +35,12 @@ encoding:encode(file, primitive.null, nil)
 encoding:encode(file, primitive.void) 
 file:close()
 
-local file = io.open("Numbers.dat")
+local file = io.open("Booleans.dat")
 encoding:encode(file, primitive.boolean, true)
 file:close()
 
 
-local file = io.open("Numbers.dat")
+local file = io.open("Bits.dat")
 encoding:encode(file, primitive.flag, true)
 encoding:encode(file, primitive.sign, 1)
 

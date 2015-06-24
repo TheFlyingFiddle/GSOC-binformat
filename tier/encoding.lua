@@ -1,5 +1,6 @@
 local format    = require"format"
 local encoding  = require"encoding.core"
+local util      = require"encoding.util"
 
 encoding.primitive = require"encoding.primitive"
 encoding.standard  = require"encoding.standard"
@@ -10,6 +11,8 @@ encoding.writer = format.writer
 function encoding.encode(stream, value, mapping, usemetadata)
    if mapping == nil then
       mapping = encoding.standard.dynamic
+   else
+      util.ismapping(mapping)
    end
    
    if usemetadata == nil then
@@ -32,6 +35,8 @@ function encoding.decode(stream, mapping, usemetadata)
          usemetadata = false
        end
    else 
+      util.ismapping(mapping)
+       
       if usemetadata == nil then
          usemetadata = true
       end

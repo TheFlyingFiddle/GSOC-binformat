@@ -222,10 +222,10 @@ local alignbytes =
 --Alignes the output to the specified number of bytes.
 function Writer:align(to)
    local pos     = self.position
-   local aligned = pos + (to - 1) & ~(to - 1)
-   if aligned > 0 then
+   local to_align = ((pos + (to - 1)) & ~(to - 1)) - pos
+   if to_align > 0 then
       self:flushbits()
-      self:raw(alignbytes[aligned - pos])   
+      self:raw(alignbytes[to_align])   
    end
 end
 

@@ -60,6 +60,13 @@ local luaunion = standard.union
 }
 luaref:setref(luaunion)
 
+standard.union
+{
+	{ type = "number", mapping = primitive.double },
+	{ type = "number", mapping = primitive.varint }
+}
+
+
 
 runtest { mapping = intornil, IntOrNilCases }
 runtest { mapping = standard.nullable(primitive.varint), IntOrNilCases}

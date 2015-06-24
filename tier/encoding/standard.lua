@@ -199,6 +199,7 @@ function standard.union(kinds, bitsize)
     local handler = { }
     setmetatable(handler, TypeUnion)
     handler.kinds = kinds;
+                       
                         
     local mappers = { }
     for i, v in ipairs(kinds) do
