@@ -19,6 +19,8 @@ function encoding.encode(stream, value, mapping, usemetadata)
       usemetadata = true
    end
       
+   util.isinputstream(stream)
+      
    local writer  = format.writer(stream)      
    local encoder = encoding.encoder(writer, usemetadata)
    encoder:encode(mapping, value)
