@@ -17,7 +17,7 @@ local listref 	  = newtyperef()
 local listmapping = standard.tuple(
 {
 	{ mapping = primitive.varint },
-	{ mapping = standard.nullable(listref) } 
+	{ mapping = standard.optional(listref) } 
 })
 listref:setref(listmapping)
 
@@ -31,7 +31,7 @@ runtest { mapping = listmapping, LinkedListCases }
 
 
 local listref 	  = newtyperef()
-local listmapping = standard.nullable(standard.tuple(
+local listmapping = standard.optional(standard.tuple(
 {
 	{ mapping = primitive.varint },
 	{ mapping = listref } 
@@ -64,7 +64,7 @@ runtest { mapping = listmapping, LinkedListCases }
 --			TYPEREF 06
 --			TYPEREF 08
 local noderef = newtyperef()
-local node = standard.nullable(standard.tuple(
+local node = standard.optional(standard.tuple(
 {
 	{ key = "payload", mapping = primitive.varint },
 	{ key = "left",    mapping = noderef },
@@ -152,7 +152,7 @@ local listref 	  = newtyperef()
 local listmapping = standard.object(standard.tuple(
 {
 	{ key = "payload", mapping = primitive.varint },
-	{ key = "next",    mapping = standard.nullable(listref) } 
+	{ key = "next",    mapping = standard.optional(listref) } 
 }))
 listref:setref(listmapping)
 

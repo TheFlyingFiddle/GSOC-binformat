@@ -25,7 +25,7 @@ runtest{ mapping = primitive.null, encodeerror = "nil expected",
 	NonNilCases,
 }
 
-local mapping = standard.nullable(primitive.void)
+local mapping = standard.optional(primitive.void)
 runtest{ mapping = mapping, NilCases, }
 
 --I am unsure about this. How do I do this correctly?

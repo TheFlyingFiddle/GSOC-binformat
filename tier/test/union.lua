@@ -69,7 +69,7 @@ standard.union
 
 
 runtest { mapping = intornil, IntOrNilCases }
-runtest { mapping = standard.nullable(primitive.varint), IntOrNilCases}
+runtest { mapping = standard.optional(primitive.varint), IntOrNilCases}
 runtest { mapping = intornil, encodeerror = "any", NoNumberOrNilCases }
 runtest { mapping = numberorlist, NumberOrList }
 runtest { mapping = luaunion, LuaValueCases}

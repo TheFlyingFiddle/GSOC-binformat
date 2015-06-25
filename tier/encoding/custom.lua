@@ -582,7 +582,6 @@ local typeWithSizeLookup =
     [tags.SINT]      = true
  }
  
- 
 function Type:decode(decoder)
     local tag     = decoder.reader:varint()
     local id      

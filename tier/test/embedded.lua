@@ -6,7 +6,7 @@ local IntCases =
 }
 
 local listref 	  = custom.typeref()
-local listmapping = standard.nullable(standard.tuple(
+local listmapping = standard.optional(standard.tuple(
 {
 	{ mapping = primitive.varint },
 	{ mapping = listref } 

@@ -153,7 +153,6 @@ function Sign:decode(decoder)
 end
 
 
---Need to enforce alignment restrictions here
 --Should probably remove this.
 primitive.byte     = createMapper(tags.UINT8,   "uint8") 
 

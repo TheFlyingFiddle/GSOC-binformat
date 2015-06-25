@@ -2,6 +2,7 @@ local format    = require"format"
 local tags      = require"encoding.tags"
 local custom	= require"encoding.custom"
 local primitive = require"encoding.primitive"
+local util      = require"encoding.util"
 
 local standard = { }
 
@@ -115,8 +116,8 @@ function TypeUnion:create(kind, value)
 end
 
 --Spacial case union nullable
-local Nullable = { }
-function Nullable:select(value)
+local Optional = { }
+function Optional:select(value)
    if value == nil then
       return 1, nil 
    else
@@ -124,7 +125,7 @@ function Nullable:select(value)
    end
 end
 
-function Nullable:create(kind, ...)
+function Optional:create(kind, ...)
    return ...
 end
 
@@ -175,8 +176,8 @@ function standard.tuple(members)
 
     for i=1, #members, 1 do
         local member = members[i];
-        assert(member.mapping);
-            
+        util.ismapping(member.mapping)
+        
         mappers[i] = member.mapping;
         if member.key then
             keys[i] = member.key
@@ -203,19 +204,25 @@ function standard.union(kinds, bitsize)
                         
     local mappers = { }
     for i, v in ipairs(kinds) do
+        util.ismapping(v.mapping)
         table.insert(mappers, v.mapping)
     end
     
     return newunion(handler, mappers, bitsize) 
 end
 
-function standard.nullable(mapper)
-   return newunion(Nullable, { primitive.null, mapper }, 0)   
+function standard.optional(mapper)
+   return newunion(Optional, { primitive.null, mapper }, 0)   
 end
 
 local newobject = custom.object
 function standard.object(mapper)
     return newobject(LuaValueAsObject, mapper)
+end
+
+local newsemantic = custom.semantic
+function standard.semantic(id, mapper)
+   return newsemantic(id, mapper)
 end
 
 local newembedded = custom.embedded

@@ -11,7 +11,7 @@ local SimpleComposedCases =
 	{ actual = standard.list(primitive.varint),      id = "standerd_list" },  
 	{ actual = standard.set(primitive.varint) },
 	{ actual = standard.map(primitive.varint, primitive.varint) },
-	{ actual = standard.nullable(primitive.varint) },
+	{ actual = standard.optional(primitive.varint) },
 	{ actual = standard.tuple(primitive.varint, primitive.stream, primitive.boolean) },
 }
 
@@ -41,7 +41,7 @@ local listref = newtyperef()
 local linkedlist = standard.tuple
 {
 	{ mapping = primitive.varint },
-	{ mapping = standard.nullable(listref) }
+	{ mapping = standard.optional(listref) }
 }
 listref:setref(linkedlist)
 
@@ -58,7 +58,7 @@ luaref:setref(luaunion)
 
 
 local noderef = newtyperef()
-local node = standard.nullable(standard.tuple(
+local node = standard.optional(standard.tuple(
 {
 	{ mapping = primitive.varint },
 	{ mapping = noderef },
