@@ -230,6 +230,16 @@ function standard.embedded(mapper)
     return newembedded(EmbeddedHandler, mapper)
 end
 
+local newtyperef = custom.typeref
+standard.typeref = newtyperef;
+function standard.selfref(func)
+   local ref     = newtyperef()
+   local mapping = func(ref)
+   ref:setref(mapping)
+   return mapping
+end
+
+
 
 --Generators-types and dynamics
 
