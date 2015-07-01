@@ -11,15 +11,14 @@ encoding.writer = format.writer
 function encoding.encode(stream, value, mapping, usemetadata)
    if mapping == nil then
       mapping = encoding.standard.dynamic
-   else
-      util.ismapping(mapping)
    end
    
    if usemetadata == nil then
       usemetadata = true
    end
       
-   util.isinputstream(stream)
+   assert(util.ismapping(mapping))
+   assert(util.isoutputstream(stream))
       
    local writer  = format.writer(stream)      
    local encoder = encoding.encoder(writer, usemetadata)
@@ -33,16 +32,15 @@ encoding.reader = format.reader
 function encoding.decode(stream, mapping, usemetadata)
    if mapping == nil then
        mapping = encoding.standard.dynamic
-       if usemetadata == nil then
-         usemetadata = false
-       end
-   else 
-      util.ismapping(mapping)
-       
-      if usemetadata == nil then
-         usemetadata = true
-      end
    end
+   
+   if usemetadata == nil then
+      usemetadata = true
+   end
+
+  
+   assert(util.isinputstream(stream))
+   assert(util.ismapping(mapping))
       
    local reader  = format.reader(stream)   
    local decoder = encoding.decoder(reader, usemetadata)

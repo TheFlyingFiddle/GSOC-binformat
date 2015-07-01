@@ -70,8 +70,7 @@ function Array:encodemeta(encoder)
 end
 
 function custom.array(handler, mapper, size)
-    util.ismapping(mapper)
-    
+    assert(util.ismapping(mapper))
     assert(handler.getsize, "Array handler missing function getsize")
     assert(handler.create,  "Array handler missing function create")
     assert(handler.setitem, "Array handler missing function setitem")
@@ -131,8 +130,7 @@ function List:encodemeta(encoder)
 end
 
 function custom.list(handler, mapper, sizebits)
-    util.ismapping(mapper)
-    
+    assert(util.ismapping(mapper))
     assert(handler.getsize, "List handler missing function getsize")
     assert(handler.create,  "List handler missing function create")
     assert(handler.setitem, "List handler missing function setitem")
@@ -177,8 +175,7 @@ function Set:encodemeta(encoder)
 end
 
 function custom.set(handler, mapper, sizebits)
-    util.ismapping(mapper)
-    
+    assert(util.ismapping(mapper))
     assert(handler.getsize, "Set handler missing function getsize")
     assert(handler.create,  "Set handler missing function create")
     assert(handler.putitem, "Set handler missing function setitem")
@@ -228,8 +225,8 @@ function Map:decode(decoder)
 end
 
 function custom.map(handler, keymapper, itemmapper, sizebits)
-    util.ismapping(keymapper)
-    util.ismapping(itemmapper)
+    assert(util.ismapping(keymapper))
+    assert(util.ismapping(itemmapper))
     
     assert(handler.getsize,  "Map handler missing function getsize")
     assert(handler.create,   "Map handler missing function create")
@@ -279,7 +276,7 @@ end
 
 function custom.tuple(handler, mappers)
     for i=1, #mappers do
-        util.ismapping(mappers[i])
+        assert(util.ismapping(mappers[i]))
     end
     
     assert(handler.create,  "Tuple handler missing function create")
@@ -325,7 +322,7 @@ function custom.union(handler, mappers, sizebits)
     if sizebits == nil then sizebits = 0 end
     
     for i=1, #mappers do
-        util.ismapping(mappers[i])
+        assert(util.ismapping(mappers[i]))
     end
 
     assert(handler.create,  "Union handler missing function create")
@@ -358,7 +355,7 @@ function Semantic:encodemeta(encoder)
 end
 
 function custom.semantic(id, mapper)
-    util.ismapping(mapper)
+    assert(util.ismapping(mapper))
 
     local semantic = { }
     setmetatable(semantic, Semantic)
@@ -427,7 +424,7 @@ function Object:encodemeta(encoder)
 end
 
 function custom.object(handler, mapper)
-    util.ismapping(mapper)
+    assert(util.ismapping(mapper))
     
     local object = { }
     setmetatable(object, Object)
@@ -510,7 +507,7 @@ function Embedded:encodemeta(encoder)
 end 
 
 function custom.embedded(handler, mapper, dontgenerateid) 
-    util.ismapping(mapper)
+    assert(util.ismapping(mapper))
     
     local embedded = setmetatable({}, Embedded)
     embedded.handler    = handler
@@ -656,7 +653,7 @@ end
 
 function custom.transform(handler, mapping)
     assert(handler, "expected transform handler")
-    util.ismapping(mapping)
+    assert(util.ismapping(mapping))
     
     assert(handler.to, "Transform handler missing function to")
     assert(handler.from, "Transform handler missing function from")

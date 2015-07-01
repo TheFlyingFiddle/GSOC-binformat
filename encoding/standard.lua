@@ -176,7 +176,7 @@ function standard.tuple(members)
 
     for i=1, #members, 1 do
         local member = members[i];
-        util.ismapping(member.mapping)
+        assert(util.ismapping(member.mapping))
         
         mappers[i] = member.mapping;
         if member.key then
@@ -204,7 +204,7 @@ function standard.union(kinds, bitsize)
                         
     local mappers = { }
     for i, v in ipairs(kinds) do
-        util.ismapping(v.mapping)
+        assert(util.ismapping(v.mapping))
         table.insert(mappers, v.mapping)
     end
     
