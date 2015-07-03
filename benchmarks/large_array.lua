@@ -5,6 +5,9 @@ local custom	= require"encoding.custom"
 local standard  = encoding.standard
 local primitive = encoding.primitive
 
+local experimental = require"experiments.standard"
+local expmappings  = require"experiments.optimal"
+
 
 local SIZE = 1000000
 
@@ -33,7 +36,34 @@ luaref:setref(lua_value_mapping)
 
 local cformat   = require"c.format"
 local luaformat = require"format"
+local expformat = require"experiments.format"
 
+--Encoding: min 5343ms max 5773ms average 5552ms
+--Decoding: min 4048ms max 4244ms average 4126ms
+--Stream length: 2500003 bytes
+bench.mapping(luaformat, "LUA UINT20", 5, array, bit_mapping)
+
+
+bench.mapping(luaformat, "FAST LUA FLOAT LIST 2",10, array,expmappings.number_list("f", 2))
+bench.mapping(cformat  , "FAST C FLOAT LIST 2",10, array,expmappings.number_list("f", 2))
+
+bench.mapping(luaformat, "FAST LUA FLOAT LIST 5",10, array,expmappings.number_list("f", 5))
+bench.mapping(cformat  , "FAST C FLOAT LIST 5",10, array,expmappings.number_list("f", 5))
+
+bench.mapping(luaformat, "FAST LUA FLOAT LIST 10",10, array,expmappings.number_list("f", 10))
+bench.mapping(cformat  , "FAST C FLOAT LIST 10",10, array,expmappings.number_list("f", 10))
+
+bench.mapping(luaformat, "FAST LUA FLOAT LIST 20",10, array,expmappings.number_list("f", 20))
+bench.mapping(cformat  , "FAST C FLOAT LIST 20",10, array,expmappings.number_list("f", 20))
+
+bench.mapping(luaformat, "FAST LUA FLOAT LIST 50",10, array,expmappings.number_list("f", 50))
+bench.mapping(cformat  , "FAST C FLOAT LIST 50",10, array,expmappings.number_list("f", 50))
+
+bench.mapping(luaformat, "FAST LUA FLOAT LIST 100",10, array,expmappings.number_list("f", 100))
+bench.mapping(cformat  , "FAST C FLOAT LIST 100",10, array,expmappings.number_list("f", 100))
+
+bench.mapping(cformat, "C DYNAMIC", 5, array, experimental.dynamic)
+bench.mapping(luaformat, "LUA DYNAMIC", 5, array, experimental.dynamic)
 
 --Encoding: min 2240ms max 2326ms average 2276ms 
 --Decoding: min 2112ms max 2324ms average 2218ms
@@ -45,15 +75,15 @@ bench.mapping(luaformat, "LUA FLOAT", 5, array, float_mapping)
 --Stream length: 400003 bytes
 bench.mapping(luaformat, "LUA UINT32", 5, array, uint_mapping)
 
---Encoding: min 5343ms max 5773ms average 5552ms
---Decoding: min 4048ms max 4244ms average 4126ms
---Stream length: 2500003 bytes
-bench.mapping(luaformat, "LUA UINT20", 5, array, bit_mapping)
-
 --Encoding: min 4345ms max 5034ms average 4753ms
 --Decoding: min 4053ms max 4265ms average 4136ms
 --Stream length: 2983493 bytes
 bench.mapping(luaformat, "LUA VARINT", 5, array, varint_mapping)
+
+
+--Encoding: min 9467ms max 10262ms average 9919ms
+--Decoding: min 14655ms max 15060ms average 14794ms
+bench.mapping(luaformat, "LUA DYNAMIC", 1, array, standard.dynamic)
 
 
 --Encoding: min 359ms max 386ms average 366.8ms 
@@ -84,7 +114,3 @@ bench.mapping(luaformat, "LUA UNION", 1, array, lua_value_mapping)
 --Decoding: min 5673ms max 6288ms average 5954ms
 --Stream length: 18000010.0 bytes
 bench.mapping(cformat, "C DYNAMIC", 5, array, standard.dynamic)
-
---Encoding: min 9467ms max 10262ms average 9919ms
---Decoding: min 14655ms max 15060ms average 14794ms
-bench.mapping(luaformat, "LUA DYNAMIC", 1, array, standard.dynamic)

@@ -16,6 +16,14 @@ local function createMapper(typeTag, func)
         writer[func](writer, value)
     end
     
+    function primitive.fastencode(encoder)
+        local writer = encoder.writer
+        local fun    = writer[func]
+        return function(value)
+            fun(writer, value)
+        end
+    end
+    
     function primitive:decode(decoder)
         local reader = decoder.reader
         return reader[func](reader)

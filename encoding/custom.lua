@@ -42,24 +42,34 @@ function custom.uint(numbits)
     return uint
 end
 
-
 --Mapper for the ARRAY <T> tag.
 local Array = { }
 Array.__index = Array
 function Array:encode(encoder, value)
     local size = self.size
     assert(self.handler:getsize(value) >= size, "array to small")
+    
+    local mapping = self.mapper
+    local encode  = mapping.encode
+    local handler = self.handler
+    local getitem = handler.getitem
+        
     for i=1, size do
-        self.mapper:encode(encoder, self.handler:getitem(value, i))
+        encode(mapping, encoder, getitem(handler, value, i))
     end
 end
 
 function Array:decode(decoder)
-    local size = self.size;
-    local value = self.handler:create();
+    local size = self.size
+    local value = self.handler:create()
+    
+    local mapping = self.mapper
+    local decode  = mapping.decode
+    local handler = self.handler
+    local setitem = handler.setitem
+    
     for i=1, size, 1 do
-        local item = self.mapper:decode(decoder)
-        self.handler:setitem(value, i, item)
+        setitem(handler, value, i, decode(mapping, decoder))
     end
     return value
 end
@@ -108,18 +118,27 @@ function List:encode(encoder, value)
     local size = self.handler:getsize(value)
     writesize(encoder.writer, self.sizebits, size)
     
-    for i=1,size, 1 do
-        self.mapper:encode(encoder, self.handler:getitem(value, i)) 
+    local mapping = self.mapper
+    local encode  = mapping.encode
+    local handler = self.handler
+    local getitem = handler.getitem
+    
+    for i=1, size do
+        encode(mapping, encoder, getitem(handler, value, i))
     end 
 end
 
 function List:decode(decoder)
     local size   = readsize(decoder.reader, self.sizebits)
     local value  = self.handler:create(size)
+
+    local mapping = self.mapper
+    local decode  = mapping.decode
+    local handler = self.handler
+    local setitem = handler.setitem
         
     for i=1,size, 1 do
-        local item = self.mapper:decode(decoder)
-        self.handler:setitem(value, i, item)
+        setitem(handler, value, i, decode(mapping, decoder))
     end
     return value;
 end
@@ -135,7 +154,6 @@ function custom.list(handler, mapper, sizebits)
     assert(handler.create,  "List handler missing function create")
     assert(handler.setitem, "List handler missing function setitem")
     assert(handler.getitem, "List handler missing function getitem")
-
     
     if sizebits == nil then sizebits = 0 end
 
@@ -154,18 +172,30 @@ Set.__index = Set;
 function Set:encode(encoder, value)
     local size = self.handler:getsize(value)
     writesize(encoder.writer, self.sizebits, size)
+    
+    local mapping = self.mapper 
+    local encode  = mapping.encode
+    local handler = self.handler
+    local getitem = handler.getitem
+    
     for i=1,size, 1 do
-        self.mapper:encode(encoder, self.handler:getitem(value, i)) 
+        encode(mapping, encoder, getitem(handler, value, i))
     end 
 end
 
 function Set:decode(decoder)
     local size  = readsize(decoder.reader, self.sizebits)
     local value  = self.handler:create(size)
+
+    local mapping = self.mapper
+    local decode  = mapping.decode
+    local handler = self.handler
+    local putitem = handler.putitem
+
     for i=1,size, 1 do
-        local item = self.mapper:decode(decoder)
-        self.handler:putitem(value, item)
+        putitem(handler, value, decode(mapping, decoder))
     end
+        
     return value
 end
 

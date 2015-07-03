@@ -253,26 +253,38 @@ standard.type = custom.type(TypeRepoHandler)
 
 
 do
-    local lua2tag = 
-    {
-        ["nil"]      = primitive.null,
-        ["boolean"]  = primitive.boolean,
-        ["number"]   = primitive.double,
-        ["string"]   = primitive.string,
-        ["function"] = nil,
-        ["thread"]   = nil,
-        ["userdata"] = nil,
-    }
+	local function number_mapping(value)
+	
+	end
+	
+	local function table_mapping(value)
+		--First check if it has an enbedded mapping
+	end
+
+	local function userdata_mapping(value)
+	    --Check if it has a mapping field. 
+		--If it does we use that.
+		--To encode the userdata. 
+	end
  
-    function lua2tag:getmappingof(value)
+
+    local dynamic_handler = 
+    {
+        ["nil"]      = function() return primitive.null end,
+        ["boolean"]  = function() return primitive.boolean end,
+        ["string"]   = function() return primitive.string end,
+		["number"]   = number_mapping,
+		["table"]    = table_mapping,
+		["userdata"] = userdata_mapping
+    }
+    
+    function dynamic_handler:getmappingof(value)
         return self[type(value)] or error("no mapping for value of type " .. type(value))
     end
  
-    standard.dynamic = custom.dynamic(lua2tag, standard.type)
+    standard.dynamic = custom.dynamic(dynamic_handler, standard.type)
     lua2tag["table"] = standard.object(standard.map(standard.dynamic, standard.dynamic)) 
 end
-
-
 
 
 do --Generator scoping block

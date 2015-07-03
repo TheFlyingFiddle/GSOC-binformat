@@ -43,12 +43,18 @@ function bench.mapping(format, name, count, to_encode, mapping)
 	local data = memstream:getdata();
 	local in_mem_stream = format.inmemorystream(data);
 	local reader 		= format.reader(in_mem_stream)
+	local decoded
 	
 	bench.benchmark("decode of " .. name, count, function()	
 		local decoder = encoding.decoder(reader)
-		decoder:decode(mapping)
+		decoded = decoder:decode(mapping)
 		decoder:close()
 	end)
+	
+	print(#decoded)
+	for i=1, #decoded do
+		assert(to_encode[i] == decoded[i])
+	end
 	
 	print(string.format("Outstream size is: %s", #data / count))
 end
