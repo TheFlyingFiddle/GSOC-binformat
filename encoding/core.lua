@@ -75,7 +75,7 @@ Decoder.__index = Decoder
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
    self.reader:discardbits()   
-   if self.usemetadata then 
+   if self.usemetadata and mapping.tag ~= tags.DYNAMIC then 
       local id = core.getid(mapping)
       local meta_types = self.reader:raw(#id)
       assert(meta_types == id)

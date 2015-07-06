@@ -42,5 +42,5 @@ local infile = io.open("Arrays.dat", "rb")
 --What type we want and provide some type checking.
 local int_array    = encoding.decode(infile, int_array_mapping)
 local string_array = encoding.decode(infile, string_array_mapping)
-local float_matrix = encoding.decode(infile, float_matrix_mapping)
+local float_matrix = encoding.decode(infile, matrix_mapping)
 infile:close()
