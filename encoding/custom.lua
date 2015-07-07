@@ -437,13 +437,19 @@ end
 function Object:decode(decoder)
     local index = decoder.reader:varint();
     index = index + 1;
-    if index > #decoder.objects then 
-        local tmpObj = { }
-        table.insert(decoder.objects, tmpObj)
-        local obj = self.mapper:decode(decoder)
-        fixcyclicrefs(obj, tmpObj, obj) --Can be very slow (on a large graph)
-        decoder.objects[index] = obj
-        return obj
+    if index > #decoder.objects then
+        if self.hastyperef then
+            local tmpObj = { } --Cycles in all honor but we mostly dont need em
+            table.insert(decoder.objects, tmpObj)
+            local obj = self.mapper:decode(decoder)
+            fixcyclicrefs(obj, tmpObj, obj)
+            decoder.objects[index] = obj
+            return obj
+        else
+            local obj = self.mapper:decode(decoder)
+            decoder.objects[index] = obj
+            return obj
+        end
     else
         return decoder.objects[index]
     end
@@ -451,6 +457,21 @@ end
 
 function Object:encodemeta(encoder)
     writemeta(encoder, self.mapper)
+end
+
+local function hastyperef(mapping)
+    if util.ismapping(mapping) and 
+       (mapping.tag == tags.TYPEREF or mapping.tag == tags.DYNAMIC) then
+        --Dynamic tags can contain implicit typerefs.
+        return true
+    end
+    
+    for _, v in pairs(mapping) do
+        if type(v) == "table" then
+            return hastyperef(v)
+        end
+    end
+    return false
 end
 
 function custom.object(handler, mapper)
@@ -461,6 +482,7 @@ function custom.object(handler, mapper)
     object.mapper  = mapper
     object.handler = handler
     object.tag = tags.OBJECT
+    object.hastyperef = hastyperef(mapper)
     return object    
 end
 
@@ -563,6 +585,7 @@ function Typeref:setref(mapper)
     
     local mencode = mapper.encode
     function encode(tr, encoder, value)
+        print(value)
         mencode(mapper, encoder, value)
     end
     
@@ -573,7 +596,6 @@ function Typeref:setref(mapper)
     
     self.encode = encode
     self.decode = decode    
-    
 end
 
 function custom.typeref()

@@ -41,7 +41,7 @@ function bench.mapping(format, name, count, to_encode, mapping)
 	end)
 
 	local data = memstream:getdata();
-	local in_mem_stream = format.inmemorystream(data);
+	local in_mem_stream = format.inmemorystream(data)
 	local reader 		= format.reader(in_mem_stream)
 	local decoded
 	
@@ -51,8 +51,7 @@ function bench.mapping(format, name, count, to_encode, mapping)
 		decoder:close()
 	end)
 	
-	print(#decoded)
-	for i=1, #decoded do
+	for i=1, #to_encode do
 		assert(to_encode[i] == decoded[i])
 	end
 	

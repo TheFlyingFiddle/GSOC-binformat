@@ -83,7 +83,7 @@ local TableAsTuple = { }
 TableAsTuple.__index = TableAsTuple
 function TableAsTuple:getitem(value, index)
     local key = self.keys[index]
-    return value[key];
+    return value[key]
 end
 
 function TableAsTuple:create()
