@@ -36,23 +36,21 @@ function NumberList:encode(encoder, value)
     local size = #value
     writesize(encoder.writer, self.sizebits, size)
     
-    local writer    = encoder.writer
-    local raw_write = writer.raw
-    
-    local packed = self.packed
+    local writer     = encoder.writer
+    local raw_write  = writer.raw
+    local write_func = self.write_func
     local count  = self.count
     local singlefmt = self.singlefmt
     local fmtstring = self.fmtstring
-    for i=0, size - 1, count do
-        for j=1, count do
-            packed[j] = value[i + j]
+    if size >= count then
+        for i=0, size - 1, count do
+            write_func(value, i + 1, spack, fmtstring, raw_write, writer)
         end
-        raw_write(writer, spack(fmtstring, tunpack(packed)))
     end
     
     local left = size - (size % count)
     for i=left, size - 1 do
-        raw_write(writer, spack(singlefmt, value[i]))
+        raw_write(writer, spack(singlefmt, value[i + 1]))
     end
 end
 
@@ -69,8 +67,11 @@ function NumberList:decode(decoder)
     
     local reader      = decoder.reader
     local raw_read    = reader.raw
-    for i=0, size - 1, count do
-        read_func(value, i + 1, sunpack, fmtstring, raw_read, reader, packsize)
+    
+    if size >= count then
+        for i=0, size - 1, count do
+            read_func(value, i + 1, sunpack, fmtstring, raw_read, reader, packsize)
+        end
     end
     
     local left = size - (size % count)
@@ -81,12 +82,17 @@ function NumberList:decode(decoder)
     return value
 end
 
-function optimal.number_list(fmt, count, sizebits)
+function NumberList:encodemeta(encoder)
+    encoder.writer:varint(self.sizebits)
+    encoder.writer:varint(self.numbertag)
+end
+
+function optimal.internal_number_list(fmt, count, mapping, sizebits)
     if sizebits == nil then sizebits = 0 end
 
     local list = setmetatable({ }, NumberList)
     list.tag = tags.LIST
-    list.id  = pack(tags.LIST) .. pack(0x02) .. pack(0x00) .. pack(tags.FLOAT)
+    list.numbertag = mapping.tag
     list.singlefmt = fmt
     list.sizebits  = sizebits
     
@@ -97,12 +103,22 @@ function optimal.number_list(fmt, count, sizebits)
     
     list.fmtstring = fstring
     list.elemsize  = string.packsize(fmt)
-    list.packed    = { }
     list.count     = count
-    --Should be a way to do what I want in Lua...
-    local read_values = "local function read_the_values(value, i, sup, fstr, rr, reader, ps) \n\t"
+    
+    local write_values = 
+        "local function write_the_values(v, i, pack, fstr, rw, writer)\n" ..
+        "    rw(writer, pack(fstr"
+        
     for i=0, count - 1 do
-        read_values = read_values .. " value[i + " .. i .. "]"
+        write_values = write_values .. ", v[i + " .. i .. "]"
+    end 
+    write_values = write_values .. "))\n\tend return write_the_values"
+    list.write_func = load(write_values)()
+    
+    --Should be a way to do what I want in Lua...
+    local read_values = "local function read_the_values(v, i, sup, fstr, rr, reader, ps) \n\t"
+    for i=0, count - 1 do
+        read_values = read_values .. " v[i + " .. i .. "]"
         if i ~= count - 1 then
             read_values = read_values .. ", \n\t"
         end
@@ -112,6 +128,27 @@ function optimal.number_list(fmt, count, sizebits)
     list.read_func = load(read_values)()
     
     return list    
+end
+
+local good_size = 100
+local prim_to_list = 
+{
+    [primitive.uint8]   = optimal.internal_number_list("B",  good_size, primitive.uint8),
+    [primitive.uint16]  = optimal.internal_number_list("I2", good_size, primitive.uint16),
+    [primitive.uint32]  = optimal.internal_number_list("I4", good_size, primitive.uint32),
+    [primitive.uint64]  = optimal.internal_number_list("I8", good_size, primitive.uint64),
+    [primitive.int8]    = optimal.internal_number_list("b",  good_size, primitive.int8),
+    [primitive.int16]   = optimal.internal_number_list("i2", good_size, primitive.int16),
+    [primitive.int32]   = optimal.internal_number_list("i4", good_size, primitive.int32),
+    [primitive.int64]   = optimal.internal_number_list("i8", good_size, primitive.int64),
+    [primitive.float]   = optimal.internal_number_list("f",  good_size, primitive.float),
+    [primitive.double]  = optimal.internal_number_list("d",  good_size, primitive.double),
+}
+
+prim_to_list[primitive.byte] = prim_to_list[primitive.uint8]
+
+function optimal.number_list(number_mapping)
+    return prim_to_list[number_mapping] or error("unrecognized number mapping " .. number_mapping)
 end
 
 return optimal

@@ -96,4 +96,25 @@ function parser.parsemetatype(metatype)
 	return parsetree
 end
 
+
+local function debugtype(node, level)
+	local spacing = ""
+	for i=1, level do
+		spacing = spacing .. " "
+	end	
+	
+	local id = spacing .. tags[node.tag]
+	for i=1, #node do
+		id = id .. "\n" .. spacing .. " " .. debugtype(node[i], level + 1)
+	end
+	
+	return id
+end
+
+function parser.idtodebugid(id)
+	local metatype = string.sub(id, 1, 1) .. string.sub(id, 3)
+	local pt = parser.parsemetatype(metatype)
+	return debugtype(pt.root, 0)
+end
+
 return parser

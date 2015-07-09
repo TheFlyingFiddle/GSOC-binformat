@@ -9,6 +9,7 @@ function core.getid(mapping)
         local encoder = core.encoder(format.writer(buffer), false)
         encoder.types = { }
         encoder.types[mapping] = encoder.writer:getposition()
+        assert(mapping.encodemeta, tags[mapping.tag] .. " lacking encode meta")
         mapping:encodemeta(encoder)
         encoder:close()
         local body = buffer:getdata()

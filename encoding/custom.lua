@@ -20,8 +20,8 @@ end
 
 function custom.int(numbits)
     local int = setmetatable({ bits = numbits}, Int)
-    int.tag   = tags.SINT
-    int.id    = format.packvarint(tags.SINT) .. format.packvarint(numbits)
+    int.tag     = tags.SINT
+    int.id      = format.packvarint(tags.SINT) .. format.packvarint(numbits)
     return int
 end
 
@@ -36,9 +36,9 @@ function Int:decode(decoder)
 end
 
 function custom.uint(numbits)
-    local uint = setmetatable({ bits = numbits}, Int)
-    uint.tag   = tags.UINT
-    uint.id    = format.packvarint(tags.UINT) .. format.packvarint(numbits)
+    local uint   = setmetatable({ bits = numbits}, Int)
+    uint.tag     = tags.UINT
+    uint.id      = format.packvarint(tags.UINT) .. format.packvarint(numbits)
     return uint
 end
 
@@ -465,10 +465,12 @@ local function hastyperef(mapping)
         --Dynamic tags can contain implicit typerefs.
         return true
     end
-    
-    for _, v in pairs(mapping) do
+   
+    for k, v in pairs(mapping) do
         if type(v) == "table" then
-            return hastyperef(v)
+            if hastyperef(v) then
+                return true
+            end
         end
     end
     return false
@@ -585,7 +587,6 @@ function Typeref:setref(mapper)
     
     local mencode = mapper.encode
     function encode(tr, encoder, value)
-        print(value)
         mencode(mapper, encoder, value)
     end
     

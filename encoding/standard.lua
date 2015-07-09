@@ -272,9 +272,6 @@ do
     lua2tag["table"] = standard.object(standard.map(standard.dynamic, standard.dynamic)) 
 end
 
-
-
-
 do --Generator scoping block
     
     --Basic generator functions that are needed for standard.type and by extension standard.dynamic.

@@ -4,7 +4,6 @@ require "test.utils"
 dofile("test/number.lua")
 dofile("test/packed.lua")
 dofile("test/empty.lua")
-dofile("test/bitnumbers.lua")
 dofile("test/bool.lua")
 dofile("test/text.lua")
 dofile("test/standard.lua")

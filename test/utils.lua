@@ -145,59 +145,58 @@ local function tofilename(mapping, case)
 	  "_"..string.gsub(string.sub(id,1, 128), unsafe, "")
 end
 
+local function checksame(test, case, recovered)
+	if test.countexpected == nil or test.countexpected > 0 then
+		local expected = case.expected
+		if expected == nil then
+			if test.defaultexpected ~= nil then
+				expected = test.defaultexpected
+			else
+				expected = case.actual
+			end
+		end
+		
+		if test.rounderror ~= nil then
+			if expected ~= 0 then 
+				assert(math.abs((recovered-expected)/expected) < test.rounderror,
+					"recovered value is too different from the expected")
+			else
+				assert(expected == recovered)
+			end
+		elseif test.matcher ~= nil then
+			local ok, errmgs = test.matcher(recovered, expected)
+			if not ok then 
+				print(recovered, excpected)
+			end					
+			assert(ok, errmsg)
+		else
+			local matcher = Matcher(table.copy(test.compareopts or {}))
+			local ok, errmsg = matcher:match(recovered, expected)
+			if not ok then 
+				print(recovered, expected) 
+			end
+			assert(ok, errmsg)
+		end
+	end
+	viewer:write(recovered)								
+	print()
+end
+
+local exp_dynamic = require"experimental.new_dynamic"
+
 local function rundynamictest(test)
 	local mapping = test.mapping
 	local basedir = test.basedir or "streams"
 	for gid, group in ipairs(test) do
 		for cid, case in ipairs(group) do
 			io.write("Dyn_" .. tags[mapping.tag], ": "); viewer:write(case.actual); io.write(" ... "); io.flush()
-			local output = format.outmemorystream()
-			
-			do
-				local encoder = encoding.encoder(encoding.writer(output), true)
-				encoder:encode(mapping, case.actual)
-				encoder:close()
-				--hexastream(io.stdout, output:getdata())
-			end
-			
-			do 
-				local data	  = output:getdata();
-				local instream = format.inmemorystream(data);
-				local decoder = encoding.decoder(encoding.reader(instream), false)
-				local recovered = assertcount(test.countexpected, decoder:decode(standard.dynamic))
-				decoder:close()
-				output:close()	
-				viewer:write(recovered)				
-				
-				if test.countexpected == nil or test.countexpected > 0 then
-					local expected = case.expected
-					if expected == nil then
-						if test.defaultexpected ~= nil then
-							expected = test.defaultexpected
-						else
-							expected = case.actual
-						end
-					end
-					if test.rounderror ~= nil then
-						assert(math.abs((recovered-expected)/expected) < test.rounderror,
-							"recovered value is too different from the expected")
-					elseif test.matcher ~= nil then
-						local ok, errmgs = test.matcher(recovered, expected)
-						if not ok then 
-							print(recovered, excpected)
-						end					
-						assert(ok, errmsg)
-					else
-						local matcher = Matcher(table.copy(test.compareopts or {}))
-						local ok, errmsg = matcher:match(recovered, expected)
-						if not ok then 
-							print(recovered, expected) 
-						end
-						assert(ok, errmsg)
-					end
-				end
-				print()
-			end
+			local output 	 = format.outmemorystream()
+			encoding.encode(output, case.actual, mapping, true)
+			--hexastream(io.stdout, output:getdata())
+		
+			local input 	= format.inmemorystream(output:getdata())			
+			local recovered 	= encoding.decode(input, standard.dynamic, false)
+			checksame(test, case, recovered)
 		end
 	end
 end
@@ -255,36 +254,7 @@ function runtest(test)
 				decoder:close()
 				input:close()
 				
-				if test.countexpected == nil or test.countexpected > 0 then
-					local expected = case.expected
-					if expected == nil then
-						if test.defaultexpected ~= nil then
-							expected = test.defaultexpected
-						else
-							expected = case.actual
-						end
-					end
-					if test.rounderror ~= nil then
-						assert(math.abs((recovered-expected)/expected) < test.rounderror,
-							"recovered value is too different from the expected")
-					elseif test.matcher ~= nil then
-						local ok, errmgs = test.matcher(recovered, expected)
-						if not ok then 
-							print(recovered, excpected)
-						end					
-						assert(ok, errmsg)
-					else
-						local matcher = Matcher(table.copy(test.compareopts or {}))
-						local ok, errmsg = matcher:match(recovered, expected)
-						viewer:write(recovered) print()
-						
-						if not ok then print(recovered, expected) end
-						
-						assert(ok, errmsg)
-					end
-					viewer:write(recovered)
-				end
-				print()
+				checksame(test, case, recovered)
 			else
 				print("error: "..encodeerror)
 			end

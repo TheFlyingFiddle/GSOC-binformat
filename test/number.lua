@@ -1,372 +1,305 @@
--- small integer numbers
-local Int8Cases = {
-	{ actual = 0x00 },
-	{ actual = 0x01 },
-	{ actual = 0x55 },
-	{ actual = 0x7e },
-	{ actual = 0x7f },
+-- integer numbers
+local int = {
+	positive = {
+		[0] = {
+			{ actual = 0 },
+		},
+		{
+			{ actual = 1 },
+		},
+		{
+			{ actual = 2 },
+			{ actual = 3 },
+		},
+	},
+	negative = {
+		{
+			{ actual = -1 },
+		},
+		{
+			{ actual = -2 },
+		},
+		{
+			{ actual = -3 },
+			{ actual = -4 },
+		},
+	},
 }
-local Int16Cases = {
-	{ actual = 0x100 },
-	{ actual = 0x101 },
-	{ actual = 0x5555 },
-	{ actual = 0x7ffe },
-	{ actual = 0x7fff },
+do
+	local function findlast(list, index)
+		for i = index-1, 1, -1 do
+			if list[i] ~= nil then
+				return i
+			end
+		end
+	end
+	local function addints(length, isauto)
+		local min
+		if not isauto and int.positive[length-1] == nil then
+			min = length-1
+			addints(min, true)
+		else
+			min = findlast(int.positive, length)
+		end
+		min = 1 << min
+		local max = ~(-1 << length)
+		if min >= 0 then
+			int.positive[length] = {
+				{ actual = min | 0 },
+				{ actual = min | 1 },
+				{ actual = max - 1 },
+				{ actual = max },
+			}
+		end
+		if not isauto then
+			local pos = int.positive[length-1]
+			local neg = int.negative[findlast(int.negative, length)]
+			pos = pos[#pos].actual
+			neg = neg==nil and 0 or neg[#neg].actual
+			int.negative[length] = {
+				{ actual = neg - 1  },
+				{ actual = neg - 2  },
+				{ actual = -pos },
+				{ actual = -pos - 1 },
+			}
+		end
+	end
+	addints(4)
+	addints(7)
+	addints(8)
+	addints(16)
+	addints(24)
+	addints(32)
+	addints(53)
+	addints(64)
+end
+
+-- floating-point numbers
+local float = {
+	positive = { tiny = {}, huge = {}, other = {} },
+	negative = { tiny = {}, huge = {}, other = {} },
 }
-local Int32Cases = {
-	{ actual = 0x10000 },
-	{ actual = 0x10001 },
-	{ actual = 0x55555555 },
-	{ actual = 0x7ffffffe },
-	{ actual = 0x7fffffff },
-}
-local Int64Cases = {
-	{ actual = 0x100000000 },
-	{ actual = 0x100000001 },
-	{ actual = 0x5555555555555555 },
-	{ actual = 0x7ffffffffffffffe },
-	{ actual = 0x7fffffffffffffff },
-}
--- large integer numbers
-local uInt8Cases = {
-	{ actual = 0x80 },
-	{ actual = 0x81 },
-	{ actual = 0xaa },
-	{ actual = 0xfe },
-	{ actual = 0xff },
-}
-local uInt16Cases = {
-	{ actual = 0x8000 },
-	{ actual = 0x8001 },
-	{ actual = 0xaaaa },
-	{ actual = 0xfffe },
-	{ actual = 0xffff },
-}
-local uInt32Cases = {
-	{ actual = 0x80000000 },
-	{ actual = 0x80000001 },
-	{ actual = 0xaaaaaaaa },
-	{ actual = 0xfffffffe },
-	{ actual = 0xffffffff },
-}
-local uInt64Cases = {
-	-- not supported in standard Lua 5.3
-	--{ actual = 0x8000000000000000 },
-	--{ actual = 0x8000000000000001 },
-	--{ actual = 0xaaaaaaaaaaaaaaaa },
-	--{ actual = 0xfffffffffffffffe },
-	--{ actual = 0xffffffffffffffff },
-}
--- negative integer numbers
-local sInt8Cases = {
-	{ actual = -0x01 },
-	{ actual = -0x02 },
-	{ actual = -0x55 },
-	{ actual = -0x7f },
-	{ actual = -0x80 },
-}
-local sInt16Cases = {
-	{ actual = -0x0001 },
-	{ actual = -0x0002 },
-	{ actual = -0x5555 },
-	{ actual = -0x7fff },
-	{ actual = -0x8000 },
-}
-local sInt32Cases = {
-	{ actual = -0x8001 },
-	{ actual = -0x8002 },
-	{ actual = -0x55555555 },
-	{ actual = -0x7fffffff },
-	{ actual = -0x80000000 },
-}
-local sInt64Cases = {
-	{ actual = -0x80000001 },
-	{ actual = -0x80000002 },
-	{ actual = -0x5555555555555555 },
-	{ actual = -0x7fffffffffffffff },
-	{ actual = -0x8000000000000000 },
-}
--- irrational numbers
-local SinglePrecisionCases = {
-	-- must be some value that has precise representation both in single
-	-- and double precision!
-}
-local DoublePrecisionCases = {
-	{ actual = math.pi },
-	{ actual = -math.pi },
-}
+do
+	float.positive.other[32] = {
+		{ actual = math.huge },
+	}
+	float.positive.other[64] = {
+		{ actual = math.pi },
+	}
+	for length, cases in pairs(float.positive.other) do
+		local negs = {}
+		for index, case in ipairs(cases) do
+			negs[index] = { actual = -case.actual }
+		end
+		float.negative.other[length] = negs
+	end
+	local function newcases(sig, exp, bits)
+		local list = {}
+		for index, case in ipairs(int.positive[bits]) do
+			local base = case.actual
+			list[index] = {
+				id = string.format("%s0x%xE%d", sig>0 and "" or "-", base, exp),
+				actual = sig * base * 2^exp,
+			}
+		end
+		return list
+	end
+	local function addfloats(sig, exp)
+		local length = sig+exp
+		exp = 1 << (exp-1)
+		local emin = 1-(exp-2)-sig
+		local emax = exp-1-sig
+		float.positive.tiny[length] = newcases( 1, emin, sig)
+		float.positive.huge[length] = newcases( 1, emax, sig)
+		float.negative.tiny[length] = newcases(-1, emin, sig)
+		float.negative.huge[length] = newcases(-1, emax, sig)
+	end
+	addfloats(24, 8)
+	addfloats(53, 11)
+end
+
 -- non-numeric values
-local NonNumberCases = {
+local nonnumber = {
 	{ actual = nil },
 	{ actual = false },
 	{ actual = true },
 	{ actual = "text" },
 	{ actual = {} },
 	{ actual = print },
-	{ actual = function() end },
+	{ actual = function () end },
 	{ actual = coroutine.running() },
 	{ actual = io.stdout },
 }
 
-local SignCases =
-{
-	{ actual = 1,     expected = 1 },
-	{ actual = -1,    expected = -1 }
-}
 
-runtest{ mapping = primitive.sign, SignCases }
 
--- unsigned integer of 8-bit
-runtest{ mapping = primitive.byte,
-	Int8Cases,
-	uInt8Cases,
+local function collect(res, group, lower, upper)
+	if type(next(group)) ~= "number" then
+		for _, cases in pairs(group) do
+			collect(res, cases, lower, upper)
+		end
+	else
+		for bits = 1+(lower or -1), upper or 128 do
+			local cases = group[bits]
+			if cases ~= nil then
+				for _, case in ipairs(cases) do
+					res[#res+1] = case
+				end
+			end
+		end
+	end
+end
+
+local function numbers(...)
+	local res = {}
+	collect(res, ...)
+	return res
+end
+
+local function testuint(mapping, bits)
+	print("Num bits: ", bits)
+	runtest{ mapping = mapping,
+		numbers(int.positive, nil, bits),
+	}
+	if bits ~= nil then
+		runtest{ mapping = mapping, encodeerror = "overflow",
+			numbers(int.positive, bits),
+			numbers(int.negative),
+		}
+	else
+		runtest{ mapping = mapping,
+			numbers(int.negative),
+		}
+	end
+	runtest{ mapping = mapping, encodeerror = "no integer representation",
+		numbers(float),
+	}
+	runtest{ mapping = mapping, encodeerror = "number",
+		nonnumber,
+	}
+end
+
+local function testsint(mapping, bits)
+	print("Num bits: ", bits)
+	runtest{ mapping = mapping,
+		numbers(int.positive, nil, bits and bits-1),
+		numbers(int.negative, nil, bits),
+	}
+	if bits ~= nil then
+		runtest{ mapping = mapping, encodeerror = "overflow",
+			numbers(int.positive, bits-1),
+			numbers(int.negative, bits),
+		}
+	end
+	runtest{ mapping = mapping, encodeerror = "no integer representation",
+		numbers(float),
+	}
+	runtest{ mapping = mapping, encodeerror = "number",
+		nonnumber,
+	}
+end
+
+-- number sign
+runtest{ mapping = primitive.sign, defaultexpected =  1,
+	numbers(int.positive),
+	numbers(float.positive),
 }
-runtest{ mapping = primitive.byte, encodeerror = "unsigned overflow",
-	Int16Cases,
-	Int32Cases,
-	Int64Cases,
-	uInt16Cases,
-	uInt32Cases,
-	uInt64Cases,
-	sInt8Cases,
-	sInt16Cases,
-	sInt32Cases,
-	sInt64Cases,
+runtest{ mapping = primitive.sign, defaultexpected = -1,
+	numbers(int.negative),
+	numbers(float.negative),
 }
-runtest{ mapping = primitive.byte, encodeerror = "has no integer representation",
-	SinglePrecisionCases,
-	DoublePrecisionCases,
+runtest{ mapping = primitive.sign, encodeerror = "number",
+	nonnumber,
 }
-runtest{ mapping = primitive.byte, encodeerror = "number expected",
-	NonNumberCases,
-}
--- unsigned integer of 16-bit
-runtest{ mapping = primitive.uint16,
-	Int8Cases,
-	Int16Cases,
-	uInt8Cases,
-	uInt16Cases,
-}
-runtest{ mapping = primitive.uint16, encodeerror = "unsigned overflow",
-	Int32Cases,
-	Int64Cases,
-	uInt32Cases,
-	uInt64Cases,
-	sInt8Cases,
-	sInt16Cases,
-	sInt32Cases,
-	sInt64Cases,
-}
-runtest{ mapping = primitive.uint16, encodeerror = "has no integer representation",
-	SinglePrecisionCases,
-	DoublePrecisionCases,
-}
-runtest{ mapping = primitive.uint16, encodeerror = "number expected",
-	NonNumberCases,
-}
--- unsigned integer of 32-bit
-runtest{ mapping = primitive.uint32,
-	Int8Cases,
-	Int16Cases,
-	Int32Cases,
-	uInt8Cases,
-	uInt16Cases,
-	uInt32Cases,
-}
-runtest{ mapping = primitive.uint32, encodeerror = "unsigned overflow",
-	Int64Cases,
-	uInt64Cases,
-	sInt8Cases,
-	sInt16Cases,
-	sInt32Cases,
-	sInt64Cases,
-}
-runtest{ mapping = primitive.uint32, encodeerror = "has no integer representation",
-	SinglePrecisionCases,
-	DoublePrecisionCases,
-}
-runtest{ mapping = primitive.uint32, encodeerror = "number expected",
-	NonNumberCases,
-}
--- unsigned integer of 64-bit
-runtest{ mapping = primitive.uint64,
-	Int8Cases,
-	Int16Cases,
-	Int32Cases,
-	Int64Cases,
-	uInt8Cases,
-	uInt16Cases,
-	uInt32Cases,
-	uInt64Cases,
-}
-runtest{ mapping = primitive.uint64, --encodeerror = "unsigned overflow",
-	sInt8Cases,
-	sInt16Cases,
-	sInt32Cases,
-	sInt64Cases,
-}
-runtest{ mapping = primitive.uint64, encodeerror = "has no integer representation",
-	SinglePrecisionCases,
-	DoublePrecisionCases,
-}
-runtest{ mapping = primitive.uint64, encodeerror = "number expected",
-	NonNumberCases,
-}
--- varint
-runtest{ mapping = primitive.varint,
-	Int8Cases,
-	Int16Cases,
-	Int32Cases,
-	Int64Cases,
-	uInt8Cases,
-	uInt16Cases,
-	uInt32Cases,
-	uInt64Cases,
-}
-runtest{ mapping = primitive.varint, --encodeerror = "unsigned overflow",
-	sInt8Cases,
-	sInt16Cases,
-	sInt32Cases,
-	sInt64Cases,
-}
-runtest{ mapping = primitive.varint, encodeerror = "has no integer representation",
-	SinglePrecisionCases,
-	DoublePrecisionCases,
-}
-runtest{ mapping = primitive.varint, encodeerror = "number expected",
-	NonNumberCases,
-}
--- signed integer of 16-bit
-runtest{ mapping = primitive.int16,
-	Int8Cases,
-	Int16Cases,
-	uInt8Cases,
-	sInt8Cases,
-	sInt16Cases,
-}
-runtest{ mapping = primitive.int16, encodeerror = "integer overflow",
-	Int32Cases,
-	Int64Cases,
-	uInt16Cases,
-	uInt32Cases,
-	uInt64Cases,
-	sInt32Cases,
-	sInt64Cases,
-}
-runtest{ mapping = primitive.int16, encodeerror = "has no integer representation",
-	SinglePrecisionCases,
-	DoublePrecisionCases,
-}
-runtest{ mapping = primitive.int16, encodeerror = "number expected",
-	NonNumberCases,
-}
--- signed integer of 32-bit
-runtest{ mapping = primitive.int32,
-	Int8Cases,
-	Int16Cases,
-	Int32Cases,
-	uInt8Cases,
-	uInt16Cases,
-	sInt8Cases,
-	sInt16Cases,
-	sInt32Cases,
-}
-runtest{ mapping = primitive.int32, encodeerror = "integer overflow",
-	Int64Cases,
-	uInt32Cases,
-	uInt64Cases,
-	sInt64Cases,
-}
-runtest{ mapping = primitive.int32, encodeerror = "has no integer representation",
-	SinglePrecisionCases,
-	DoublePrecisionCases,
-}
-runtest{ mapping = primitive.int32, encodeerror = "number expected",
-	NonNumberCases,
-}
--- signed integer of 64-bit
-runtest{ mapping = primitive.int64,
-	Int8Cases,
-	Int16Cases,
-	Int32Cases,
-	Int64Cases,
-	uInt8Cases,
-	uInt16Cases,
-	uInt32Cases,
-	uInt64Cases,
-	sInt8Cases,
-	sInt16Cases,
-	sInt32Cases,
-	sInt64Cases,
-}
-runtest{ mapping = primitive.int64, encodeerror = "has no integer representation",
-	SinglePrecisionCases,
-	DoublePrecisionCases,
-}
-runtest{ mapping = primitive.int64, encodeerror = "number expected",
-	NonNumberCases,
-}
--- varint zig-zag
-runtest{ mapping = primitive.varintzz,
-	Int8Cases,
-	Int16Cases,
-	Int32Cases,
-	Int64Cases,
-	uInt8Cases,
-	uInt16Cases,
-	uInt32Cases,
-	uInt64Cases,
-	sInt8Cases,
-	sInt16Cases,
-	sInt32Cases,
-	sInt64Cases,
-}
-runtest{ mapping = primitive.varintzz, encodeerror = "has no integer representation",
-	SinglePrecisionCases,
-	DoublePrecisionCases,
-}
-runtest{ mapping = primitive.varintzz, encodeerror = "any",
-	NonNumberCases,
-}
+-- unsigned integers
+testuint(primitive.uint1, 1)
+testuint(primitive.uint2, 2)
+testuint(primitive.uint3, 3)
+testuint(primitive.uint4, 4)
+testuint(primitive.uint7, 7)
+testuint(primitive.byte, 8)
+testuint(primitive.uint16, 16)
+testuint(primitive.uint24, 24)
+testuint(primitive.uint32, 32)
+testuint(primitive.uint53, 53)
+testuint(primitive.uint64)
+testuint(primitive.varint)
+-- signed integers
+testsint(primitive.int1, 1)
+testsint(primitive.int2, 2)
+testsint(primitive.int3, 3)
+testsint(primitive.int4, 4)
+testsint(primitive.int7, 7)
+testsint(primitive.int8, 8)
+testsint(primitive.int16, 16)
+testsint(primitive.int24, 24)
+testsint(primitive.int32, 32)
+testsint(primitive.int53, 53)
+testsint(primitive.int64)
+testsint(primitive.varintzz)
 -- single precision floats
 runtest{ mapping = primitive.float,
-	Int8Cases,
-	Int16Cases,
-	uInt8Cases,
-	uInt16Cases,
-	sInt8Cases,
-	sInt16Cases,
-	SinglePrecisionCases,
+	numbers(int, nil, 24),
+	numbers(float, nil, 32),
 }
-runtest{ mapping = primitive.float, rounderror = 0.001,
-	Int32Cases,
-	Int64Cases,
-	uInt32Cases,
-	uInt64Cases,
-	sInt32Cases,
-	sInt64Cases,
-	DoublePrecisionCases,
+runtest{ mapping = primitive.float, rounderror = 0.00001,
+	numbers(int, 24),
 }
+runtest{ mapping = primitive.float, defaultexpected =    0, numbers(float.positive.tiny, 32) }
+runtest{ mapping = primitive.float, defaultexpected =  1/0, numbers(float.positive.huge, 32) }
+runtest{ mapping = primitive.float, defaultexpected =   -0, numbers(float.negative.tiny, 32) }
+runtest{ mapping = primitive.float, defaultexpected = -1/0, numbers(float.negative.huge, 32) }
 runtest{ mapping = primitive.float, encodeerror = "number expected",
-	NonNumberCases,
+	nonnumber,
 }
 -- double precision floats
 runtest{ mapping = primitive.double,
-	Int8Cases,
-	Int16Cases,
-	Int32Cases,
-	Int64Cases,
-	uInt8Cases,
-	uInt16Cases,
-	uInt32Cases,
-	uInt64Cases,
-	sInt8Cases,
-	sInt16Cases,
-	sInt32Cases,
-	sInt64Cases,
-	SinglePrecisionCases,
-	DoublePrecisionCases,
+	numbers(float),
 }
+
+runtest { mapping = primitive.double,
+	rounderror = 0.00000001,
+	numbers(int)
+}
+
 runtest{ mapping = primitive.double, encodeerror = "number expected",
-	NonNumberCases,
+	nonnumber,
 }
+
+--[[ FLOAT ENABLED VARINT
+-- varint
+runtest{ mapping = primitive.varint,
+	numbers(int.positive),
+	numbers(float.positive.huge),
+}
+runtest{ mapping = primitive.varint, encodeerror = "unsigned overflow",
+	numbers(int.negative),
+	numbers(float.negative),
+}
+runtest{ mapping = primitive.varint, encodeerror = "has no integer representation",
+	numbers(float.positive.tiny),
+}
+runtest{ mapping = primitive.varint, encodeerror = ".",
+	numbers(float.positive.other),
+}
+runtest{ mapping = primitive.varint, encodeerror = "number expected",
+	nonnumber,
+}
+-- varint zig-zag
+runtest{ mapping = primitive.varintzz,
+	numbers(int),
+	numbers(float.positive.huge),
+	numbers(float.negative.huge),
+}
+runtest{ mapping = primitive.varintzz, encodeerror = "has no integer representation",
+	numbers(float.positive.tiny),
+	numbers(float.negative.tiny),
+}
+runtest{ mapping = primitive.varintzz, encodeerror = ".",
+	numbers(float.positive.other),
+	numbers(float.negative.other),
+}
+runtest{ mapping = primitive.varintzz, encodeerror = "number expected",
+	nonnumber,
+}
+--]]
