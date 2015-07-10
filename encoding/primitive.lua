@@ -65,22 +65,31 @@ local Null = { tag = tags.NULL, id = pack(tags.NULL) }
 function Null:encode(encoder, value) assert(value == nil, "nil expected") end
 function Null:decode(decoder) return nil end
 
+--Boolean maps true/false.
 local Bool = { tag = tags.BOOLEAN, id = pack(tags.BOOLEAN) }
 function Bool:encode(encoder, value)
-    if value then
-        encoder.writer:uint8(1)     
-    else 
-        encoder.writer:uint8(0)
-    end
+    encoder.writer:uint8(value and 1 or 0)
+end
+function Bool:decode(decoder)
+    return decoder.reader:uint8() ~= 0
 end
 
-function Bool:decode(decoder)
-    local val = decoder.reader:uint8();
-    if val == 1 then 
-        return true
-    else
-        return false
-    end
+--Flag maps to true/false and behavies like boolean. 
+local Flag = { tag = tags.FLAG, id = pack(tags.FLAG)}
+function Flag:encode(encoder, value)
+    encoder.writer:uint(1, value and 1 or 0)
+end
+function Flag:decode(decoder)
+    return decoder.reader:uint(1) ~= 0
+end
+
+--Sign maps from a number to -1 or 1.
+local Sign = { tag = tags.SIGN, id = pack(tags.SIGN)}
+function Sign:encode(encoder, value)
+    encoder.writer:uint(1, value < 0 and 1 or 0)
+end
+function Sign:decode(decoder)
+    return decoder.reader:uint(1) ~= 0 and -1 or 1
 end
 
 
@@ -90,7 +99,6 @@ function Char:encode(encoder, value)
     assert(string.len(value) == 1, "invalid character")
     encoder.writer:raw(value)
 end
-
 function Char:decode(decoder)
     return decoder.reader:raw(1)
 end
@@ -114,7 +122,6 @@ function String:encode(encoder, value)
     encoder.writer:raw(value)
     encoder.writer:raw("\0") --Add null terminator
 end
-
 function String:decode(decoder)
     local len = decoder.reader:varint()
     local val = decoder.reader:raw(len - 1)
@@ -132,7 +139,6 @@ function WString:encode(encoder, value)
     encoder.writer:raw(value)
     encoder.writer:raw('\000\000') --Add null terminator
 end
-
 function WString:decode(decoder)
     local length = decoder.reader:varint() * 2
     local string = decoder.reader:raw(length - 2)
@@ -140,29 +146,6 @@ function WString:decode(decoder)
     return string
 end
 
---Flag maps to true/false and behavies like boolean. 
-local Flag = { tag = tags.FLAG, id = pack(tags.FLAG)}
-function Flag:encode(encoder, value)
-    encoder.writer:uint(1, value and 1 or 0)
-end
-
-function Flag:decode(decoder)
-    return decoder.reader:uint(1) ~= 0
-end
-
---Sign maps from a number to -1 or 1.
-local Sign = { tag = tags.SIGN, id = pack(tags.SIGN)}
-function Sign:encode(encoder, value)
-    encoder.writer:uint(1, value < 0 and 1 or 0)
-end
-
-function Sign:decode(decoder)
-    return decoder.reader:uint(1) ~= 0 and -1 or 1
-end
-
-
---Should probably remove this.
-primitive.byte     = createMapper(tags.UINT8,   "uint8") 
 
 primitive.varint   = createMapper(tags.VARINT,   "varint")
 primitive.varintzz = createMapper(tags.VARINTZZ, "varintzz")
@@ -177,6 +160,9 @@ primitive.int64    = createMapper(tags.SINT64,   "int64")
 primitive.float    = createMapper(tags.FLOAT,    "float")
 primitive.double   = createMapper(tags.DOUBLE,   "double")
 
+--Should probably remove this. ([maia] I agree)
+primitive.byte     = primitive.uint8
+
 --Not yet implemented primitive.half = createMapper(tags.HALF, "half")
 --Not yet implemented primitive.quad = createMapper(tags.QUAD, "quad");
 
@@ -185,13 +171,14 @@ primitive.stream   = createMapper(tags.STREAM, "stream")
 primitive.void 		= Void
 primitive.null 		= Null
 primitive.boolean   = Bool
+primitive.flag      = Flag
+primitive.sign      = Sign
 primitive.char 		= Char
 primitive.wchar 	= WChar
 primitive.string 	= String
 primitive.wstring	= WString
-primitive.flag		= Flag
-primitive.sign		= Sign
 
+--TODO:[maia] Seems too much. I'd suggest to be removed.
 createBitInts(tags.UINT, "uint", 64)
 createBitInts(tags.SINT, "int",  64)
 

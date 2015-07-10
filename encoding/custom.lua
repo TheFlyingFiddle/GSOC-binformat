@@ -21,7 +21,7 @@ end
 function custom.int(numbits)
     local int = setmetatable({ bits = numbits}, Int)
     int.tag     = tags.SINT
-    int.id      = format.packvarint(tags.SINT) .. format.packvarint(numbits)
+    int.id      = pack(tags.SINT) .. pack(numbits)
     return int
 end
 
@@ -38,7 +38,7 @@ end
 function custom.uint(numbits)
     local uint   = setmetatable({ bits = numbits}, Int)
     uint.tag     = tags.UINT
-    uint.id      = format.packvarint(tags.UINT) .. format.packvarint(numbits)
+    uint.id      = pack(tags.UINT) .. pack(numbits)
     return uint
 end
 
@@ -435,8 +435,7 @@ local function fixcyclicrefs(obj, tmp, ref)
 end
 
 function Object:decode(decoder)
-    local index = decoder.reader:varint();
-    index = index + 1;
+    local index = decoder.reader:varint() + 1
     if index > #decoder.objects then
         if self.hastyperef then
             local tmpObj = { } --Cycles in all honor but we mostly dont need em

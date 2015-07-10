@@ -297,8 +297,46 @@ do --Generator scoping block
     	return nil
     end
     
+    local tagToLua = {
+        [tags.UINT]     = "number",
+        [tags.UINT8]    = "number",
+        [tags.UINT16]   = "number",
+        [tags.UINT32]   = "number",
+        [tags.UINT64]   = "number",
+        [tags.SINT]     = "number",
+        [tags.SINT8]    = "number",
+        [tags.SINT16]   = "number",
+        [tags.SINT32]   = "number",
+        [tags.SINT64]   = "number",
+        [tags.HALF]     = "number",
+        [tags.FLOAT]    = "number",
+        [tags.DOUBLE]   = "number",
+        [tags.QUAD]     = "number",
+        [tags.SIGN]     = "number",
+        [tags.VARINT]   = "number",
+        [tags.VARINTZZ] = "number",
+        
+        [tags.CHAR]    = "string",
+        [tags.WCHAR]   = "string",
+        [tags.STREAM]  = "string",
+        [tags.STRING]  = "string",
+        [tags.WSTRING] = "string",
+            
+        [tags.FLAG]    = "boolean",
+        [tags.BOOLEAN] = "boolean",
+        
+        [tags.VOID] = "nil",
+        [tags.NULL] = "nil",
+
+        [tags.LIST]  = "table",
+        [tags.SET]   = "table",
+        [tags.ARRAY] = "table",
+        [tags.TUPLE] = "table",
+        [tags.MAP]   = "table"
+    }
+    --Standard generator functions
     local function nodetoluatype(generator, node)
-    	local type = tags.tagtoluatype(node.tag)
+        local type = tagToLua[node.tag] or "unknown"
     	if type == "unkown" then
     		if node.tag == tags.UNION then
     			return "unkown"

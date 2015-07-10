@@ -45,8 +45,8 @@ do
 		local max = ~(-1 << length)
 		if min >= 0 then
 			int.positive[length] = {
-				{ actual = min | 0 },
-				{ actual = min | 1 },
+				{ actual = min },
+				{ actual = min + 1 },
 				{ actual = max - 1 },
 				{ actual = max },
 			}
