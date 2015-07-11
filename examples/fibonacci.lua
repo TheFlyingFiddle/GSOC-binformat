@@ -2,7 +2,7 @@
 local tier = require"tier"
 local standard = tier.standard
 
---A mapping object maps application value to and from TIER tiers.
+--A mapping object maps application value to and from TIER encoding.
 --This particular mapping maps tables to list of 32 bit integers. 
 local mapping = standard.list(tier.primitive.int32)
 

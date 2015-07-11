@@ -1,5 +1,5 @@
 local socket 	 = require"socket"
-local tierstream = require"rpc.tierstream"
+local tierstream = require"examples.rpc.tierstream"
 
 evaluator = { }
 function evaluator:repeats(count)

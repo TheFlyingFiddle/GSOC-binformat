@@ -15,6 +15,9 @@ can be either primitives or dynamic types.
 
 I have plans for adding function support to this module aswell. 
 
+Update: Function support has been added and I have switched from the old dynamic
+implementation to the new one.
+
 ###The compression module
 This is largly unfinished but the idea of this module is to create some compression 
 mappings primarialy list of number compressing. The plan is to test it with 

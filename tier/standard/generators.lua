@@ -2,6 +2,7 @@ local generating = require"tier.generating"
 local primitive  = require"tier.primitive"
 local util       = require"tier.util"
 local tags       = require"tier.tags"
+local custom     = require"tier.custom"
 
 return function(standard)
     local function findnode(node, sindex)

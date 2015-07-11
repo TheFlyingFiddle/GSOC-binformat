@@ -1,6 +1,6 @@
 local socket 	= require"socket"
 local tier 	= require"tier"
-local tierstream	= require"rpc.tierstream"
+local tierstream	= require"examples.rpc.tierstream"
 
 local Proxy = { }
 
