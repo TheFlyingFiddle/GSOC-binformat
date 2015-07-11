@@ -111,10 +111,6 @@ function TypeUnion:select(value)
     error(string.format("Cannot encode type: %s", typeof))
 end
 
-function TypeUnion:create(kind, value)
-    return value;
-end
-
 --Spacial case union nullable
 local Optional = { }
 function Optional:select(value)
@@ -125,15 +121,13 @@ function Optional:select(value)
    end
 end
 
-function Optional:create(kind, ...)
-   return ...
-end
-
 --Object handler
+local NIL = {}
 local LuaValueAsObject = { }
 function LuaValueAsObject:identify(value)
     --This enables any lua type to be used as an object.
-    return value; 
+    if value == nil then return NIL end
+    return value;
 end
 
 local EmbeddedHandler = { }

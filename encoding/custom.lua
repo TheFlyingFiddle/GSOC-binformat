@@ -62,6 +62,7 @@ end
 function Array:decode(decoder)
     local size = self.size
     local value = self.handler:create()
+    decoder:setobject(value)
     
     local mapping = self.mapper
     local decode  = mapping.decode
@@ -131,6 +132,7 @@ end
 function List:decode(decoder)
     local size   = readsize(decoder.reader, self.sizebits)
     local value  = self.handler:create(size)
+    decoder:setobject(value)
 
     local mapping = self.mapper
     local decode  = mapping.decode
@@ -186,6 +188,7 @@ end
 function Set:decode(decoder)
     local size  = readsize(decoder.reader, self.sizebits)
     local value  = self.handler:create(size)
+    decoder:setobject(value)
 
     local mapping = self.mapper
     local decode  = mapping.decode
@@ -244,6 +247,7 @@ end
 function Map:decode(decoder)
     local size  = readsize(decoder.reader, self.sizebits)
     local value = self.handler:create(size)
+    decoder:setobject(value)
     for i=1, size, 1 do
         local key  = self.keymapper:decode(decoder)
         local item = self.itemmapper:decode(decoder)
@@ -288,6 +292,7 @@ end
 
 function Tuple:decode(decoder)
     local value = self.handler:create();
+    decoder:setobject(value)
     for i=1, #self.mappers, 1 do
         local mapper = self.mappers[i] 
         local item   = mapper:decode(decoder)
@@ -334,9 +339,8 @@ function Union:encode(encoder, value)
 end
 
 function Union:decode(decoder)
-    local kind    = readsize(decoder.reader, self.sizebits)
-    local mapper  = self.mappers[kind]
-    return self.handler:create(kind, mapper:decode(decoder))
+    local kind = readsize(decoder.reader, self.sizebits)
+    return self.mappers[kind]:decode(decoder)
 end
 
 function Union:encodemeta(encoder)
@@ -355,7 +359,6 @@ function custom.union(handler, mappers, sizebits)
         assert(util.ismapping(mappers[i]))
     end
 
-    assert(handler.create,  "Union handler missing function create")
     assert(handler.select, "Union handler missing function select")
     
     local union = { }
@@ -398,81 +401,33 @@ end
 local Object = { }
 Object.__index = Object;
 function Object:encode(encoder, value)
-    local ident = self.handler:identify(value)
-    local index = 0
-    for i, v in ipairs(encoder.objects) do
-        if ident == v then
-            index = i
-        end
-    end   
-    
-    if index == 0 then 
-        index = #encoder.objects;
-        encoder.writer:varint(index)
-        table.insert(encoder.objects, ident)
+    local identity = self.handler:identify(value)
+    local writer = encoder.writer
+    local map = encoder:getobjectmap(self)
+    local pos = map[identity]
+    if pos == nil then 
+        map[identity] = writer:getposition()
+        writer:varint(0)
         self.mapper:encode(encoder, value)
     else 
-        encoder.writer:varint(index - 1)
-    end
-end
-
-local function fixcyclicrefs(obj, tmp, ref)
-    local t = type(obj)
-    if t == "table" then
-        for k, v in pairs(obj) do
-            if k == tmp and v == tmp then
-                obj[ref] = ref
-            elseif k == tmp then 
-                obj[ref] = v
-            elseif v == tmp then
-                obj[k] = ref     
-            end
-            
-            fixcyclicrefs(k, tmp, ref)
-            fixcyclicrefs(v, tmp, ref)        
-        end
+        writer:varint(writer:getposition() - pos)
     end
 end
 
 function Object:decode(decoder)
-    local index = decoder.reader:varint() + 1
-    if index > #decoder.objects then
-        if self.hastyperef then
-            local tmpObj = { } --Cycles in all honor but we mostly dont need em
-            table.insert(decoder.objects, tmpObj)
-            local obj = self.mapper:decode(decoder)
-            fixcyclicrefs(obj, tmpObj, obj)
-            decoder.objects[index] = obj
-            return obj
-        else
-            local obj = self.mapper:decode(decoder)
-            decoder.objects[index] = obj
-            return obj
-        end
-    else
-        return decoder.objects[index]
+    local reader = decoder.reader
+    local pos = reader:getposition()
+    local shift = reader:varint()
+    local index = pos - shift
+    local found, value = decoder:getobject(self, index)
+    if not found then
+        value = decoder:endobject(self, value, index, self.mapper:decode(decoder))
     end
+    return value
 end 
 
 function Object:encodemeta(encoder)
     writemeta(encoder, self.mapper)
-end
-
-local function hastyperef(mapping)
-    if util.ismapping(mapping) and 
-       (mapping.tag == tags.TYPEREF or mapping.tag == tags.DYNAMIC) then
-        --Dynamic tags can contain implicit typerefs.
-        return true
-    end
-   
-    for k, v in pairs(mapping) do
-        if type(v) == "table" then
-            if hastyperef(v) then
-                return true
-            end
-        end
-    end
-    return false
 end
 
 function custom.object(handler, mapper)
@@ -483,7 +438,6 @@ function custom.object(handler, mapper)
     object.mapper  = mapper
     object.handler = handler
     object.tag = tags.OBJECT
-    object.hastyperef = hastyperef(mapper)
     return object    
 end
 
