@@ -1,6 +1,6 @@
-local primitive = require"encoding.primitive"
-local standard  = require"encoding.standard"
-local custom    = require"encoding.custom"
+local primitive = require"tier.primitive"
+local standard  = require"tier.standard"
+local custom    = require"tier.custom"
 
 local dynamic
 local dynamic_handler = { }

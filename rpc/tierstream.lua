@@ -59,7 +59,7 @@ local function tcpstream(tcp_socket, write_size)
 	return stream
 end
 
-local encoding 	   = require"encoding"
+local tier 	   = require"tier"
 local cool_dynamic = require"experimental.dynamic"
 
 local TierStream = { }
@@ -83,8 +83,8 @@ local function tierstream(tcp_socket, write_size, read_size)
 	local stream   = setmetatable({ }, TierStream)
 	stream.stream  = tcpstream(tcp_socket, write_size, read_size)
 
-	stream.encoder = encoding.encoder(encoding.writer(stream.stream))
-	stream.decoder = encoding.decoder(encoding.reader(stream.stream))
+	stream.encoder = tier.encoder(tier.writer(stream.stream))
+	stream.decoder = tier.decoder(tier.reader(stream.stream))
 	return stream 	
 end
 

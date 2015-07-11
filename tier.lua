@@ -1,16 +1,16 @@
 local format    = require"format"
-local encoding  = require"encoding.core"
-local util      = require"encoding.util"
+local tier  = require"tier.core"
+local util      = require"tier.util"
 
-encoding.primitive = require"encoding.primitive"
-encoding.standard  = require"encoding.standard"
+tier.primitive = require"tier.primitive"
+tier.standard  = require"tier.standard"
 
 
-encoding.writer = format.writer
---Convinience function for encoding  single value
-function encoding.encode(stream, value, mapping, usemetadata)
+tier.writer = format.writer
+--Convinience function for tier  single value
+function tier.encode(stream, value, mapping, usemetadata)
    if mapping == nil then
-      mapping = encoding.standard.dynamic
+      mapping = tier.standard.dynamic
    end
    
    if usemetadata == nil then
@@ -21,17 +21,17 @@ function encoding.encode(stream, value, mapping, usemetadata)
    assert(util.isoutputstream(stream))
       
    local writer  = format.writer(stream)      
-   local encoder = encoding.encoder(writer, usemetadata)
+   local encoder = tier.encoder(writer, usemetadata)
    encoder:encode(mapping, value)
    encoder:close()   
 end
 
-encoding.reader = format.reader
+tier.reader = format.reader
 
 --Convinience function for decoding a single value.
-function encoding.decode(stream, mapping, usemetadata)
+function tier.decode(stream, mapping, usemetadata)
    if mapping == nil then
-       mapping = encoding.standard.dynamic
+       mapping = tier.standard.dynamic
    end
    
    if usemetadata == nil then
@@ -43,10 +43,10 @@ function encoding.decode(stream, mapping, usemetadata)
    assert(util.ismapping(mapping))
       
    local reader  = format.reader(stream)   
-   local decoder = encoding.decoder(reader, usemetadata)
+   local decoder = tier.decoder(reader, usemetadata)
    local val     = decoder:decode(mapping)
    decoder:close()
    return val
 end
 
-return encoding
+return tier

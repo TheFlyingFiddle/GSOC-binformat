@@ -1,7 +1,7 @@
-local generating = require"encoding.generating"
-local primitive  = require"encoding.primitive"
-local util       = require"encoding.util"
-local tags       = require"encoding.tags"
+local generating = require"tier.generating"
+local primitive  = require"tier.primitive"
+local util       = require"tier.util"
+local tags       = require"tier.tags"
 
 return function(standard)
     local function findnode(node, sindex)

@@ -1,7 +1,7 @@
 local format    = require"format"
-local tags		= require"encoding.tags"
-local parser	= require"encoding.parser"
-local core		= require"encoding.core"
+local tags		= require"tier.tags"
+local parser	= require"tier.parser"
+local core		= require"tier.core"
 
 local generating = { }
 

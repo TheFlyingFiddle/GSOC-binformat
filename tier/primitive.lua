@@ -1,11 +1,11 @@
-local tags   = require"encoding.tags"
+local tags   = require"tier.tags"
 local format = require"format"
 
 local primitive = { }
 
 local pack = format.packvarint
 
---Most primitive have a one to one mapping to encoding functions 
+--Most primitive have a one to one mapping to tier functions 
 --The method reduces some boilerplate.
 --It creates a basic encode/decode object that simply forwards to
 --the encoder/decoder.
@@ -122,7 +122,7 @@ function String:decode(decoder)
     return val
 end
 
---The wstring does not have a one-to-one mapping with an encoding/decoding function.
+--The wstring does not have a one-to-one mapping with an tier/decoding function.
 --Thus we need to create the mapper manually.
 local WString = { tag = tags.WSTRING , id = pack(tags.WSTRING)}
 function WString:encode(encoder, value)

@@ -1,9 +1,9 @@
-local encoding  = require"encoding"
-local primitive = encoding.primitive
-local standard  = encoding.standard
+local tier  = require"tier"
+local primitive = tier.primitive
+local standard  = tier.standard
 
 --Creates a mapping that can map between string or number
---values and their TIER encoding. 
+--values and their TIER tier. 
 local string_or_int_mapping = standard.union
 {
     { type = "number", mapping = primitive.int32 },
@@ -22,21 +22,21 @@ local without_name = { item_number = 14 }
 local output = io.open("Unions.dat", "wb")
 
 --Encodes a integer value
-encoding.encode(output, 123, string_or_int_mapping)
+tier.encode(output, 123, string_or_int_mapping)
 
 --Encodes a string value
-encoding.encode(output, "Hello", string_or_int_mapping)
+tier.encode(output, "Hello", string_or_int_mapping)
 
 --Encodes a value with the optional value present.
-encoding.encode(output, with_name, item_mapping)
+tier.encode(output, with_name, item_mapping)
 
 --Encodes a value without the optional value
-encoding.encode(output, without_name, item_mapping)
+tier.encode(output, without_name, item_mapping)
 output:close()
 
 local input = io.open("Unions.dat", "rb")
-local a_string          = encoding.decode(input, string_or_int_mapping)
-local a_int             = encoding.decode(input, string_or_int_mapping)
-local item_with_name    = encoding.decode(input, item_mapping)
-local item_without_name = encoding.decode(input, item_mapping)
+local a_string          = tier.decode(input, string_or_int_mapping)
+local a_int             = tier.decode(input, string_or_int_mapping)
+local item_with_name    = tier.decode(input, item_mapping)
+local item_without_name = tier.decode(input, item_mapping)
 input:close() 

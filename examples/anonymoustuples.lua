@@ -1,6 +1,6 @@
-local encoding  = require"encoding"
-local primitive = encoding.primitive
-local standard  = encoding.standard
+local tier  = require"tier"
+local primitive = tier.primitive
+local standard  = tier.standard
 
 local point_mapping = standard.tuple
 {
@@ -9,13 +9,13 @@ local point_mapping = standard.tuple
 }
 
 local output = io.open("AnonymousTuples.dat", "wb")
-encoding.encode(output, { 14, -12 }, point_mapping)
-encoding.encode(output, { 21, 24}, point_mapping)
+tier.encode(output, { 14, -12 }, point_mapping)
+tier.encode(output, { 21, 24}, point_mapping)
 output:close()
 
 local input = io.open("AnonymousTuples.dat", "rb")
-local point_a = encoding.decode(input, point_mapping)
-local point_b = encoding.decode(input)
+local point_a = tier.decode(input, point_mapping)
+local point_b = tier.decode(input)
 input:close()
 
 --The values in the points are accessed with the integers 

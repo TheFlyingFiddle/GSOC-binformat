@@ -1,5 +1,5 @@
-local primitive = require"encoding.primitive"
-local custom    = require"encoding.custom"
+local primitive = require"tier.primitive"
+local custom    = require"tier.custom"
 return function (standard)
     
     local dynamic

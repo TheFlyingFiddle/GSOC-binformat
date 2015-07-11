@@ -1,6 +1,6 @@
-local encoding  = require"encoding"
-local primitive = encoding.primitive
-local standard  = encoding.standard
+local tier  = require"tier"
+local primitive = tier.primitive
+local standard  = tier.standard
 
 local outfile = io.open("Maps.dat", "wb")
 
@@ -15,7 +15,7 @@ local string_to_int_data =
 }
 
 --Encode the string to int map
-encoding.encode(outfile, string_to_int_data, string_to_int_mapping)
+tier.encode(outfile, string_to_int_data, string_to_int_mapping)
 
 --Mapping of a map 
 local string_to_string_mapping = standard.map(primitive.string, primitive.string)
@@ -27,11 +27,11 @@ local string_to_string_data  =
    g = "c", c = "g"
 }
 
-encoding.encode(outfile, string_to_string_data, string_to_string_mapping)
+tier.encode(outfile, string_to_string_data, string_to_string_mapping)
 outfile:close()
 
 --Reads back the values encoded
 local infile = io.open("Maps.dat", "rb")
-local string_to_int = encoding.decode(infile, string_to_int_mapping)
-local string_to_string = encoding.decode(infile, string_to_string_mapping)
+local string_to_int = tier.decode(infile, string_to_int_mapping)
+local string_to_string = tier.decode(infile, string_to_string_mapping)
 infile:close()

@@ -1,6 +1,6 @@
-local encoding  = require"encoding"
-local standard  = encoding.standard
-local primitive = encoding.primitive
+local tier  = require"tier"
+local standard  = tier.standard
+local primitive = tier.primitive
 
 local tuple = standard.tuple
 {
@@ -9,13 +9,13 @@ local tuple = standard.tuple
 }
 
 local output = io.open("NamedTupleLimitations.dat", "wb")
-encoding.encode(output, { a_int = 13, a_float = 1.0 }, tuple)
-encoding.encode(output, { a_int = 54, a_float = 16.0 }, tuple)
+tier.encode(output, { a_int = 13, a_float = 1.0 }, tuple)
+tier.encode(output, { a_int = 54, a_float = 16.0 }, tuple)
 output:close()
 
 local input = io.open("NamedTupleLimitations.dat", "rb")
-local with_mapping = encoding.decode(input, tuple)
-local without_mapping = encoding.decode(input)
+local with_mapping = tier.decode(input, tuple)
+local without_mapping = tier.decode(input)
 input:close()
 
 --The fields are there as expected and they still have the same values.

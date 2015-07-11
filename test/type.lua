@@ -82,8 +82,8 @@ local TyperefCases =
 }
 
 local function idmatcher(actual, expected)
-	local aid = encoding.getid(actual)
-	local eid = encoding.getid(expected)
+	local aid = tier.getid(actual)
+	local eid = tier.getid(expected)
 	if aid == eid then return true end
 	
 	return false, "metadata mismatch"		

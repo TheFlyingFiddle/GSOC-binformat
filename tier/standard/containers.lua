@@ -1,6 +1,6 @@
-local custom 	= require"encoding.custom"
-local primitive = require"encoding.primitive"
-local util      = require"encoding.util"
+local custom 	= require"tier.custom"
+local primitive = require"tier.primitive"
+local util      = require"tier.util"
 
 --List and Array handler
 local TableAsList = { }

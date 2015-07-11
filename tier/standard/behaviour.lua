@@ -1,5 +1,5 @@
 local format = require"format"
-local custom = require"encoding.custom"
+local custom = require"tier.custom"
 
 --Object handler
 local LuaValueAsObject = { }

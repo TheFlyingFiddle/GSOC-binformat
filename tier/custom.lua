@@ -1,7 +1,7 @@
 local format = require"format"
-local core   = require"encoding.core"
-local tags   = require"encoding.tags"
-local util   = require"encoding.util"
+local core   = require"tier.core"
+local tags   = require"tier.tags"
+local util   = require"tier.util"
 
 local pack      = format.packvarint
 local writemeta = core.writemeta

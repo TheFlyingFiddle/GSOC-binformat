@@ -1,5 +1,5 @@
 local socket 	= require"socket"
-local encoding 	= require"encoding"
+local tier 	= require"tier"
 local tierstream	= require"rpc.tierstream"
 
 local Proxy = { }

@@ -1,5 +1,5 @@
 local format	= require"format"
-local tags      = require"encoding.tags"
+local tags      = require"tier.tags"
 
 local core = { }
 function core.getid(mapping)

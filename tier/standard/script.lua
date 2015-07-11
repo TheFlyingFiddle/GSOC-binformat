@@ -1,5 +1,5 @@
-local custom    = require"encoding.custom"
-local primitive = require"encoding.primitive"
+local custom    = require"tier.custom"
+local primitive = require"tier.primitive"
 local Script = { identifier = "script-" .. _VERSION }
 local dump = string.dump
 

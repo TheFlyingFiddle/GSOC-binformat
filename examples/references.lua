@@ -1,6 +1,6 @@
-local encoding  = require"encoding"
-local standard  = encoding.standard
-local primitive = encoding.primitive
+local tier  = require"tier"
+local standard  = tier.standard
+local primitive = tier.primitive
 
 --A reference mapping of string values
 local string_ref_mapping = standard.object(primitive.string)
@@ -18,7 +18,7 @@ local fruit_basket       =
 
 --Will only encode the full values "Apple", "Orange", "Banana" and "Pineapple" a 
 --single time. The other times will simply be instream references. 
-encoding.encode(output, fruit_basket, string_list)
+tier.encode(output, fruit_basket, string_list)
 
 local person_ref_mapping = standard.object(standard.tuple
 {
@@ -51,12 +51,12 @@ local tasks =
 
 --Encode the tasks, the persons john and jane will only be encoded a single time.
 --Thus their references will be valid even after the decoding.
-encoding.encode(output, tasks, task_list)
+tier.encode(output, tasks, task_list)
 output:close()
 
 local input  = io.open("References.dat", "rb")
-local fruits = encoding.decode(input, string_list)
-local tasks  = encoding.decode(input, task_list)
+local fruits = tier.decode(input, string_list)
+local tasks  = tier.decode(input, task_list)
 
 --Make sure that the referential integrity is still there.
 assert(tasks[1].assigned == tasks[2].assigned)

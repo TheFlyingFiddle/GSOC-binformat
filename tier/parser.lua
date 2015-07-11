@@ -1,5 +1,5 @@
 local format   = require"format"
-local tags 	   = require"encoding.tags"
+local tags 	   = require"tier.tags"
 
 local LIST  	= tags.LIST
 local SET   	= tags.SET

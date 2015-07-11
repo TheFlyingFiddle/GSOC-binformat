@@ -1,5 +1,6 @@
 require "test.utils"
 
+dofile("test/dynamic.lua")
 dofile("test/script.lua")
 dofile("test/misc.lua")
 dofile("test/bimap.lua")
@@ -19,4 +20,3 @@ dofile("test/flatbuffermonster.lua")
 dofile("test/typeref.lua")
 dofile("test/type.lua")
 dofile("test/embedded.lua")
-dofile("test/dynamic.lua")
