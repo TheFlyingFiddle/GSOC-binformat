@@ -30,8 +30,28 @@ runtest {
 }
 
 
+local old_dynamic do
+	local lua2tag = 
+	{
+		["nil"]      = primitive.null,
+		["boolean"]  = primitive.boolean,
+		["number"]   = primitive.double,
+		["string"]   = primitive.string,
+		["function"] = nil,
+		["thread"]   = nil,
+		["userdata"] = nil,
+	}
+
+	function lua2tag:getmappingof(value)
+	    return self[type(value)] or error("no mapping for value of type " .. type(value))
+	end
+
+	old_dynamic = custom.dynamic(lua2tag, standard.type)
+	lua2tag["table"] = standard.object(standard.map(old_dynamic, old_dynamic)) 
+end
+
 runtest { 
-	mapping = standard.dynamic,
+	mapping = old_dynamic,
 	{
 		{ actual = nested },
 		{ actual = { nested, nested } },
@@ -57,7 +77,7 @@ runtest {
 
 
 runtest {
-	mapping = standard.list(standard.object(standard.dynamic)),
+	mapping = standard.list(standard.object(old_dynamic)),
 	{
 		{ actual = { 1,2,3 }, id = "OBJECT_DYNAMIC_1_2_3", },
 		{ actual = { nested }, id = "OBJECT_DYNAMIC_NESTED" },

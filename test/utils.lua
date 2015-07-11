@@ -7,11 +7,11 @@ local oo = require "loop.base"
 local Viewer = require "loop.debug.Viewer"
 local Matcher = require "loop.debug.Matcher"
 
-tags = require "encoding.tags"
-encoding = require "encoding"
-primitive = encoding.primitive
-standard = encoding.standard
-custom   = require"encoding.custom"
+tags = require "tier.tags"
+tier = require "tier"
+primitive = tier.primitive
+standard = tier.standard
+custom   = require"tier.custom"
 format	 = require"format"
 
 local function hexastream(output, stream, prefix, start)
@@ -77,7 +77,7 @@ local function assertequals(value, actual, expected)
 		if adata ~= edata then
 			afile:close()
 			afile = assert(io.open(actual, "rb"))
-			io.write("Encoding of '")
+			io.write("encoding of '")
 			viewer:write(value)
 			io.write("'")
 			if lines > 0 then
@@ -170,6 +170,8 @@ local function checksame(test, case, recovered)
 			end					
 			assert(ok, errmsg)
 		else
+			--Function upvalues will not be the same after 
+			--tier. 	
 			local matcher = Matcher(table.copy(test.compareopts or {}))
 			local ok, errmsg = matcher:match(recovered, expected)
 			if not ok then 
@@ -191,11 +193,11 @@ local function rundynamictest(test)
 		for cid, case in ipairs(group) do
 			io.write("Dyn_" .. tags[mapping.tag], ": "); viewer:write(case.actual); io.write(" ... "); io.flush()
 			local output 	 = format.outmemorystream()
-			encoding.encode(output, case.actual, mapping, true)
+			tier.encode(output, case.actual, mapping, true)
 			--hexastream(io.stdout, output:getdata())
-		
+			
 			local input 	= format.inmemorystream(output:getdata())			
-			local recovered 	= encoding.decode(input, standard.dynamic, false)
+			local recovered 	= tier.decode(input, standard.dynamic, false)
 			checksame(test, case, recovered)
 		end
 	end
@@ -222,7 +224,7 @@ function runtest(test)
 			local output = test.noregression and format.outmemorystream()
 			                                  or assert(io.open(outpath, "wb"))
 			do
-				local encoder = encoding.encoder(encoding.writer(output), false)
+				local encoder = tier.encoder(tier.writer(output), false)
 				if encodeerror == nil then
 					encoder:encode(mapping, case.actual)
 				else
@@ -248,7 +250,7 @@ function runtest(test)
 			if encodeerror == nil then
 				local input = test.noregression and format.inmemorystream(output)
 				                                 or assert(io.open(outpath, "rb"))
-				local decoder = encoding.decoder(encoding.reader(input), false)
+				local decoder = tier.decoder(tier.reader(input), false)
 				local recovered = assertcount(test.countexpected, decoder:decode(mapping))
 				decoder:close()
 				input:close()

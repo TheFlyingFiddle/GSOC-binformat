@@ -1,8 +1,8 @@
-local encoding  = require"encoding"
-local custom	= require"encoding.custom"
+local tier  = require"tier"
+local custom	= require"tier.custom"
 
-local standard  = encoding.standard
-local primitive = encoding.primitive
+local standard  = tier.standard
+local primitive = tier.primitive
 
 local dna_table = 
 {
@@ -43,10 +43,10 @@ local dna_mapping = custom.transform(DnaTransform, custom.semantic("DNA", standa
 local tests = { "AGGTGGGCTTTAATTAATTACCGGAAGGTTAACCTT" }
 
 local stream = io.open("DNA.dat", "wb")
-encoding.encode(stream, tests[1], dna_mapping)
+tier.encode(stream, tests[1], dna_mapping)
 stream:close()
 
 stream = io.open("DNA.dat", "rb")
-local res = encoding.decode(stream, dna_mapping);
+local res = tier.decode(stream, dna_mapping);
 assert(res == tests[1])
 stream:close();

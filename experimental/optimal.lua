@@ -1,9 +1,9 @@
 local format    = require"format"
-local tags      = require"encoding.tags"
-local custom	= require"encoding.custom"
-local primitive = require"encoding.primitive"
-local util      = require"encoding.util"
-local core      = require"encoding.core"
+local tags      = require"tier.tags"
+local custom	= require"tier.custom"
+local primitive = require"tier.primitive"
+local util      = require"tier.util"
+local core      = require"tier.core"
 
 local spack     = string.pack
 local sunpack   = string.unpack

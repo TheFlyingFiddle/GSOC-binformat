@@ -1,6 +1,6 @@
-local encoding  = require"encoding"
-local primitive = encoding.primitive
-local standard  = encoding.standard
+local tier  = require"tier"
+local primitive = tier.primitive
+local standard  = tier.standard
 
 local outfile = io.open("Sets.dat", "wb")
 
@@ -13,10 +13,10 @@ local int_set_data =
   [11] = true, [13] = true
 }
 
-encoding.encode(outfile, int_set_data, int_set_mapping)
+tier.encode(outfile, int_set_data, int_set_mapping)
 outfile:close()
 
 --We can read the data back like this
 local infile = io.open("Sets.dat", "rb")
-local int_set = encoding.decode(infile, int_set_mapping)
+local int_set = tier.decode(infile, int_set_mapping)
 infile:close()

@@ -1,5 +1,5 @@
 local format	= require"format"
-local tags      = require"encoding.tags"
+local tags      = require"tier.tags"
 
 local core = { }
 function core.getid(mapping)
@@ -127,7 +127,7 @@ end
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
    self.reader:discardbits()   
-   if self.usemetadata  then 
+   if self.usemetadata and mapping.tag ~= tags.DYNAMIC then 
       local id = core.getid(mapping)
       local meta_types = self.reader:raw(#id)
       assert(meta_types == id)

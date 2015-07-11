@@ -1,11 +1,19 @@
-local encoding  = require"encoding"
-local standard  = encoding.standard
-local primitive = encoding.primitive
+--This module was very usefull in testing
+--Migration from the old dynamic implementation idtodebugid
+--the new one. However it is no longer needed.
+--I am leaving the code her uncommented incase 
+--I ever feel like updating the dynamic code yet again.
+
+--[[
+local tier  = require"tier"
+local standard  = tier.standard
+local primitive = tier.primitive
 local display   = require"test.user_display"
-local dynamic   = require"experimental.dynamic"
 local format    = require"format"
-local parser	= require"encoding.parser"
-local Matcher = require "loop.debug.Matcher"
+local parser	= require"tier.parser"
+local Matcher   = require "loop.debug.Matcher"
+
+local dynamic = standard.dynamic
 
 local function assertmatch(recovered, expected)
 	local matcher = Matcher({})
@@ -24,9 +32,9 @@ local function comp_dynamic(value, manual_mapping)
 	local manual_stream    = format.outmemorystream()
 	
 
-	encoding.encode(dyn_stream, value)	
-	encoding.encode(new_dyn_stream, value, dynamic)
-	encoding.encode(manual_stream, value, manual_mapping)
+	tier.encode(dyn_stream, value)	
+	tier.encode(new_dyn_stream, value, dynamic)
+	tier.encode(manual_stream, value, manual_mapping)
 	
 	local data     	   = dyn_stream:getdata()
 	local new_data 	   = new_dyn_stream:getdata()
@@ -36,9 +44,9 @@ local function comp_dynamic(value, manual_mapping)
 	local ndyn_in = format.inmemorystream( new_data)
 	local manual_in = format.inmemorystream(manual_data)
 	
-	--assertmatch(encoding.decode(dyn_in), value)
-	assertmatch(encoding.decode(ndyn_in, dynamic), value)
-	assertmatch(encoding.decode(manual_in, manual_mapping), value)
+	--assertmatch(tier.decode(dyn_in), value)
+	assertmatch(tier.decode(ndyn_in, dynamic), value)
+	assertmatch(tier.decode(manual_in, manual_mapping), value)
 	local is_larger = #new_data > #data
 	if is_debuging or is_larger then	
 		print("\nStream size <manual : new : old> | " .. #manual_data .. " : " 
@@ -46,7 +54,7 @@ local function comp_dynamic(value, manual_mapping)
 											    #data .. " |")
 												
 		--local mapping = dynamic.handler:getmappingof(value)
-		--local id 	  = encoding.getid(mapping)
+		--local id 	  = tier.getid(mapping)
 		--print(parser.idtodebugid(id))
 				
 		print("Manual data:")
@@ -208,4 +216,4 @@ local mapping = standard.map(primitive.stream, standard.tuple
 	}
 })
 
-comp_dynamic(data, mapping)
+comp_dynamic(data, mapping)]]--

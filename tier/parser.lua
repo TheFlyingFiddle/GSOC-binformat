@@ -1,5 +1,5 @@
 local format   = require"format"
-local tags 	   = require"encoding.tags"
+local tags 	   = require"tier.tags"
 
 local LIST  	= tags.LIST
 local SET   	= tags.SET
@@ -25,6 +25,7 @@ local parser = { }
 local unpackvar = format.unpackvarint
 local function parsenode(metastring, index)
 	local tag  = unpackvar(string.sub(metastring, index, index))
+	
 	local node = { }
 	node.tag   = tag
 	node.sindex = index

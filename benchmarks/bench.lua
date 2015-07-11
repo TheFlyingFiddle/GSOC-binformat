@@ -1,5 +1,5 @@
 local format   = require"format"
-local encoding = require"encoding"
+local tier = require"tier"
  
 local bench = { }
 
@@ -42,18 +42,18 @@ end
 function bench.mapping(format, name, count, to_encode, mapping, equality)
 	print("Starting benchmark")
 	local encode_output = format.outmemorystream()
-	encoding.encode(encode_output, to_encode, mapping, false)
+	tier.encode(encode_output, to_encode, mapping, false)
 	local stream_data    = encode_output:getdata()
 		
 	if equality then
-		local decoded = encoding.decode(decode_input, mapping)
+		local decoded = tier.decode(decode_input, mapping)
 		equality(decoded, to_encode)
 	end	
 		
 	local function encode()
 		local stream  = format.outmemorystream()
 		local writer  = format.writer(stream)
-		local encoder = encoding.encoder(writer)
+		local encoder = tier.encoder(writer)
 		encoder:encode(mapping, to_encode)
 		encoder:close()
 	end
@@ -61,19 +61,19 @@ function bench.mapping(format, name, count, to_encode, mapping, equality)
 	local function decode()
 		local input	  = format.inmemorystream(stream_data)
 		local reader  = format.reader(input)
-		local decoder = encoding.decoder(reader)
+		local decoder = tier.decoder(reader)
 		decoder:decode(mapping)
 		decoder:close()
 	end	
 	
 	local function combined()
 		local outstream = format.outmemorystream()
-		local encoder   = encoding.encoder(format.writer(outstream))
+		local encoder   = tier.encoder(format.writer(outstream))
 		encoder:encode(mapping, to_encode)
 		encoder:close()
 		
 		local instream  = format.inmemorystream(outstream:getdata())
-		local decoder	= encoding.decoder(format.reader(instream))
+		local decoder	= tier.decoder(format.reader(instream))
 		local decoded   = decoder:decode(mapping)
 		decoder:close()
 	
@@ -85,7 +85,7 @@ function bench.mapping(format, name, count, to_encode, mapping, equality)
 	local timings = bench.benchmark(count, { encode, decode, combined } )
 	
 	print(name .. ":")
-	print("Encoding min:max:mean " .. timings[1].min .. " : " .. timings[1].max .. " : " .. timings[1].mean)
+	print("tier min:max:mean " .. timings[1].min .. " : " .. timings[1].max .. " : " .. timings[1].mean)
 	print("Decoding min:max:mean " .. timings[2].min .. " : " .. timings[2].max .. " : " .. timings[2].mean)
 	print("Combined min:max:mean " .. timings[3].min .. " : " .. timings[3].max .. " : " .. timings[3].mean)
 	print("Stream size " .. #stream_data)
