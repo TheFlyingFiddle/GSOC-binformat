@@ -25,6 +25,7 @@ local parser = { }
 local unpackvar = format.unpackvarint
 local function parsenode(metastring, index)
 	local tag  = unpackvar(string.sub(metastring, index, index))
+	
 	local node = { }
 	node.tag   = tag
 	node.sindex = index

@@ -701,7 +701,7 @@ function Transform:decode(decoder)
 end
 
 function Transform:encodemeta(encoder)
-    writemeta(encoder, self.mapping)
+    self.mapping:encodemeta(encoder)
 end
 
 function custom.transform(handler, mapping)
@@ -716,6 +716,7 @@ function custom.transform(handler, mapping)
     transform.handler = handler
     transform.mapping = mapping
     transform.tag     = mapping.tag
+    transform.id      = mapping.id
     return transform
 end
 

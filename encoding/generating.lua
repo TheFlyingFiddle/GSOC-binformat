@@ -1,6 +1,7 @@
 local format    = require"format"
 local tags		= require"encoding.tags"
 local parser	= require"encoding.parser"
+local core		= require"encoding.core"
 
 local generating = { }
 
@@ -12,8 +13,20 @@ function Generator:generate(node) --rep is the entire type.
 	local mapping = self.mappings[id] or self.tempmappings[node.sindex]
 	if not mapping then
 		local gen	= self.generators[node.tag]
-		mapping 	= gen(self, node)
-		self.tempmappings[node.sindex] = mapping
+		if gen then 
+			mapping 	= gen(self, node)
+			self.tempmappings[node.sindex] = mapping
+		elseif node.tag == tags.SEMANTIC then 
+			gen = self.semantic_generators[node.identifier]
+			if gen then 
+				mapping = gen(self, node[1])
+				self.tempmappings[node.sindex] = mapping
+			else
+				error("No semantic generator for identifier " .. node.identifier )
+			end
+		else 
+			error("No generator for tag " .. tags[node.tag] .. "(" .. node.tag .. ")")
+		end
 	end					
 	return mapping
 end
@@ -60,18 +73,30 @@ function Generator:fromstring(str)
 	return self:fromtype(parsetree)
 end
 
+function Generator:idmapping(mapping)
+	local id = mapping.id 
+	if not id then
+		local eid = core.getid(mapping)
+		id = string.sub(eid, 1, 1) .. string.sub(eid, 3)
+	end
+	self.mappings[id] = mapping
+end
+
+function Generator:taggenerator(tag, generator)
+	self.generators[tag] = generator
+end
+
+function Generator:semanticgenerator(id, generator)
+	self.semantic_generators[id] = generator
+end
+
 function generating.generator(generators, mappings)
 	local gen = { }
 	setmetatable(gen, Generator)
-	gen.generators = generators
-	gen.mappings   = { }
-	
-	for _, v in pairs(mappings)  do
-		gen.mappings[v.id] = v
-	end
-	
+	gen.generators			= { }
+	gen.semantic_generators = { }
+	gen.mappings			= { }
 	return gen
 end
-
 
 return generating

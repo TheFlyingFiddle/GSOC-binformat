@@ -31,8 +31,8 @@ local ObjectCases =
 
 local SemanticCases = 
 {
-	{ actual = custom.semantic("test", primitive.varint) },
-	{ actual = custom.semantic("color", primitive.uint32)}
+	--{ actual = custom.semantic("test", primitive.varint) },
+	--{ actual = custom.semantic("color", primitive.uint32)}
 }
 
 local newtyperef = custom.typeref

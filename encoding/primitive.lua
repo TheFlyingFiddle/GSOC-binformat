@@ -192,6 +192,7 @@ primitive.wstring	= WString
 primitive.flag		= Flag
 primitive.sign		= Sign
 
+
 createBitInts(tags.UINT, "uint", 64)
 createBitInts(tags.SINT, "int",  64)
 

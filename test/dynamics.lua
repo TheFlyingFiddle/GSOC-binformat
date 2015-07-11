@@ -2,10 +2,11 @@ local encoding  = require"encoding"
 local standard  = encoding.standard
 local primitive = encoding.primitive
 local display   = require"test.user_display"
-local dynamic   = require"experimental.dynamic"
 local format    = require"format"
 local parser	= require"encoding.parser"
-local Matcher = require "loop.debug.Matcher"
+local Matcher   = require "loop.debug.Matcher"
+
+local dynamic = standard.dynamic
 
 local function assertmatch(recovered, expected)
 	local matcher = Matcher({})

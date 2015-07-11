@@ -170,6 +170,8 @@ local function checksame(test, case, recovered)
 			end					
 			assert(ok, errmsg)
 		else
+			--Function upvalues will not be the same after 
+			--encoding. 	
 			local matcher = Matcher(table.copy(test.compareopts or {}))
 			local ok, errmsg = matcher:match(recovered, expected)
 			if not ok then 
@@ -193,7 +195,7 @@ local function rundynamictest(test)
 			local output 	 = format.outmemorystream()
 			encoding.encode(output, case.actual, mapping, true)
 			--hexastream(io.stdout, output:getdata())
-		
+			
 			local input 	= format.inmemorystream(output:getdata())			
 			local recovered 	= encoding.decode(input, standard.dynamic, false)
 			checksame(test, case, recovered)

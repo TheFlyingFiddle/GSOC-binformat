@@ -88,6 +88,7 @@ local function numbers(iter)
     return min_max_mapping(min, max)
 end
 
+
 local type_tuple    = { }
 local min_tuple     = { }
 local max_tuple     = { }
@@ -108,8 +109,11 @@ local function tuple_element_mapping(type)
     elseif type == "string" then
         return primitive.stream
     elseif type == "table" or 
-           type == "userdata" then
+           type == "userdata" or 
+           type == "function" then
         return dynamic
+    elseif type == "thread" then
+        error("Cannot serialize corutines!")
     end
 end
 
@@ -282,17 +286,6 @@ local function table_mapping(value)
     return standard.object(mapping)
 end
 
-local function userdata_mapping(value)
-    if value.tiermapping ~= nil then
-        return value.tiermapping
-    end
-    
-    --Check if it has a mapping field. 
-	--If it does we use that.
-	--To encode the userdata. 
-    error("Can't encode userdata yet")
-end
-
 local function list_iter(value)
     local i = 0
     local n = #value
@@ -331,12 +324,28 @@ iterators.set  = key_iter
 iterators.key_map = key_iter
 iterators.value_map = value_iter
 
+local function userdata_mapping(value)
+    --Check if it has a mapping field. 
+	--If it does we use that.
+	--To encode the userdata. 
+    if value.tiermapping ~= nil then
+        return value.tiermapping
+    end
+    
+    error("Can't encode userdata yet")
+end
+
+
 dynamic_handler["nil"]        = function() return primitive.null end
+dynamic_handler["function"]   = function() return standard.script end
 dynamic_handler.boolean       = function() return primitive.boolean end
 dynamic_handler.string        = function() return standard.object(primitive.stream) end
+
 dynamic_handler.number        = number_mapping
 dynamic_handler.table         = table_mapping
 dynamic_handler.userdata      = userdata_mapping
+
+dynamic_handler.thread        = function() error("Cannot serialize coroutines.") end
 
 function dynamic_handler:getmappingof(value)
     local func = self[type(value)] or error("no mapping for value of type " .. type(value))
