@@ -42,6 +42,15 @@ end
 local Encoder = { }
 Encoder.__index = Encoder
 
+function Encoder:getobjectmap(mapping)
+  local domain = self.domains[mapping]
+  if domain == nil then
+    domain = {}
+    self.domains[mapping] = domain
+  end
+  return domain
+end
+
 --Encodes data using the specified mapping.
 function Encoder:encode(mapping, data)
    self.writer:flushbits()
@@ -64,7 +73,7 @@ end
 function core.encoder(writer, usemetadata)
 	local encoder = setmetatable({ }, Encoder)
     encoder.writer = writer;
-	encoder.objects = { }
+	encoder.domains = { }
 	encoder.usemetadata = usemetadata
 	return encoder	
 end
@@ -72,6 +81,48 @@ end
 
 local Decoder = { }
 Decoder.__index = Decoder
+
+function Decoder:getobject(mapping, id)
+  local domain = self.domains[mapping]
+  if domain == nil then
+    domain = { values = {}, defined = {} }
+    self.domains[mapping] = domain
+  end
+  if not domain.defined[id] then
+    local pending = self.pending
+    local top = #pending+1
+    pending[top] = { domain = domain, id = id }
+    return false, top
+  end
+  return true, domain.values[id]
+end
+
+function Decoder:setobject(value)
+  local pending = self.pending
+  local top = #pending
+  if top > 0 then
+    local entry = pending[top]
+    pending[top] = nil
+    local domain, id = entry.domain, entry.id
+    domain.defined[id] = true
+    domain.values[id] = value
+  end
+end
+
+function Decoder:endobject(mapping, expected, id, value)
+  local domain = self.domains[mapping]
+  local pending = self.pending
+  local top = #pending
+  if domain.defined[id] then
+    expected = expected-1
+  else
+    pending[top] = nil
+    domain.defined[id] = true
+    domain.values[id] = value
+  end
+  assert(top == expected, "corrupted mapping, unresolved objects")
+  return value
+end
 
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
@@ -97,7 +148,8 @@ end
 function core.decoder(reader, usemetadata)
 	local decoder = setmetatable({ }, Decoder)
     decoder.reader  = reader
-	decoder.objects = { }
+	decoder.domains = {}
+	decoder.pending = {}
 	decoder.usemetadata = usemetadata
 	return decoder
 end

@@ -106,10 +106,6 @@ function TypeUnion:select(value)
     error(string.format("Cannot encode type: %s", typeof))
 end
 
-function TypeUnion:create(kind, value)
-    return value;
-end
-
 --Spacial case union nullable
 local Optional = { }
 function Optional:select(value)
@@ -118,10 +114,6 @@ function Optional:select(value)
    else
       return 2, value
    end
-end
-
-function Optional:create(kind, ...)
-   return ...
 end
 
 local newlist = custom.list

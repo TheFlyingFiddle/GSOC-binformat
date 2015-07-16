@@ -2,10 +2,12 @@ local format = require"format"
 local custom = require"tier.custom"
 
 --Object handler
+local NIL = {}
 local LuaValueAsObject = { }
 function LuaValueAsObject:identify(value)
     --This enables any lua type to be used as an object.
-    return value; 
+    if value == nil then return NIL end
+    return value;
 end
 
 local EmbeddedHandler = { }
