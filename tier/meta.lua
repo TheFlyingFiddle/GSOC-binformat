@@ -77,11 +77,11 @@ local function encodeid(encoder, type)
 	end 
 end
 
-local outstream = format.outmemorystream
+local outstream  = format.outmemorystream
 local newwriter  = format.writer 
 local newencoder = core.encoder 
 
-local function getencodeid(type)
+function meta.getid(type)
 	if not type.id then
 		local buffer  = outstream()
 		encoder       = newencoder(newwriter(buffer))
@@ -97,7 +97,7 @@ local function getencodeid(type)
 end 
 
 function meta.encodetype(encoder, type)
-	encoder.writer:raw(getencodeid(type))	
+	encoder.writer:raw(meta.getid(type))	
 end 
 
 local function newdecodetype(decoder, MetaTable)
@@ -139,7 +139,9 @@ function meta.decodetype(decoder)
 		local data    	 = pack(tag) .. decoder.reader:stream()
 		local decoder 	 = newdecoder(newreader(instream(data)))
 		decoder.types 	 = { }
-		return decodeid(decoder)			
+		local type 		 = decodeid(decoder)
+		type.id 		 = data 
+		return type			
 	end  
 end
 
@@ -166,7 +168,7 @@ end
 do 
 	local List = newmetatype(tags.LIST) 
 	function List:encode(encoder)
-		encoder.writer:varint(self.size)
+		encoder.writer:varint(self.sizebits)
 		encodeid(encoder, self[1])
 	end
 	
@@ -175,11 +177,11 @@ do
 		item[1]			  = decodeid(decodeid)
 	end
 	
-	function meta.list(element_type, size)
-		if size == nil then size = 0 end
+	function meta.list(element_type, sizebits)
+		if sizebits == nil then sizebits = 0 end
 		local list 	  = setmetatable({ }, List)
 		list[1] 	  = element_type
-		list.size 	  = size
+		list.sizebits 	  = sizebits
 		return list 
 	end
 end 
@@ -187,20 +189,20 @@ end
 do 
 	local Set = newmetatype(tags.SET) 
 	function Set:encode(encoder)
-		encoder.writer:varint(self.size)
+		encoder.writer:varint(self.sizebits)
 		encodeid(encoder, self[1])
 	end
 	
 	function Set:decode(decoder, item)
-		item.size 	= decoder.reader:varint()
+		item.sizebits 	= decoder.reader:varint()
 		item[1]		= decodedid(decoder)
 	end
 	
-	function meta.set(element_type, size)
-		if size == nil then size = 0 end
+	function meta.set(element_type, sizebits)
+		if sizebits == nil then sizebits = 0 end
 		local set = setmetatable({}, Set)
 		set[1]	  = element_type
-		set.size  = size 
+		set.sizebits  = sizebits 
 		set.tag   = tags.SET
 		return set
 	end
@@ -209,7 +211,7 @@ end
 do
 	local Map 	= newmetatype(tags.MAP)
 	function Map:encode(encoder)
-		encoder.writer:varint(self.size)
+		encoder.writer:varint(self.sizebits)
 		encodeid(encoder, self[1])
 		encodeid(encoder, self[2])
 	end
@@ -220,13 +222,13 @@ do
 		item[2]		 = decodeid(decoder)
 	end
 	
-	function meta.map(key_type, value_type, size)
-		if size == nil then size = 0 end
+	function meta.map(key_type, value_type, sizebits)
+		if sizebits == nil then sizebits = 0 end
 		
 		local map = setmetatable({ }, Map)
 		map[1]    = key_type
 		map[2]	  = value_type
-		map.size  = size
+		map.sizebits  = sizebits
 		return map
 	end
 end 
@@ -259,7 +261,7 @@ end
 do 
 	local Union = newmetatype(tags.UNION)
 	function Union:encode(encoder)
-		encoder.writer:varint(self.size)
+		encoder.writer:varint(self.sizebits)
 		encoder.writer:varint(#self)
 		
 		for i=1, #self do 
@@ -268,20 +270,21 @@ do
 	end
 	
 	function Union:decode(decoder, item)
-		item.size = encoder.reader:varint()
+		item.sizebits = decoder.reader:varint()
+		local size    = decoder.reader:varint()
 		for i=1, size do 
 			item[i] = decodeid(decoder)
 		end 
 	end 
 	 
-	function meta.union(types, size)
-		if size == nil then size = 0 end 
+	function meta.union(types, sizebits)
+		if sizebits == nil then sizebits = 0 end 
 		local union = setmetatable({}, Union)
 		for i=1, #types do 
 			union[i] = types[i]
 		end 
 		
-		union.size = size 
+		union.sizebits = sizebits 
 		return union
 	end
 end 
@@ -343,12 +346,12 @@ end
 do 
 	local Align   = { tags = tags.ALIGN } Align.__index = Align
 	function Align:encode(encoder)
-		encoder.writer:varint(varint)
+		encoder.writer:varint(self.alignof)
 		encodeid(encoder, self[1])
 	end  
 	
 	function Align:decode(decoder, item)
-		item.size = decoder.reader:varint()
+		item.alignof = decoder.reader:varint()
 		item[1]   = decodeid(decoder)
 	end
 	
@@ -357,12 +360,13 @@ do
 	end
 	
 	local function fixedaligndecode(self, decoder, item)
+		item.alignof = self.fixedalignof
 		item[1] = decodeid(decoder)
 	end 
 	
-	local function newaligntype(tag, size)
+	local function newaligntype(tag, alignof)
 		local type = newmetatype(tag)
-		type.fixedsize = size 
+		type.fixedalignof = alignof 
 		type.encode = fixedalignencode
 		type.decode = fixedaligndecode
 		return type 
@@ -376,14 +380,14 @@ do
 		[8] = newaligntype(tags.ALIGN8, 8)
 	}
 	
-	function meta.align(element_type, size)
+	function meta.align(element_type, alignof)
 		local align = { }
-		align[1]    = element_type
-		align.size  = size 
-		if align_tables[size] == nil then 
+		align[1]       = element_type
+		align.alignof  = alignof 
+		if align_tables[alignof] == nil then 
 			setmetatable(align, Align)
 		else 
-			setmetatable(align, align_tables[size])
+			setmetatable(align, align_tables[alignof])
 		end 
 	end
 end 
@@ -398,10 +402,8 @@ do
 		item.size = decoder.reader:varint()
 	end 
 	
-	function meta.uint(size)
-		local uint = setmetatable({}, Uint)
-		uint.size  = size 
-		return uint
+	function meta.uint(bits)
+		return setmetatable( { bits = bits}, Uint)
 	end 
 end
 
@@ -415,9 +417,51 @@ do
 		item.size = decoder.reader:varint()
 	end 
 	
-	function meta.int(size)
-		local sint = setmetatable({}, Sint)
-		sint.size  = size 
-		return sint
+	function meta.int(bits)
+		return setmetatable({ bits = bits}, Sint)
 	end
+end 
+
+
+do 
+	local Typeref = { } Typeref.__index = Typeref 
+	
+	--We can do this since we know the layout of the 
+	--meta types. 
+	local function fixrefs(meta, ref, value)
+		if meta.typeref_fixing then return 0 end 
+		--Fixing cyclic references 
+		meta.typeref_fixing = true
+		
+		local count = 0
+		for i=1, #meta do 
+			if meta[i] == ref then 
+				meta[i] = value
+				count = count + 1
+			end  
+			
+			count = count + fixrefs(meta[i], ref, value)								
+		end 
+		
+		meta.typeref_fixing = nil
+		return count
+	end
+	
+	function Typeref:encode() error("uninitialized typeref") end 
+	function Typeref:decode() error("uninitialized typeref") end 
+	
+	function Typeref:setref(meta)
+		local numfixed = fixrefs(meta, self, meta)
+		if numfixed == 0 then 
+			--IF we did not fix any references we are setting 
+			--the typeref to something that is not a graph.
+			--This would indicate inproper useage of typerefs
+			--or that there is a structural problem with metatypes. 
+			error("only use typerefs when constructing graphs! otherwize use normal types")
+		end 	
+	end
+	
+	function meta.typeref()
+		return setmetatable({}, Typeref)
+	end  	
 end 

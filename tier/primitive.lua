@@ -1,4 +1,4 @@
-local tags   = require"tier.tags"
+local meta   = require"tier.meta"
 local format = require"format"
 
 local primitive = { }
@@ -56,17 +56,17 @@ local function createBitInts(tag, name, count)
 end
 
 --Void should be interpreted as NO VALUE
-local Void = { tag = tags.VOID, id = pack(tags.VOID) }
+local Void = { meta = meta.void }
 function Void:encode(encoder, value) end
 function Void:decode(decoder) end
 
 --Null should be interpreted as nil value. 
-local Null = { tag = tags.NULL, id = pack(tags.NULL) }
+local Null = { meta = meta.null }
 function Null:encode(encoder, value) assert(value == nil, "nil expected") end
 function Null:decode(decoder) return nil end
 
 --Boolean maps true/false.
-local Bool = { tag = tags.BOOLEAN, id = pack(tags.BOOLEAN) }
+local Bool = { meta = meta.boolean }
 function Bool:encode(encoder, value)
     encoder.writer:uint8(value and 1 or 0)
 end
@@ -75,7 +75,7 @@ function Bool:decode(decoder)
 end
 
 --Flag maps to true/false and behavies like boolean. 
-local Flag = { tag = tags.FLAG, id = pack(tags.FLAG)}
+local Flag = { meta = meta.flag }
 function Flag:encode(encoder, value)
     encoder.writer:uint(1, value and 1 or 0)
 end
@@ -84,7 +84,7 @@ function Flag:decode(decoder)
 end
 
 --Sign maps from a number to -1 or 1.
-local Sign = { tag = tags.SIGN, id = pack(tags.SIGN)}
+local Sign = { meta = meta.sign }
 function Sign:encode(encoder, value)
     encoder.writer:uint(1, value < 0 and 1 or 0)
 end
@@ -94,7 +94,7 @@ end
 
 
 --CHAR should read as a 1 char string.
-local Char = { tag = tags.CHAR, id = pack(tags.CHAR)}
+local Char = { meta = meta.char }
 function Char:encode(encoder, value)
     assert(string.len(value) == 1, "invalid character")
     encoder.writer:raw(value)
@@ -104,7 +104,7 @@ function Char:decode(decoder)
 end
 
 --WCHAR is interpreted as a 2 bytes long string.
-local WChar = { tag = tags.WCHAR , id = pack(tags.WCHAR)}
+local WChar = { meta = meta.wchar }
 function WChar:encode(encoder, value)
     assert(string.len(value) == 2, "invalid wide character")
     encoder.writer:raw(value)
@@ -115,13 +115,14 @@ end
 
 --All strings are null terminated. Thus they cannot use the standard 
 --reader:stream() or writer:stream(str)
-local String = { tag = tags.STRING, id = pack(tags.STRING)}
+local String = { meta = meta.string }
 function String:encode(encoder, value)
     local len = string.len(value) + 1
     encoder.writer:varint(len)
     encoder.writer:raw(value)
     encoder.writer:raw("\0") --Add null terminator
 end
+
 function String:decode(decoder)
     local len = decoder.reader:varint()
     local val = decoder.reader:raw(len - 1)
@@ -131,7 +132,7 @@ end
 
 --The wstring does not have a one-to-one mapping with an tier/decoding function.
 --Thus we need to create the mapper manually.
-local WString = { tag = tags.WSTRING , id = pack(tags.WSTRING)}
+local WString = { meta = meta.wstring}
 function WString:encode(encoder, value)
     local length = string.len(value)
     assert(length %2 == 0, "invalid wide string")
@@ -147,18 +148,19 @@ function WString:decode(decoder)
 end
 
 
-primitive.varint   = createMapper(tags.VARINT,   "varint")
-primitive.varintzz = createMapper(tags.VARINTZZ, "varintzz")
-primitive.uint8    = createMapper(tags.UINT8,    "uint8")
-primitive.uint16   = createMapper(tags.UINT16,   "uint16")
-primitive.uint32   = createMapper(tags.UINT32,   "uint32")
-primitive.uint64   = createMapper(tags.UINT64,   "uint64")
-primitive.int8     = createMapper(tags.SINT8,    "int8")
-primitive.int16    = createMapper(tags.SINT16,   "int16")
-primitive.int32    = createMapper(tags.SINT32,   "int32")
-primitive.int64    = createMapper(tags.SINT64,   "int64")
-primitive.float    = createMapper(tags.FLOAT,    "float")
-primitive.double   = createMapper(tags.DOUBLE,   "double")
+primitive.varint   = createMapper(meta.varint,   "varint")
+primitive.varintzz = createMapper(meta.varintzz, "varintzz")
+primitive.uint8    = createMapper(meta.uint8,    "uint8")
+primitive.uint16   = createMapper(meta.uint16,   "uint16")
+primitive.uint32   = createMapper(meta.uint32,   "uint32")
+primitive.uint64   = createMapper(meta.uint64,   "uint64")
+primitive.int8     = createMapper(meta.sint8,    "int8")
+primitive.int16    = createMapper(meta.sint16,   "int16")
+primitive.int32    = createMapper(meta.sint32,   "int32")
+primitive.int64    = createMapper(meta.sint64,   "int64")
+primitive.float    = createMapper(meta.float,    "float")
+primitive.double   = createMapper(meta.double,   "double")
+primitive.stream   = createMapper(meta.stream, "stream")
 
 --Should probably remove this. ([maia] I agree)
 primitive.byte     = primitive.uint8
@@ -166,7 +168,6 @@ primitive.byte     = primitive.uint8
 --Not yet implemented primitive.half = createMapper(tags.HALF, "half")
 --Not yet implemented primitive.quad = createMapper(tags.QUAD, "quad");
 
-primitive.stream   = createMapper(tags.STREAM, "stream")
 
 primitive.void 		= Void
 primitive.null 		= Null
