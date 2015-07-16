@@ -40,7 +40,7 @@ local function fatrec(n)
 end
 
 evaluator:repeats(999)
-evaluator:execute("iterative", fat, 999)
+evaluator:execute("iterative", fat,    999)
 evaluator:execute("recursive", fatrec, 999)
 local n, results = evaluator:report()
 for name, result in pairs(results) do 
