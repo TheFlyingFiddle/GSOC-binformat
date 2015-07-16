@@ -135,14 +135,12 @@ local function tofilename(mapping, case)
 	local value = case.actual
 	local id = case.id or viewer.labels[value] or viewer:tostring(value)
 	
-	local tagid
+	local tagid = tags[mapping.meta.tag]
 	if mapping.id then
-		tagid = tags[mapping.tag] .. "_" .. string.gsub(mapping.id, ".", tohexa) 
-	else
-		tagid = tags[mapping.tag]	
+		tagid = tagid .. "_" .. string.gsub(mapping.id, ".", tohexa) 
 	end
-	return tagid .. "_"..type(value)..
-	  "_"..string.gsub(string.sub(id,1, 128), unsafe, "")
+
+	return tagid .. "_".. type(value) .. "_"..string.gsub(string.sub(id,1, 128), unsafe, "")
 end
 
 local function checksame(test, case, recovered)
@@ -191,7 +189,7 @@ local function rundynamictest(test)
 	local basedir = test.basedir or "streams"
 	for gid, group in ipairs(test) do
 		for cid, case in ipairs(group) do
-			io.write("Dyn_" .. tags[mapping.tag], ": "); viewer:write(case.actual); io.write(" ... "); io.flush()
+			io.write("Dyn_" .. tags[mapping.meta.tag], ": "); viewer:write(case.actual); io.write(" ... "); io.flush()
 			local output 	 = format.outmemorystream()
 			tier.encode(output, case.actual, mapping, true)
 			--hexastream(io.stdout, output:getdata())
@@ -211,7 +209,7 @@ function runtest(test)
 	local basedir = test.basedir or "streams"
 	for gid, group in ipairs(test) do
 		for cid, case in ipairs(group) do
-			io.write(tags[mapping.tag],": "); viewer:write(case.actual); io.write(" ... "); io.flush()
+			io.write(tags[mapping.meta.tag],": "); viewer:write(case.actual); io.write(" ... "); io.flush()
 			local basename = basedir.."/"..tofilename(mapping, case)
 			local outpath = basename..".dat"
 			

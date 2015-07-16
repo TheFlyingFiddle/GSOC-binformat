@@ -16,9 +16,10 @@ end
 
 --Encodes data using the specified mapping.
 function Encoder:encode(mapping, data)
+   local meta = require"tier.meta"
    self.writer:flushbits()
    if self.usemetadata then
-      self.writer:raw(core.getid(mapping))
+      meta.encodetype(self, mapping.meta)
    end
    
    mapping:encode(self, data)	
@@ -93,7 +94,7 @@ function Decoder:decode(mapping)
 
    self.reader:discardbits()   
    if self.usemetadata and mapping.meta ~= meta.dynamic then 
-      local id         = meta.getid(mapping.meta)
+      local id         = meta.getencodeid(mapping.meta)
       local meta_types = self.reader:raw(#id)
       assert(meta_types == id)
    end 

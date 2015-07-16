@@ -44,19 +44,31 @@ function util.isoutputstream(stream)
 	return true
 end
 
+function util.ismetatype(metatype)
+	local typ = type(metatype)
+	if typ ~= "table" then 
+		return false, "metatype expected got " .. typ
+	end 
+	
+	local tagtype = type(metatype.tag)
+	if tagtype ~= "number" then 
+		return false, "missing numeric field tag got field of type " .. tagtype
+	end 	
+	
+	return true
+end 
+
 function util.ismapping(mapping)
 	local typ = type(mapping)
 	if typ ~= "table" and typ ~= "userdata" then
 		return false, "mapping expected got " .. typ
 	end
-		
-	if type(mapping.tag) ~= "number" then
-		return false, "mapping.tag must be a number not " .. type(mapping.tag)
-	end
 	
-	local sucess, err = checkcallable(mapping.encode, "mapping", "encode")
+	local sucess, err = util.ismetatype(mapping.meta)
+	if not sucess then return false, err end 	
+	
+	sucess, err = checkcallable(mapping.encode, "mapping", "encode")
 	if not sucess then return false, err end
-	
 	
 	sucess, err = checkcallable(mapping.encode, "mapping", "decode")
 	if not sucess then return false, err end

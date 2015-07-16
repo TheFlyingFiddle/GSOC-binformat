@@ -10,7 +10,6 @@ local meta_types = { }
 
 local function newmetatype(tag)
 	assert(tag)
-	
 	local mt = {} mt.__index = mt
 	mt.tag = tag
 	meta_types[tag] = mt
@@ -86,18 +85,28 @@ function meta.getid(type)
 		local buffer  = outstream()
 		encoder       = newencoder(newwriter(buffer))
 		encoder.types = { }
-		encoder.types[type] = encoder.writer:getposition()
-		type:encodeid(encoder) 
+		encodeid(encoder, type)
 		encoder:close()		
-
-		local body = buffer:getdata()
-		type.id    = pack(type.tag) .. pack(#body) .. body	
+		type.id    = buffer:getdata()	
 	end 
 	return type.id 
 end 
 
+function meta.getencodeid(type)
+	meta.getid(type)
+	
+	--This is the encoded version of an id. 	
+	if #type.id > 1 then 
+		local head = string.sub(type.id, 1,  1)  
+		local body = string.sub(type.id, 2, -1)	
+		return head .. pack(#body) .. body
+	else
+		return type.id 
+	end 
+end 
+
 function meta.encodetype(encoder, type)
-	encoder.writer:raw(meta.getid(type))	
+	encoder.writer:raw(meta.getencodeid(type))	
 end 
 
 local function newdecodetype(decoder, MetaTable)
@@ -106,25 +115,24 @@ end
 
 local function decodeid(decoder)
 	local reader = decoder.reader
+	local pos  = reader:getposition()
 
-	local tag = reader:varint()
+	local tag  = reader:varint()
 	if simple_metatypes[tag] then
 		return metafromtag(tag)
 	elseif tag == tags.TYPEREF then 
-		local pos     = reader:getposition() - 1	
 		local typeref = pos - reader:varint() 
 		local type    = decoder.types[typeref]
 		return type
 	else 
-		local pos  = reader:getposition()
 		local type = meta_types[tag]
 		
 		--We have to create a value of the appropriate type 
 		--before we can start decoding to fix potential typereference. 
 		local item = setmetatable({}, type)
-		type:decode(decoder, item)		
-		
-		return type_reader:decode(decoder)
+		decoder.types[pos] = item
+		type:decode(decoder, item)
+		return item
 	end 
 end 
 
@@ -154,7 +162,7 @@ do
 	
 	function Array:decode(decoder, item)
 		item.size = decoder.reader:varint()
-		item[1]	  = decodeid(decodeid)
+		item[1]	  = decodeid(decoder)
 	end
 	
 	function meta.array(element_type, size)
@@ -173,8 +181,8 @@ do
 	end
 	
 	function List:decode(decoder, item)
-		item.size 		  = decoder.reader:varint()
-		item[1]			  = decodeid(decodeid)
+		item.sizebits	  = decoder.reader:varint()
+		item[1]			  = decodeid(decoder)
 	end
 	
 	function meta.list(element_type, sizebits)
@@ -195,7 +203,7 @@ do
 	
 	function Set:decode(decoder, item)
 		item.sizebits 	= decoder.reader:varint()
-		item[1]		= decodedid(decoder)
+		item[1]			= decodeid(decoder)
 	end
 	
 	function meta.set(element_type, sizebits)
@@ -217,9 +225,9 @@ do
 	end
 	
 	function Map:decode(decoder, item)
-		item.size    = encoder.reader:varint()
-		item[1]		 = decodeid(decoder)
-		item[2]		 = decodeid(decoder)
+		item.sizebits = decoder.reader:varint()
+		item[1]		  = decodeid(decoder)
+		item[2]		  = decodeid(decoder)
 	end
 	
 	function meta.map(key_type, value_type, sizebits)
@@ -243,7 +251,7 @@ do
 	end
 	
 	function Tuple:decode(decoder, item)
-		local size  = encoder.reader:varint()
+		local size  = decoder.reader:varint()
 		for i=1, size do 
 			item[i] = decodeid(decoder)
 		end 
@@ -272,13 +280,14 @@ do
 	function Union:decode(decoder, item)
 		item.sizebits = decoder.reader:varint()
 		local size    = decoder.reader:varint()
+
 		for i=1, size do 
 			item[i] = decodeid(decoder)
 		end 
 	end 
 	 
 	function meta.union(types, sizebits)
-		if sizebits == nil then sizebits = 0 end 
+		if sizebits == nil then sizebits = 0 end		 
 		local union = setmetatable({}, Union)
 		for i=1, #types do 
 			union[i] = types[i]
@@ -336,7 +345,7 @@ do
 	end 
 	 
 	function meta.semantic(id, element_type)
-		local semantic 		= setmetatable({}, SemanticMeta)
+		local semantic 		= setmetatable({}, Semantic)
 		semantic[1]	   		= element_type
 		semantic.identifier = id 
 		return semantic
@@ -408,7 +417,7 @@ do
 end
 
 do  
-	local Sint = newmetatype(tags.UINT)
+	local Sint = newmetatype(tags.SINT)
 	function Sint:encode(encoder)
 		encoder.writer:varint(self.size)
 	end
@@ -430,12 +439,12 @@ do
 	--meta types. 
 	local function fixrefs(meta, ref, value)
 		if meta.typeref_fixing then return 0 end 
+
 		--Fixing cyclic references 
 		meta.typeref_fixing = true
-		
 		local count = 0
-		for i=1, #meta do 
-			if meta[i] == ref then 
+		for i=1, #meta do 		
+			if meta[i] == ref then
 				meta[i] = value
 				count = count + 1
 			end  
@@ -462,6 +471,12 @@ do
 	end
 	
 	function meta.typeref()
-		return setmetatable({}, Typeref)
-	end  	
+		return setmetatable({tag = tags.TYPEREF}, Typeref)
+	end
+	
+	function meta.istyperef(type)
+		return type.tag == tags.TYPEREF
+	end   	
 end 
+
+return meta

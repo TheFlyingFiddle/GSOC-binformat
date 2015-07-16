@@ -9,8 +9,8 @@ local pack = format.packvarint
 --The method reduces some boilerplate.
 --It creates a basic encode/decode object that simply forwards to
 --the encoder/decoder.
-local function createMapper(typeTag, func)
-    local primitive = { tag = typeTag, id = pack(typeTag) }
+local function createMapper(meta, func)
+    local primitive = { meta = meta }
     function primitive:encode(encoder, value)
         local writer = encoder.writer
         writer[func](writer, value)
@@ -33,13 +33,11 @@ end
 
 --This function creates mappings for the INT bitsize and 
 --UINT bitsize tags. 
-local function createBitInts(tag, name, count)
+local function createBitInts(name, count)
     for i=1, count do
         if not primitive[name .. i] then
             local mapping = {  }
-            mapping.tag = tag 
-            mapping.bitsize = i
-            mapping.id  = pack(tag) .. pack(i)
+            mapping.meta = meta[name](i)
             function mapping:encode(encoder, value)
                 local writer = encoder.writer;
                 writer[name](writer, i, value)
@@ -178,9 +176,5 @@ primitive.char 		= Char
 primitive.wchar 	= WChar
 primitive.string 	= String
 primitive.wstring	= WString
-
---TODO:[maia] Seems too much. I'd suggest to be removed.
-createBitInts(tags.UINT, "uint", 64)
-createBitInts(tags.SINT, "int",  64)
 
 return primitive

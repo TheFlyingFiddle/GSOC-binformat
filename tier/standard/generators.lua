@@ -1,192 +1,139 @@
-local generating = require"tier.generating"
+local generator  = require"tier.generator"
 local primitive  = require"tier.primitive"
 local util       = require"tier.util"
 local tags       = require"tier.tags"
 local custom     = require"tier.custom"
 
-return function(standard)
-    local function findnode(node, sindex)
-    	if node.sindex == sindex then 
-            return node 
-        end
-        
-    	local index = 1
-    	while true do
-    		local snode = node[index]
-    		if snode then
-    			local correct_node = findnode(snode, sindex)
-    			if correct_node then
-    				return correct_node
-    			end	
-    		else
-    			break
-    		end
-    		index = index + 1
-    	end
-    	return nil
-    end
+local tagToLua = {
+    [tags.UINT]     = "number",
+    [tags.UINT8]    = "number",
+    [tags.UINT16]   = "number",
+    [tags.UINT32]   = "number",
+    [tags.UINT64]   = "number",
+    [tags.SINT]     = "number",
+    [tags.SINT8]    = "number",
+    [tags.SINT16]   = "number",
+    [tags.SINT32]   = "number",
+    [tags.SINT64]   = "number",
+    [tags.HALF]     = "number",
+    [tags.FLOAT]    = "number",
+    [tags.DOUBLE]   = "number",
+    [tags.QUAD]     = "number",
+    [tags.SIGN]     = "number",
+    [tags.VARINT]   = "number",
+    [tags.VARINTZZ] = "number",
     
-    local tagToLua = {
-        [tags.UINT]     = "number",
-        [tags.UINT8]    = "number",
-        [tags.UINT16]   = "number",
-        [tags.UINT32]   = "number",
-        [tags.UINT64]   = "number",
-        [tags.SINT]     = "number",
-        [tags.SINT8]    = "number",
-        [tags.SINT16]   = "number",
-        [tags.SINT32]   = "number",
-        [tags.SINT64]   = "number",
-        [tags.HALF]     = "number",
-        [tags.FLOAT]    = "number",
-        [tags.DOUBLE]   = "number",
-        [tags.QUAD]     = "number",
-        [tags.SIGN]     = "number",
-        [tags.VARINT]   = "number",
-        [tags.VARINTZZ] = "number",
+    [tags.CHAR]    = "string",
+    [tags.WCHAR]   = "string",
+    [tags.STREAM]  = "string",
+    [tags.STRING]  = "string",
+    [tags.WSTRING] = "string",
         
-        [tags.CHAR]    = "string",
-        [tags.WCHAR]   = "string",
-        [tags.STREAM]  = "string",
-        [tags.STRING]  = "string",
-        [tags.WSTRING] = "string",
-            
-        [tags.FLAG]    = "boolean",
-        [tags.BOOLEAN] = "boolean",
-        
-        [tags.VOID] = "nil",
-        [tags.NULL] = "nil",
+    [tags.FLAG]    = "boolean",
+    [tags.BOOLEAN] = "boolean",
+    
+    [tags.VOID] = "nil",
+    [tags.NULL] = "nil",
 
-        [tags.LIST]  = "table",
-        [tags.SET]   = "table",
-        [tags.ARRAY] = "table",
-        [tags.TUPLE] = "table",
-        [tags.MAP]   = "table"
-    }
-    --Standard generator functions
-    local function nodetoluatype(generator, node)
-    	local type = tagToLua[node.tag] or "unknown"
-    	if type == "unkown" then
-    		if node.tag == tags.UNION then
-    			return "unkown"
-    		else        
-                if node.tag == tags.TYPEREF then
-                	local sindex 	= node.sindex - node.offset
-    	            local refnode   = findnode(generator.root, sindex)
-                    return nodetoluatype(generator, refnode) 
-                else       
-                	return nodetoluatype(generator, node[1])
-                end
-    		end
-    	end
-    	
-    	return type
-    end
-    
+    [tags.LIST]  = "table",
+    [tags.SET]   = "table",
+    [tags.ARRAY] = "table",
+    [tags.TUPLE] = "table",
+    [tags.MAP]   = "table"
+}
+
+--Standard generator functions
+local function metatypetoluatype(g, metatype)
+	local lua_type = tagToLua[metatype.tag] or "unknown"
+	if lua_type == "unkown" then
+        return metatypetoluatype(generator, metatype[1])
+	end
+	return lua_type
+end
+   
+return function(standard)
+
     --Generator functions
-    local function gentuple(generator, node)
+    local function gentuple(g, metatype)
         local tuple = { }
-    	for i=1, node.size do
-    		tuple[i] = { mapping = generator:generate(node[i]) }
+    	for i=1, #metatype do
+    		tuple[i] = { mapping = g:generate(metatype[i]) }
     	end
     	return standard.tuple(tuple)
     end
     
-    local function genunion(generator, node)
+    local function genunion(g, metatype)
     	local union = { }
-    	for i=1, node.size do
-    		local sub = node[i]        
-            
-            local ltype = nodetoluatype(generator, sub)
-    		union[i] = { type = ltype, mapping = generator:generate(sub) }	
+    	for i=1, #metatype do
+    		local sub = metatype[i]        
+            local ltype = metatypetoluatype(g, sub)
+    		union[i] = { type = ltype, mapping = g:generate(sub) }	
     	end
     		
-    	return standard.union(union, node.bitsize)
+    	return standard.union(union, metatype.sizebits)
     end
     
-    local function genlist(generator, node)
-    	return standard.list(generator:generate(node[1]), node.bitsize)
+    local function genlist(g, metatype)
+    	return standard.list(g:generate(metatype[1]), metatype.sizebits)
     end
     
-    local function genset(generator, node)
-    	return standard.set(generator:generate(node[1]),  node.bitsize)
+    local function genset(g, metatype)
+    	return standard.set(g:generate(metatype[1]),  metatype.sizebits)
     end
     
-    local function genarray(generator, node)
-    	return standard.array(generator:generate(node[1]), node.size)
+    local function genarray(g, metatype)
+    	return standard.array(g:generate(metatype[1]), metatype.size)
     end
     
-    local function genmap(generator, node)
-    	return standard.map(generator:generate(node[1]),
-                            generator:generate(node[2]), node.bitsize)
+    local function genmap(g, metatype)
+    	return standard.map(g:generate(metatype[1]),
+                            g:generate(metatype[2]), metatype.sizebits)
     end
     
-    local function genobject(generator, node)
-    	return standard.object(generator:generate(node[1]))
+    local function genobject(g, metatype)
+    	return standard.object(g:generate(metatype[1]))
     end
     
     local semantic_generators = { }
-    
-    local function gensemantic(generator, node)
-        if semantic_generators[node.identifier] then
-            return semantic_generators[node.identifier](generator, node[1])
+    local function gensemantic(g, metatype)
+        if semantic_generators[metatype.identifier] then
+            return semantic_generators[metatype.identifier](generator, metatype[1])
         else 
-            error("Cannot create a mapping for unrecognized semantic type " .. node.identifier)
+            error("Cannot create a mapping for unrecognized semantic type " .. metatype.identifier)
         end
     end
     
-    local function genembedded(generator, node)
-    	return standard.embedded(generator:generate(node[1]))
+    local function genembedded(generator, metatype)
+    	return standard.embedded(generator:generate(metatype[1]))
     end
     
-    local function genaligned(generator, node)
-        local size
-        if      node.tag == tags.ALIGN1 then size = 1
-        elseif  node.tag == tags.ALIGN2 then size = 2
-        elseif  node.tag == tags.ALIGN4 then size = 4
-        elseif  node.tag == tags.ALIGN8 then size = 8
-        else    size = node.size end
+    local function genaligned(generator, metatype)
+        return custom.align(metatype.alignof, generator:generate(metatype[1]))
+    end
         
-        
-        return custom.align(size, generator:generate(node[1]))
-    end
-    
-    local function gentyperef(generator, node)
-    	local sindex 	= node.sindex - node.offset
-    	local refnode   = findnode(generator.root, sindex)
-    	assert(refnode, "Typeref failed")
-    	    
-        local ref = generator.typerefs[refnode]
-        if not ref then
-            ref = custom.typeref()
-            generator.typerefs[refnode] = ref
-        end
-    	return ref
-    end
-    
-    local g = generating.generator()
-    g:taggenerator(tags.TUPLE,      gentuple)
-    g:taggenerator(tags.UNION,      genunion)
-    g:taggenerator(tags.LIST,       genlist)
-    g:taggenerator(tags.SET,        genset)
-    g:taggenerator(tags.MAP,        genmap)
-    g:taggenerator(tags.ARRAY,      genarray)
-    g:taggenerator(tags.OBJECT,     genobject)
-    g:taggenerator(tags.EMBEDDED,   genembedded)
-    g:taggenerator(tags.TYPEREF,    gentyperef)
-    g:taggenerator(tags.ALIGN,      genaligned)
-    g:taggenerator(tags.ALIGN1,     genaligned)
-    g:taggenerator(tags.ALIGN2,     genaligned)
-    g:taggenerator(tags.ALIGN4,     genaligned)
-    g:taggenerator(tags.ALIGN8,     genaligned)
+
+    local g = generator()
+    g:register_generator(tags.TUPLE,      gentuple)
+    g:register_generator(tags.UNION,      genunion)
+    g:register_generator(tags.LIST,       genlist)
+    g:register_generator(tags.SET,        genset)
+    g:register_generator(tags.MAP,        genmap)
+    g:register_generator(tags.ARRAY,      genarray)
+    g:register_generator(tags.OBJECT,     genobject)
+    g:register_generator(tags.EMBEDDED,   genembedded)
+    g:register_generator(tags.ALIGN,      genaligned)
+    g:register_generator(tags.ALIGN1,     genaligned)
+    g:register_generator(tags.ALIGN2,     genaligned)
+    g:register_generator(tags.ALIGN4,     genaligned)
+    g:register_generator(tags.ALIGN8,     genaligned)
     
     --We add all the mappings in the 
     --primitive module to the generator
     for k, v in pairs(primitive) do
         if util.ismapping(v) then 
-            g:idmapping(v) 
+            g:register_mapping(v) 
         end
-    end
+    end    
       
     standard.generator = g
 end

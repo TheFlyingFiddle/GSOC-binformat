@@ -64,7 +64,7 @@ return function(standard)
                 
                 
     --Have to add it to the generator so that we can dynamically decode it.
-    standard.generator:idmapping(mapping)
+    standard.generator:register_mapping(mapping)
     
 	--SEMANTIC "script-Lua 5.3" OBJECT TUPLE 02 LIST 0x00 DYNAMIC STREAM
     --It's important to have object incase of cyclic references.

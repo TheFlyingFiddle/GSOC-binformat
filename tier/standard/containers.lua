@@ -172,7 +172,7 @@ local function createunion(kinds, bitsize)
     local mappers = { }
     for i, v in ipairs(kinds) do
         assert(util.ismapping(v.mapping))
-        table.insert(mappers, v.mapping)
+        mappers[i] = v.mapping
     end
     
     return newunion(handler, mappers, bitsize) 

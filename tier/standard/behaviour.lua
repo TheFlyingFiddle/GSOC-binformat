@@ -7,7 +7,7 @@ local LuaValueAsObject = { }
 function LuaValueAsObject:identify(value)
     --This enables any lua type to be used as an object.
     if value == nil then return NIL end
-    return value;
+    return value
 end
 
 local EmbeddedHandler = { }
@@ -48,8 +48,8 @@ end
 --Generators-types and dynamics
 --Generation of mappings.
 local TypeRepoHandler = { }
-function TypeRepoHandler:getmapping(tag)
-    return self.generator:frommeta(tag)
+function TypeRepoHandler:getmapping(metatype)
+    return self.generator:generate(metatype)
 end
 
 return function(standard)
@@ -57,7 +57,7 @@ return function(standard)
     TypeRepoHandler.generator = standard.generator
     
     local type = custom.type(TypeRepoHandler)
-    standard.generator:idmapping(type)
+    standard.generator:register_mapping(type)
 
     standard.type     = type
     standard.object   = createobject

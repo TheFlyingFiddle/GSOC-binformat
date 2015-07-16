@@ -1,6 +1,6 @@
 local format = require"format"
+local meta   = require"tier.meta"
 local core   = require"tier.core"
-local tags   = require"tier.tags"
 local util   = require"tier.util"
 
 local pack      = format.packvarint
@@ -56,7 +56,7 @@ do
     end
     
     function Array:decode(decoder)
-        local size = self.size
+        local size = self.meta.size
         local value = self.handler:create()
         decoder:setobject(value)
         
@@ -78,10 +78,10 @@ do
         assert(handler.setitem, "Array handler missing function setitem")
         assert(handler.getitem, "Array handler missing function getitem")
     
-        local array = setmetatable({ }, Array)
+        local array   = setmetatable({ }, Array)
+        array.mapping = mapping
         array.meta    = meta.array(mapping.meta, size)
         array.handler = handler
-        array.mapping  = mapping
         return array    
     end
 end 
@@ -142,10 +142,10 @@ do
         assert(handler.setitem, "List handler missing function setitem")
         assert(handler.getitem, "List handler missing function getitem")
             
-        local list = setmetatable({ }, List)
-        list.meta  = meta.list(mapping.meta, sizebits)
-        list.handler = handler
+        local list   = setmetatable({ }, List)
         list.mapping = mapping
+        list.meta    = meta.list(mapping.meta, sizebits)
+        list.handler = handler
         return list
     end
 end 
@@ -157,7 +157,7 @@ do
         local size = self.handler:getsize(value)
         writesize(encoder.writer, self.meta.sizebits, size)
         
-        local mapping = self.mapping 
+        local mapping = self.mapping
         local encode  = mapping.encode
         local handler = self.handler
         local getitem = handler.getitem
@@ -192,9 +192,9 @@ do
         assert(handler.getitem, "Set handler missing function getitem")
     
         local set   = setmetatable({ }, Set)
+        set.mapping = mapping
         set.meta    = meta.set(mapping.meta, sizebits)
         set.handler = handler
-        set.mapping = mapping
         return set
     end
 end 
@@ -203,31 +203,45 @@ do
     --mapping for the MAP <K> <V> tag.
     local Map = { } Map.__index = Map
     function Map:encode(encoder, value)
+        local keys   = self.keymapping
+        local values = self.valuemapping
+    
+        local kencode = keys.encode
+        local vencode = values.encode 
+    
         local size = self.handler:getsize(value)
         writesize(encoder.writer, self.meta.sizebits, size)
         for k, v in self.handler:getitems(value) do
-            self.keymapping:encode(encoder, k)
-            self.itemmapping:encode(encoder, v);
+            kencode(keys, encoder, k)
+            vencode(values, encoder, v)
         end
     end
     
     function Map:decode(decoder)
+        local keys   = self.keymapping
+        local values = self.valuemapping
+        
+        local kdecode = keys.decode 
+        local vdecode = values.decode
+        
+        local handler = self.handler
+        local putitem = handler.putitem
+
         local size  = readsize(decoder.reader, self.meta.sizebits)
         local value = self.handler:create(size)
         decoder:setobject(value)
         for i=1, size, 1 do
-            local key  = self.keymapping:decode(decoder)
-            local item = self.itemmapping:decode(decoder)
-            
-            self.handler:putitem(value, key, item)
+            local key  = kdecode(keys, decoder)
+            local item = vdecode(values, decoder)
+            putitem(handler, value, key, item)
         end 
         
-        return value;
+        return value
     end
     
-    function custom.map(handler, keymapping, itemmapping, sizebits)
+    function custom.map(handler, keymapping, valuemapping, sizebits)
         assert(util.ismapping(keymapping))
-        assert(util.ismapping(itemmapping))
+        assert(util.ismapping(valuemapping))
         
         assert(handler.getsize,  "Map handler missing function getsize")
         assert(handler.create,   "Map handler missing function create")
@@ -235,10 +249,10 @@ do
         assert(handler.getitems, "Map handler missing function getitems")
           
         local map = setmetatable({}, Map)
-        map.meta        = meta.map(keymapping.meta, itemmapping.meta, sizebits)
+        map.keymapping    = keymapping
+        map.valuemapping  = valuemapping
+        map.meta        = meta.map(keymapping.meta, valuemapping.meta, sizebits)
         map.handler     = handler
-        map.keymapping  = keymapping
-        map.itemmapping = itemmapping
         return map;
     end
 
@@ -249,20 +263,26 @@ do
     local Tuple = { }
     Tuple.__index = Tuple
     function Tuple:encode(encoder, value)
-        for i=1, #self.mappings, 1 do
+        local handler  = self.handler
+        local getitem  = handler.getitem
+    
+        for i=1, #self.mappings do
             local mapping = self.mappings[i]
-            local item   = self.handler:getitem(value, i)
+            local item    = getitem(handler, value, i)
             mapping:encode(encoder, item)
         end
     end
     
     function Tuple:decode(decoder)
+        local handler = self.handler
+        local setitem = handler.setitem
+    
         local value = self.handler:create();
         decoder:setobject(value)
-        for i=1, #self.mappings, 1 do
+        for i=1, #self.mappings do
             local mapping = self.mappings[i] 
             local item   = mapping:decode(decoder)
-            self.handler:setitem(value, i, item)
+            setitem(handler, value, i, item)
         end
         return value;   
     end
@@ -276,15 +296,16 @@ do
         assert(handler.getitem, "Tuple handler missing function getitem")
         assert(handler.setitem, "Tuple handler missing function setitem")
     
+        local tuple = setmetatable({ }, Tuple)
+        
         local types = { }
         for i=1, #mappings do 
             types[i] = mappings[i].meta
         end 
-    
-        local tuple = setmetatable({ }, Tuple)
+        
         tuple.meta     = meta.tuple(types)
-        tuple.mappings = mappings
         tuple.handler  = handler
+        tuple.mappings = mappings
         return tuple
     end
 end 
@@ -311,16 +332,16 @@ do
         for i=1, #mappings do
             assert(util.ismapping(mappings[i]))
         end
-    
+
+        local union = setmetatable({ }, Union)
         local types = { }
         for i=1, #mappings do 
-            types[i] = mappings[i]
+            types[i] = mappings[i].meta
         end 
         
-        local union = setmetatable({ }, Union)
+        union.mappings = mappings
         union.meta  = meta.union(types, sizebits)
         union.handler  = handler
-        union.mappings  = mappings
         return union
     end
 end 
@@ -340,8 +361,8 @@ do
         assert(util.ismapping(mapping))
     
         local semantic = setmetatable({ }, Semantic)
-        semantic.meta    = meta.semantic(id, mapping.meta)
         semantic.mapping = mapping
+        semantic.meta    = meta.semantic(id, mapping.meta)
         return semantic
     end
 end 
@@ -352,25 +373,27 @@ do
     function Object:encode(encoder, value)
         local identity = self.handler:identify(value)
         local writer = encoder.writer
+        local mapping = self.mapping
         local map = encoder:getobjectmap(self)
         local pos = map[identity]
         if pos == nil then 
             map[identity] = writer:getposition()
             writer:varint(0)
-            self.mapping:encode(encoder, value)
+            mapping:encode(encoder, value)
         else 
             writer:varint(writer:getposition() - pos)
         end
     end
     
     function Object:decode(decoder)
-        local reader = decoder.reader
+        local reader  = decoder.reader
+        local mapping = self.mapping
         local pos = reader:getposition()
         local shift = reader:varint()
         local index = pos - shift
         local found, value = decoder:getobject(self, index)
         if not found then
-            value = decoder:endobject(self, value, index, self.mapping:decode(decoder))
+            value = decoder:endobject(self, value, index, mapping:decode(decoder))
         end
         return value
     end 
@@ -378,9 +401,9 @@ do
     function custom.object(handler, mapping)
         assert(util.ismapping(mapping))
         
-        local object = setmetatable({ }, Object)
-        object.meta    = meta.object(mapping.meta)
+        local object   = setmetatable({ }, Object)
         object.mapping = mapping
+        object.meta    = meta.object(mapping.meta)
         object.handler = handler
         return object    
     end
@@ -403,9 +426,8 @@ do
     function custom.align(size, mapping)
         util.ismapping(mapping)
         
-        local aligner = setmetatable({}, Align)
+        local aligner = setmetatable({ mapping }, Align)
         aligner.meta    = meta.align(mapping.meta, size)
-        aligner.mapping = mapping
         return aligner                
     end
 end 
@@ -416,9 +438,10 @@ do
 
     local Embedded = { } Embedded.__index = Embedded;
     function Embedded:encode(encoder, value)
+        local mapping = self.mapping
         local outstream = self.handler:getoutstream()
         local enco = newencoder(newwriter(outstream), false)
-        self.mapping:encode(enco, value)
+        mapping:encode(enco, value)
         enco:close()
         
         local data    = outstream:getdata()
@@ -430,6 +453,7 @@ do
     local newdecoder = core.decoder
     
     function Embedded:decode(decoder) 
+        local mapping   = self.mapping
         local data      = decoder.reader:stream() 
         local instream  = self.handler:getinstream(data)
         local deco      = newdecoder(newreader(instream), false)
@@ -443,10 +467,10 @@ do
     function custom.embedded(handler, mapping) 
         assert(util.ismapping(mapping))
         
-        local embedded = setmetatable({}, Embedded)
+        local embedded = setmetatable({ }, Embedded)
+        embedded.mapping = mapping
         embedded.meta = meta.embedded(mapping.meta)
         embedded.handler = handler
-        embedded.mapping = mapping
         return embedded
     end
 end 
@@ -461,24 +485,64 @@ do
         error("typeref not yet initialized")
     end
     
+    local tofix = { }
+    local insert = table.insert
+    local function findrefs(table, ref)
+        if table.is_fixing_typerefs then return end
+
+        --Avoid cyclic reference problems 
+        table.is_fixing_typerefs = true
+        
+        --Placing items in a temprorary tofix array 
+        --to avoid mutating during iteration
+        for k, v in pairs(table) do 
+            if k == ref or v == ref then 
+                insert(tofix, table)
+                insert(tofix, k)
+            end
+            
+            if type(k) == "table" then 
+                findrefs(k, ref, value)
+            end
+            
+            if type(v) == "table" then
+                findrefs(v, ref, value) 
+            end 
+        end
+        
+        table.is_fixing_typerefs = nil
+    end 
+    
+    local function fixrefs(mapping, ref, value)
+        findrefs(mapping, ref)
+        local size = #tofix
+        for i=1, size, 2 do
+            local table = tofix[i+0] ; tofix[i+0] = nil
+            local key   = tofix[i+1] ; tofix[i+1] = nil
+            if key == ref then  
+                local val    = table[key]
+                if val == ref then 
+                    val = value 
+                end                
+                table[value] = val
+                table[key]   = nil   
+            else 
+                table[key] = value
+            end 
+        end 
+    end 
+    
+        
     function Typeref:setref(mapping)
         assert(self.mapping == nil, "canot reseed a typeref")
         self.mapping = mapping
-        self.meta:setref(self.mapping.meta)
-        self.meta = self.mapping.meta
-                
-        local mencode = mapping.encode
-        function encode(tr, encoder, value)
-            mencode(mapping, encoder, value)
-        end
         
-        local mdecode = mapping.decode
-        function decode(tr, decoder)
-           return mdecode(mapping, decoder)
-        end
-        
-        self.encode = encode
-        self.decode = decode    
+        --We really don't want to have typerefs in the final mapping 
+        --chaing when we have initialized the value. Instead 
+        --we want to replace any occurance of a typeref with the 
+        --actual mapping. 
+        fixrefs(mapping, self, mapping)
+        self.meta:setref(mapping.meta)
     end
     
     function custom.typeref()

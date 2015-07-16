@@ -1,4 +1,5 @@
 local format    = require"format"
+local meta      = require"tier.meta"
 local tags      = require"tier.tags"
 local custom	= require"tier.custom"
 local primitive = require"tier.primitive"
@@ -34,7 +35,7 @@ NumberList.__index = NumberList
 
 function NumberList:encode(encoder, value)
     local size = #value
-    writesize(encoder.writer, self.sizebits, size)
+    writesize(encoder.writer, self.meta.sizebits, size)
     
     local writer     = encoder.writer
     local raw_write  = writer.raw
@@ -55,7 +56,7 @@ function NumberList:encode(encoder, value)
 end
 
 function NumberList:decode(decoder)
-    local size  = readsize(decoder.reader, self.sizebits)
+    local size  = readsize(decoder.reader, self.meta.sizebits)
     local value = { }
     
     local read_func   = self.read_func
@@ -82,19 +83,12 @@ function NumberList:decode(decoder)
     return value
 end
 
-function NumberList:encodemeta(encoder)
-    encoder.writer:varint(self.sizebits)
-    encoder.writer:varint(self.numbertag)
-end
-
 function optimal.internal_number_list(fmt, count, mapping, sizebits)
     if sizebits == nil then sizebits = 0 end
 
-    local list = setmetatable({ }, NumberList)
-    list.tag = tags.LIST
-    list.numbertag = mapping.tag
+    local list     = setmetatable({ }, NumberList)
     list.singlefmt = fmt
-    list.sizebits  = sizebits
+    list.meta      = meta.list(mapping.meta, sizebits)
     
     local fstring = ""
     for i=1, count do

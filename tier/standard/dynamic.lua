@@ -281,7 +281,7 @@ return function (standard)
         else
             mapping = standard.map(item_mapping(ktype, value, "key_map"),
                                    item_mapping(vtype, value, "value_map"))
-        end
+        end       
         return standard.object(mapping)
     end
     
@@ -334,11 +334,12 @@ return function (standard)
         error("Can't encode userdata yet")
     end
     
+    local string_object = standard.object(primitive.stream)
     
     dynamic_handler["nil"]        = function() return primitive.null end
     dynamic_handler["function"]   = function() return standard.script end
     dynamic_handler.boolean       = function() return primitive.boolean end
-    dynamic_handler.string        = function() return standard.object(primitive.stream) end
+    dynamic_handler.string        = function() return string_object end
     
     dynamic_handler.number        = number_mapping
     dynamic_handler.table         = table_mapping
@@ -355,5 +356,5 @@ return function (standard)
     --Add ourselfs to the standard table.
     dynamic = custom.dynamic(dynamic_handler, standard.type)
     standard.dynamic = dynamic
-    standard.generator:idmapping(standard.dynamic)
+    standard.generator:register_mapping(standard.dynamic)
 end

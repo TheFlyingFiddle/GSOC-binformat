@@ -2,7 +2,7 @@ local PrimitiveCases = { }
 for k,v in pairs(primitive) do 
 	table.insert(PrimitiveCases, { actual = v })
 end
-table.sort(PrimitiveCases, function(a,b) return a.actual.tag < b.actual.tag end)
+table.sort(PrimitiveCases, function(a,b) return a.actual.meta.tag < b.actual.meta.tag end)
 
 
 local SimpleComposedCases = 
