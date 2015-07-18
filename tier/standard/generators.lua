@@ -94,6 +94,14 @@ return function(standard)
     	return standard.object(g:generate(metatype[1]))
     end
     
+    local function genint(g, metatype)
+        return custom.int(metatype.bits)
+    end 
+    
+    local function genuint(g, metatype)
+        return custom.uint(metatype.bits)
+    end 
+    
     local semantic_generators = { }
     local function gensemantic(g, metatype)
         if semantic_generators[metatype.identifier] then
@@ -126,6 +134,8 @@ return function(standard)
     g:register_generator(tags.ALIGN2,     genaligned)
     g:register_generator(tags.ALIGN4,     genaligned)
     g:register_generator(tags.ALIGN8,     genaligned)
+    g:register_generator(tags.UINT,       genuint)
+    g:register_generator(tags.SINT,        genint)
     
     --We add all the mappings in the 
     --primitive module to the generator

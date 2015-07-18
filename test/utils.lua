@@ -135,11 +135,9 @@ local function tofilename(mapping, case)
 	local value = case.actual
 	local id = case.id or viewer.labels[value] or viewer:tostring(value)
 	
-	local tagid = tags[mapping.meta.tag]
-	if mapping.id then
-		tagid = tagid .. "_" .. string.gsub(mapping.id, ".", tohexa) 
-	end
-
+	local meta = require"tier.meta"
+	
+	local tagid = tags[mapping.meta.tag] .. "_" .. string.gsub(meta.getid(mapping.meta), ".", tohexa) 
 	return tagid .. "_".. type(value) .. "_"..string.gsub(string.sub(id,1, 128), unsafe, "")
 end
 

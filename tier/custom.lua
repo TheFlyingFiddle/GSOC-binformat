@@ -15,7 +15,7 @@ do
     end
     
     function Int:decode(decoder)
-        return encoder.reader:int(self.meta.bits)
+        return decoder.reader:int(self.meta.bits)
     end
     
     function custom.int(numbits)
@@ -30,7 +30,7 @@ do
     end
     
     function Uint:decode(decoder)
-        return encoder.reader:uint(self.meta.bits)
+        return decoder.reader:uint(self.meta.bits)
     end
     
     function custom.uint(numbits)
@@ -426,8 +426,9 @@ do
     function custom.align(size, mapping)
         util.ismapping(mapping)
         
-        local aligner = setmetatable({ mapping }, Align)
+        local aligner = setmetatable({ }, Align)
         aligner.meta    = meta.align(mapping.meta, size)
+        aligner.mapping = mapping
         return aligner                
     end
 end 

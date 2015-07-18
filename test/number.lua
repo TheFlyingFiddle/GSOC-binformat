@@ -161,12 +161,12 @@ local function testuint(mapping, bits)
 	runtest{ mapping = mapping,
 		numbers(int.positive, nil, bits),
 	}
-	if bits ~= nil then
+	if bits ~= nil and bits ~= 64 then
 		runtest{ mapping = mapping, encodeerror = "overflow",
 			numbers(int.positive, bits),
 			numbers(int.negative),
 		}
-	else
+	elseif bits ~= 64 then
 		runtest{ mapping = mapping,
 			numbers(int.negative),
 		}
@@ -212,31 +212,40 @@ runtest{ mapping = primitive.sign, encodeerror = "number",
 	nonnumber,
 }
 -- unsigned integers
-testuint(primitive.uint1, 1)
-testuint(primitive.uint2, 2)
-testuint(primitive.uint3, 3)
-testuint(primitive.uint4, 4)
-testuint(primitive.uint7, 7)
-testuint(primitive.byte, 8)
+testuint(custom.uint(1), 1)
+testuint(custom.uint(2), 2)
+testuint(custom.uint(3), 3)
+testuint(custom.uint(4), 4)
+testuint(custom.uint(7), 7)
+testuint(custom.uint(8), 8)
+testuint(primitive.uint8, 8)
+testuint(custom.uint(16), 16)
 testuint(primitive.uint16, 16)
-testuint(primitive.uint24, 24)
+testuint(custom.uint(24), 24)
 testuint(primitive.uint32, 32)
-testuint(primitive.uint53, 53)
+testuint(custom.uint(32), 32)
+testuint(custom.uint(53), 53)
 testuint(primitive.uint64)
+testuint(custom.uint(64), 64)
 testuint(primitive.varint)
 -- signed integers
-testsint(primitive.int1, 1)
-testsint(primitive.int2, 2)
-testsint(primitive.int3, 3)
-testsint(primitive.int4, 4)
-testsint(primitive.int7, 7)
+testsint(custom.int(1), 1)
+testsint(custom.int(2), 2)
+testsint(custom.int(3), 3)
+testsint(custom.int(4), 4)
+testsint(custom.int(7), 7)
+testsint(custom.int(8), 8)
 testsint(primitive.int8, 8)
+testsint(custom.int(16), 16)
 testsint(primitive.int16, 16)
-testsint(primitive.int24, 24)
+testsint(custom.int(24), 24)
 testsint(primitive.int32, 32)
-testsint(primitive.int53, 53)
+testsint(custom.int(32), 32)
+testsint(custom.int(53), 53)
 testsint(primitive.int64)
+testsint(custom.int(64), 64)
 testsint(primitive.varintzz)
+
 -- single precision floats
 runtest{ mapping = primitive.float,
 	numbers(int, nil, 24),

@@ -20,7 +20,6 @@ local ComplexLuaCases =
 	{ actual = { {1, 2, 3, 4}, { 5, 6, 7}, { 8, 87 }, {10}, { } } },
 	{ actual = { { 1, 2, "dance", 4}, { 5, 6}, { "hello"}, { 7, 8, 9} } },
 	{ actual = { {1, 2000, "hi"}, { 0xffff, 2, "lo"}, {6, 0xfff, "mid"} } },
-	{ actual = cyclic }, 
 	
 	{ 
 		actual = 
@@ -70,6 +69,7 @@ local ComplexLuaCases =
 			d = { 14, 12, { 31, "hi"} }
 		} 
 	},
+	--{ actual = cyclic }, 
 }
 
 
@@ -83,7 +83,7 @@ local IllegalLuaCases =
 	{ actual = { io.stdout }}
 }
 
---runtest { mapping = standard.dynamic, SimpleLuaCases  }
+runtest { mapping = standard.dynamic, SimpleLuaCases  }
 print("Testing all the complex cases whiwho!")
 runtest { mapping = standard.dynamic, ComplexLuaCases } 
 --runtest { mapping = standard.dynamic, encodeerror = "any" , IllegalLuaCases }

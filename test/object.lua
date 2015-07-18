@@ -24,8 +24,8 @@ nested[1] = nested
 runtest { 
 	mapping = list,
 	{
-		{ actual = { nested } },
-		{ actual = { nested, nested } },
+		{ actual = { nested } , id = "nested object list"},
+		{ actual = { nested, nested } , id = "double nested object list"},
 	},
 }
 

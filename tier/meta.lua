@@ -353,7 +353,7 @@ do
 end 
 
 do 
-	local Align   = { tags = tags.ALIGN } Align.__index = Align
+	local Align   = newmetatype(tags.ALIGN)
 	function Align:encode(encoder)
 		encoder.writer:varint(self.alignof)
 		encodeid(encoder, self[1])
@@ -397,18 +397,19 @@ do
 			setmetatable(align, Align)
 		else 
 			setmetatable(align, align_tables[alignof])
-		end 
+		end
+		return align 
 	end
 end 
 
 do 
 	local Uint = newmetatype(tags.UINT)
 	function Uint:encode(encoder)
-		encoder.writer:varint(self.size)
+		encoder.writer:varint(self.bits)
 	end
 	
 	function Uint:decode(decoder, item)
-		item.size = decoder.reader:varint()
+		item.bits = decoder.reader:varint()
 	end 
 	
 	function meta.uint(bits)
@@ -419,11 +420,11 @@ end
 do  
 	local Sint = newmetatype(tags.SINT)
 	function Sint:encode(encoder)
-		encoder.writer:varint(self.size)
+		encoder.writer:varint(self.bits)
 	end
 	
 	function Sint:decode(decoder, item)
-		item.size = decoder.reader:varint()
+		item.bits = decoder.reader:varint()
 	end 
 	
 	function meta.int(bits)

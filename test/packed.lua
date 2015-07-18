@@ -1,9 +1,9 @@
 local colormapper5551 = standard.tuple
 {
-	{ mapping = primitive.uint5},
-	{ mapping = primitive.uint5},
-	{ mapping = primitive.uint5},
-	{ mapping = primitive.uint1}
+	{ mapping = custom.uint(5)},
+	{ mapping = custom.uint(5)},
+	{ mapping = custom.uint(5)},
+	{ mapping = custom.uint(1)}
 }
 
 local Colors = 

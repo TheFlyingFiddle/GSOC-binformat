@@ -1,5 +1,8 @@
 require "test.utils"
 
+dofile("test/script.lua")
+dofile("test/misc.lua")
+dofile("test/bimap.lua")
 dofile("test/empty.lua")
 dofile("test/bool.lua")
 dofile("test/text.lua")
@@ -16,8 +19,5 @@ dofile("test/type.lua")
 dofile("test/object.lua")
 dofile("test/embedded.lua")
 dofile("test/dynamic.lua")
-dofile("test/script.lua")
-dofile("test/misc.lua")
-dofile("test/bimap.lua")
 dofile("test/number.lua")
 dofile("test/packed.lua")

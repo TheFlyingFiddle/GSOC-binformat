@@ -17,11 +17,11 @@ local SimpleComposedCases =
 
 local AlignCases = 
 {
-	{ actual = custom.align(1, primitive.varint) },
-	{ actual = custom.align(2, primitive.varint) },
-	{ actual = custom.align(3, primitive.varint) },
-	{ actual = custom.align(4, primitive.varint) },
-	{ actual = custom.align(8, primitive.varint) },
+	{ actual = custom.align(1, primitive.varint), id = "type_align_1" },
+	{ actual = custom.align(2, primitive.varint), id = "type_align_2"},
+	{ actual = custom.align(3, primitive.varint), id = "type_align_3" },
+	{ actual = custom.align(4, primitive.varint), id = "type_align_4"},
+	{ actual = custom.align(8, primitive.varint), id = "type_align_8" },
 }
 
 local ObjectCases =
@@ -81,9 +81,11 @@ local TyperefCases =
 	{ actual = luaunion, 	 id = "luaunion" },
 }
 
+local meta = require"tier.meta"
+
 local function idmatcher(actual, expected)
-	local aid = tier.getid(actual)
-	local eid = tier.getid(expected)
+	local aid = meta.getid(actual.meta)
+	local eid = meta.getid(expected.meta)
 	if aid == eid then return true end
 	
 	return false, "metadata mismatch"		
@@ -94,7 +96,4 @@ runtest { mapping = standard.type, noregression = true, PrimitiveCases }
 runtest { mapping = standard.type, matcher = idmatcher, SimpleComposedCases }
 runtest { mapping = standard.type, matcher = idmatcher, AlignCases }
 runtest { mapping = standard.type, matcher = idmatcher, ObjectCases }
-
-
-
 runtest { mapping = standard.type, matcher = idmatcher, TyperefCases }
