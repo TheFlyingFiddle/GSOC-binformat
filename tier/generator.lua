@@ -3,6 +3,7 @@ local custom = require"tier.custom"
 
 local Generator = { } Generator.__index = Generator
 function Generator:generate(type)
+    assert(type)
 	local id      = meta.getid(type)
 	local mapping = self.mappings[id]
 	if mapping == nil then 

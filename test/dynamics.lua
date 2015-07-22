@@ -1,7 +1,7 @@
 --This module was very usefull in testing
---Migration from the old dynamic implementation idtodebugid
+--Migration from the old dynamic implementation to 
 --the new one. However it is no longer needed.
---I am leaving the code her uncommented incase 
+--I am leaving the code here uncommented incase 
 --I ever feel like updating the dynamic code yet again.
 
 --[[

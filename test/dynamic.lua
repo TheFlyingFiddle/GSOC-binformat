@@ -84,6 +84,5 @@ local IllegalLuaCases =
 }
 
 runtest { mapping = standard.dynamic, SimpleLuaCases  }
-print("Testing all the complex cases whiwho!")
-runtest { mapping = standard.dynamic, ComplexLuaCases } 
---runtest { mapping = standard.dynamic, encodeerror = "any" , IllegalLuaCases }
+runtest { mapping = standard.dynamic, noregression = true, ComplexLuaCases } 
+runtest { mapping = standard.dynamic, encodeerror = "any" , IllegalLuaCases }

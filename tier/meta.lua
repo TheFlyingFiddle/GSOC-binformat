@@ -13,6 +13,7 @@ local function newmetatype(tag)
 	local mt = {} mt.__index = mt
 	mt.tag = tag
 	meta_types[tag] = mt
+	
 	return mt
 end 
 
@@ -53,7 +54,6 @@ end
 local function metafromtag(tag)
 	return meta[tags[tag]:lower()]
 end 
-
 
 local function encodeid(encoder, type)
 	local writer = encoder.writer

@@ -1,8 +1,6 @@
-local primitive = require"tier.primitive"
+local meta      = require"tier.meta"
 local custom    = require"tier.custom"
 return function (standard)
-    
-    local dynamic
     local dynamic_handler = { }
     local iterators = { }
     
@@ -12,34 +10,34 @@ return function (standard)
           if value > 0 then
              if value <= 0xFFFF then
                 if value <= 0xFF then
-                    return primitive.uint8
+                    return meta.uint8
                 else
-                    return primitive.uint16
+                    return meta.uint16
                 end
              else
                 if value <= 0xFFFFFFFF then
-                    return primitive.uint32
+                    return meta.uint32
                 else
-                    return primitive.uint64
+                    return meta.uint64
                 end
              end
           else
              if value >= -0x8000 then
                 if value >= -0x80 then
-                    return primitive.int8 
+                    return meta.int8 
                 else
-                    return primitive.int16    
+                    return meta.int16    
                 end
              else
                 if value >= -0x8000000 then
-                    return primitive.int32
+                    return meta.int32
                 else
-                    return primitive.int64
+                    return meta.int64
                 end
              end
           end
        else
-          return primitive.double
+          return meta.double
        end
     end
     
@@ -78,7 +76,7 @@ return function (standard)
         local count    = 1
         repeat
             if math.type(val) ~= "integer" then
-                return primitive.double
+                return meta.double
             end
             
             min = mmin(val, min)
@@ -105,13 +103,13 @@ return function (standard)
     
     local function tuple_element_mapping(type)
         if type == "boolean" then 
-            return primitive.boolean
+            return meta.boolean
         elseif type == "string" then
-            return primitive.stream
+            return meta.stream
         elseif type == "table" or 
                type == "userdata" or 
                type == "function" then
-            return dynamic
+            return meta.dynamic
         elseif type == "thread" then
             error("Cannot serialize corutines!")
         end
@@ -134,19 +132,19 @@ return function (standard)
             count = count + 1    
             
             if type(k) ~= "number" then
-                return dynamic
+                return meta.dynamic
             end
         end
        
         if not isarray(type_tuple, count) then
-            return dynamic
+            return meta.dynamic
         end
         
         repeat
             for k, v in pairs(val) do
                 local typ = type(v)
                 if type_tuple[k] ~= typ then
-                    return dynamic
+                    return meta.dynamic
                 end
                 
                 if typ == "number" then
@@ -159,73 +157,38 @@ return function (standard)
                 end
                 
                 if #val ~= count then
-                    return dynamic
+                    return meta.dynamic
                 end 
             end
             val = iter()        
         until val == nil  
         
-        local mappings = { }
+        local subtypes = { }
         for i=1, count do
-            local elem_mapping
+            local subtype
             if type_tuple[i] == "number" then
                 if double_tuple[i] then
-                    elem_mapping = primitive.double
+                    subtype = meta.double
                 else
-                    elem_mapping = min_max_mapping(min_tuple[i], max_tuple[i])
+                    subtype = min_max_mapping(min_tuple[i], max_tuple[i])
                 end
             else
-                elem_mapping = tuple_element_mapping(type_tuple[i])
+                subtype = tuple_element_mapping(type_tuple[i])
             end
             
-            mappings[i] = { mapping = elem_mapping } 
+            subtypes[i] = subtype
         end
         
         clear_tuple_data(count)
-        return standard.object(standard.tuple(mappings))
+        return meta.object(meta.tuple(subtypes))
      
     end
-    
-    local function tuple_or_dynamic_mapping(value)    
-        local count = 0
-        for k, v in pairs(value) do
-            local typ = type(v)
-            type_tuple[k] = typ
-            count = count + 1
-            
-            if type(k) ~= "number" then
-                return dynamic
-            end
-        end
-        
-        if not isarray(type_tuple, count) then
-            return dynamic
-        end
-        
-        local mappings = { }
-        for i=1, count do
-            local elem_mapping
-            if type_tuple[i] == "number" then
-                elem_mapping = number_mapping(value[i])
-            else
-                elem_mapping = tuple_element_mapping(type_tuple[i])
-            end
-        
-            mappings[i] = { mapping = elem_mapping }
-        end
-        
-        clear_tuple_data(count)
-        return standard.tuple(mappings)
-    end
-    
-    local ref_mappings = { }
+  
     local function item_mapping(type, value, iter)
         if type == "boolean" then
-            return primitive.boolean
+            return meta.boolean
         elseif type == "string" then
-            return primitive.stream
-        elseif type == "dynamic" then
-            return tuple_or_dynamic_mapping(value)
+            return meta.stream
         elseif type == "number" then
             local iterator = iterators[iter](value)
             return numbers(iterator)
@@ -233,12 +196,10 @@ return function (standard)
             local iterator = iterators[iter](value)
             return tables(iterator)
         else 
-            return dynamic
+            return meta.dynamic
         end
     end
-    
-    
-    local optimal = require"experimental.optimal"
+        
     local function table_mapping(value)
         if value.tiermapping ~= nil then
             return value.tiermapping
@@ -265,24 +226,18 @@ return function (standard)
             count = count + 1
         end
         
-        local mapping
+        local metatype
         if count == 0 then
-            mapping = standard.array(primitive.void, 0)
+            metatype = meta.array(meta.void, 0)
         elseif ktype == "number" and isarray(value, count) then
-            if vtype == "dynamic" then
-                mapping = tuple_or_dynamic_mapping(value)    
-            elseif vtype == "number" then
-                mapping = optimal.number_list(item_mapping(vtype, value, "list"))
-            else
-                mapping = standard.list(item_mapping(vtype, value, "list"))
-            end
+            metatype = meta.list(item_mapping(vtype, value, "list"))
         elseif vtype == "boolean" then
-            mapping = standard.set(item_mapping(ktype, value, "set"))
+            metatype = meta.set(item_mapping(ktype, value, "set"))
         else
-            mapping = standard.map(item_mapping(ktype, value, "key_map"),
-                                   item_mapping(vtype, value, "value_map"))
+            metatype = meta.map(item_mapping(ktype, value, "key_map"),
+                                item_mapping(vtype, value, "value_map"))
         end       
-        return standard.object(mapping)
+        return meta.object(metatype)
     end
     
     local function list_iter(value)
@@ -334,12 +289,11 @@ return function (standard)
         error("Can't encode userdata yet")
     end
     
-    local string_object = standard.object(primitive.stream)
     
-    dynamic_handler["nil"]        = function() return primitive.null end
-    dynamic_handler["function"]   = function() return standard.script end
-    dynamic_handler.boolean       = function() return primitive.boolean end
-    dynamic_handler.string        = function() return string_object end
+    dynamic_handler["nil"]        = function() return meta.null end
+    dynamic_handler["function"]   = function() return standard.script.meta end
+    dynamic_handler.boolean       = function() return meta.boolean end
+    dynamic_handler.string        = function() return meta.object(meta.stream) end
     
     dynamic_handler.number        = number_mapping
     dynamic_handler.table         = table_mapping
@@ -348,13 +302,12 @@ return function (standard)
     dynamic_handler.thread        = function() error("Cannot serialize coroutines.") end
     
     function dynamic_handler:getmappingof(value)
-        local func = self[type(value)] or error("no mapping for value of type " .. type(value))
-        return func(value)
+        local func     = self[type(value)] or error("no mapping for value of type " .. type(value))
+        local metatype = func(value)
+        return standard.generator:generate(metatype)
     end
     
-    
     --Add ourselfs to the standard table.
-    dynamic = custom.dynamic(dynamic_handler, standard.type)
-    standard.dynamic = dynamic
+    standard.dynamic = custom.dynamic(dynamic_handler, standard.type)
     standard.generator:register_mapping(standard.dynamic)
 end

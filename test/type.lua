@@ -1,6 +1,6 @@
 local PrimitiveCases = { }
 for k,v in pairs(primitive) do 
-	table.insert(PrimitiveCases, { actual = v })
+	table.insert(PrimitiveCases, { actual = v , id = "primitive" .. k })
 end
 table.sort(PrimitiveCases, function(a,b) return a.actual.meta.tag < b.actual.meta.tag end)
 
@@ -9,10 +9,10 @@ local SimpleComposedCases =
 {
 	{ actual = standard.array(primitive.varint, 5) , id = "standard_array"},
 	{ actual = standard.list(primitive.varint),      id = "standerd_list" },  
-	{ actual = standard.set(primitive.varint) },
-	{ actual = standard.map(primitive.varint, primitive.varint) },
-	{ actual = standard.optional(primitive.varint) },
-	{ actual = standard.tuple(primitive.varint, primitive.stream, primitive.boolean) },
+	{ actual = standard.set(primitive.varint),		 id = "standard_set"},
+	{ actual = standard.map(primitive.varint, primitive.varint), id = "standard_map" },
+	{ actual = standard.optional(primitive.varint), id = "standard_optional" },
+	{ actual = standard.tuple(primitive.varint, primitive.stream, primitive.boolean), id = "standard_tuple" },
 }
 
 local AlignCases = 
