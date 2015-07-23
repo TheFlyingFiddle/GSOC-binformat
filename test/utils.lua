@@ -181,7 +181,6 @@ local function checksame(test, case, recovered)
 end
 
 
-local exp_dynamic = require"experimental.dynamic"
 local function rundynamictest(test)
 	local mapping = test.mapping
 	local basedir = test.basedir or "streams"

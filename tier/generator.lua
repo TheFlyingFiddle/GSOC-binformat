@@ -2,12 +2,12 @@ local meta   = require"tier.meta"
 local custom = require"tier.custom"
 
 local Generator = { } Generator.__index = Generator
+
 function Generator:generate(type)
-	local id      = meta.getid(type)
-	local mapping = self.mappings[id]
+	local mapping = self.mappings[type] or self.generated[type]
 	if mapping == nil then 
 		local ref = custom.typeref()
-		self.mappings[id] = ref 
+		self.generated[type] = ref 
 		
 		local generator = self.generators[type.tag]
 		if not generator then 
@@ -19,7 +19,7 @@ function Generator:generate(type)
 			ref:setref(mapping)		
 		end
 		
-		self.mappings[id] = mapping 								 					
+		self.generated[type] = mapping 								 					
 	elseif meta.istyperef(mapping.meta) then 
 		mapping.has_been_used = true
 	end 
@@ -27,8 +27,7 @@ function Generator:generate(type)
 end 
 
 function Generator:register_mapping(mapping)
-	local id = meta.getid(mapping.meta)
-	self.mappings[id] = mapping
+	self.mappings[mapping.meta] = mapping
 end 
 
 function Generator:register_generator(tag, generator)
@@ -38,6 +37,7 @@ end
 return function()
 	local generator = setmetatable({}, Generator)
 	generator.mappings   = { }
+	generator.generated  = setmetatable({}, { __mode = "kv" })
 	generator.generators = { }
 	return generator
 end 
