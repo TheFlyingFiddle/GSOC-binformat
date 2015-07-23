@@ -55,10 +55,43 @@ local function metafromtag(tag)
 	return meta[tags[tag]:lower()]
 end 
 
+local memoized_types = setmetatable({}, { __mode = "v"})
+local function canmemoize(type)
+	if type.recursive_protection then return true end 
+
+	local isok = true
+	if type.tag == tags.TYPEREF then 
+		isok   = false		
+	else
+		type.recursive_protection = true
+		for i=1, #type do 
+			if not canmemoize(type[i]) then 
+				isok = false
+				break; 
+			end 	
+		end 
+		type.recursive_protection = nil
+	end 
+	return isok
+end 
+
+
+local function memoize_type(type)
+	if canmemoize(type) then 
+		local id = meta.getid(type)
+		if memoized_types[id] then 
+			return memoized_types[id]
+		else 
+			memoized_types[id] = type
+		end 
+	end 
+	return type
+end
+
 local function encodeid(encoder, type)
 	local writer = encoder.writer
 	if simple_metatypes[type.tag] then
-		writer:varint(type.tag)
+		writer:writef("V", type.tag)
 	elseif type.tag == tags.TYPEREF then
 		assert(type[1] ~= nil, "incomplete typeref") 
 		encodeid(encoder, type[1])
@@ -66,12 +99,12 @@ local function encodeid(encoder, type)
 		local index = encoder.types[type]
 		if index == nil then 
 			encoder.types[type] = writer:getposition()
-			writer:varint(type.tag)
+			writer:writef("V", type.tag)
 		 	type:encode(encoder)			
 		else
 			local offset = writer:getposition() - index
-			writer:varint(tags.TYPEREF)
-			writer:varint(offset)
+			writer:writef("V", tags.TYPEREF)
+			writer:writef("V", offset)
 		end 
 	end 
 end
@@ -106,23 +139,22 @@ function meta.getencodeid(type)
 end 
 
 function meta.encodetype(encoder, type)
-	encoder.writer:raw(meta.getencodeid(type))	
+	encoder:writef("r", meta.getencodeid(type))	
 end 
 
 local function newdecodetype(decoder, MetaTable)
 	local type = setmetatable({}, MetaTable)
 end 
 
-local decoded_types = setmetatable({}, { __mode = "v"})
 local function decodeid(decoder)
 	local reader = decoder.reader
 	local pos  = reader:getposition()
 
-	local tag  = reader:varint()
+	local tag  = reader:readf("V")
 	if simple_metatypes[tag] then
 		return metafromtag(tag)
 	elseif tag == tags.TYPEREF then 
-		local typeref = pos - reader:varint()
+		local typeref = pos - reader:readf("V")
 		return decoder.types[typeref]
 	else 
 		local type = setmetatable({}, meta_types[tag])
@@ -131,11 +163,11 @@ local function decodeid(decoder)
 		
 		local endpos 	= reader:getposition()
 		local id        = string.sub(decoder.idbuffer, pos + 1, endpos + 1)
-		if decoded_types[id] then 
-			type = decoded_types[id]
+		if memoized_types[id] then 
+			type = memoized_types[id]
 		else
-			decoded_types[id] = type
-			type.id 		  = id
+			memoized_types[id] = type
+			type.id 		   = id
 		end 
 		return type
 	end	
@@ -146,13 +178,13 @@ local instream  = format.inmemorystream
 local newreader  = format.reader
 local newdecoder = core.decoder
 function meta.decodetype(decoder)
-	local tag = decoder.reader:varint()
+	local tag = decoder:readf("V")
 	if simple_metatypes[tag] then 
 		return metafromtag(tag)
 	else 
-		local data    	 = pack(tag) .. decoder.reader:stream()
-		if decoded_types[data] then 
-			return decoded_types[data]
+		local data    	 = pack(tag) .. decoder:readf("s")
+		if memoized_types[data] then 
+			return memoized_types[data]
 		end 
 				
 		local decoder 	   = newdecoder(newreader(instream(data)))
@@ -165,12 +197,12 @@ end
 do 
 	local Array = newmetatype(tags.ARRAY)
 	function Array:encode(encoder)
-		encoder.writer:varint(self.size)
+		encoder:writef("V", self.size)
 		encodeid(encoder, self[1])
 	end
 	
 	function Array:decode(decoder)
-		self.size = decoder.reader:varint()
+		self.size = decoder:readf("V")
 		self[1]	  = decodeid(decoder)
 	end
 	
@@ -178,19 +210,19 @@ do
 		local array = setmetatable({ }, Array)
 		array[1]  = element_type
 		array.size = size 
-		return array
+		return memoize_type(array)
 	end
 end 
 
 do 
 	local List = newmetatype(tags.LIST) 
 	function List:encode(encoder)
-		encoder.writer:varint(self.sizebits)
+		encoder:writef("V", self.sizebits)
 		encodeid(encoder, self[1])
 	end
 	
 	function List:decode(decoder)
-		self.sizebits	  = decoder.reader:varint()
+		self.sizebits	  = decoder:readf("V")
 		self[1]			  = decodeid(decoder)
 	end
 	
@@ -199,19 +231,19 @@ do
 		local list 	  = setmetatable({ }, List)
 		list[1] 	  = element_type
 		list.sizebits 	  = sizebits
-		return list 
+		return memoize_type(list)
 	end
 end 
 
 do 
 	local Set = newmetatype(tags.SET) 
 	function Set:encode(encoder)
-		encoder.writer:varint(self.sizebits)
+		encoder:writef("V", self.sizebits)
 		encodeid(encoder, self[1])
 	end
 	
 	function Set:decode(decoder)
-		self.sizebits 	= decoder.reader:varint()
+		self.sizebits 	= decoder:readf("V")
 		self[1]			= decodeid(decoder)
 	end
 	
@@ -221,20 +253,20 @@ do
 		set[1]	  = element_type
 		set.sizebits  = sizebits 
 		set.tag   = tags.SET
-		return set
+		return memoize_type(set)
 	end
 end 
 
 do
 	local Map 	= newmetatype(tags.MAP)
 	function Map:encode(encoder)
-		encoder.writer:varint(self.sizebits)
+		encoder:writef("V", self.sizebits)
 		encodeid(encoder, self[1])
 		encodeid(encoder, self[2])
 	end
 	
 	function Map:decode(decoder)
-		self.sizebits = decoder.reader:varint()
+		self.sizebits = decoder:readf("V")
 		self[1]		  = decodeid(decoder)
 		self[2]		  = decodeid(decoder)
 	end
@@ -246,21 +278,21 @@ do
 		map[1]    = key_type
 		map[2]	  = value_type
 		map.sizebits  = sizebits
-		return map
+		return memoize_type(map)
 	end
 end 
 
 do
 	local Tuple = newmetatype(tags.TUPLE)
 	function Tuple:encode(encoder)
-		encoder.writer:varint(#self)
+		encoder:writef("V", #self)
 		for i=1, #self do 
 			encodeid(encoder, self[i])	
 		end
 	end
 	
 	function Tuple:decode(decoder)
-		local size  = decoder.reader:varint()
+		local size  = decoder:readf("V")
 		for i=1, size do 
 			self[i] = decodeid(decoder)
 		end 
@@ -271,15 +303,16 @@ do
 		for i=1, #types do 
 			tuple[i] = types[i]
 		end 
-		return tuple
+		
+		return memoize_type(tuple)
 	end
 end 
 
 do 
 	local Union = newmetatype(tags.UNION)
 	function Union:encode(encoder)
-		encoder.writer:varint(self.sizebits)
-		encoder.writer:varint(#self)
+		encoder:writef("V", self.sizebits)
+		encoder:writef("V", #self)
 		
 		for i=1, #self do 
 			encodeid(encoder, self[i])
@@ -287,8 +320,8 @@ do
 	end
 	
 	function Union:decode(decoder)
-		self.sizebits = decoder.reader:varint()
-		local size    = decoder.reader:varint()
+		self.sizebits = decoder:readf("V")
+		local size    = decoder:readf("V")
 
 		for i=1, size do 
 			self[i] = decodeid(decoder)
@@ -303,7 +336,7 @@ do
 		end 
 		
 		union.sizebits = sizebits 
-		return union
+		return memoize_type(union)
 	end
 end 
 
@@ -320,7 +353,7 @@ do
 	function meta.object(element_type)
 		local obj = setmetatable({}, Object)
 		obj[1]	  = element_type
-		return obj
+		return memoize_type(obj)
 	end
 end 
 
@@ -337,19 +370,19 @@ do
 	function meta.embedded(element_type)
 		local emb = setmetatable({}, Embedded)
 		emb[1]	  = element_type
-		return emb
+		return memoize_type(emb)
 	end
 end 
 
 do 
 	local Semantic = newmetatype(tags.SEMANTIC)
 	function Semantic:encode(encoder)
-		encoder.writer:stream(self.identifier)
+		encoder:writef("s", self.identifier)
 		encodeid(encoder, self[1])
 	end
 	
 	function Semantic:decode(decoder)
-		self.identifier = decoder.reader:stream()
+		self.identifier = decoder:readf("s")
 		self[1] = decodeid(decoder)
 	end 
 	 
@@ -357,19 +390,19 @@ do
 		local semantic 		= setmetatable({}, Semantic)
 		semantic[1]	   		= element_type
 		semantic.identifier = id 
-		return semantic
+		return memoize_type(semantic)
 	end
 end 
 
 do 
 	local Align   = newmetatype(tags.ALIGN)
 	function Align:encode(encoder)
-		encoder.writer:varint(self.alignof)
+		encoder:writef("V", self.alignof)
 		encodeid(encoder, self[1])
 	end  
 	
 	function Align:decode(decoder)
-		self.alignof = decoder.reader:varint()
+		self.alignof = decoder:readf("V")
 		self[1]   = decodeid(decoder)
 	end
 	
@@ -407,37 +440,38 @@ do
 		else 
 			setmetatable(align, align_tables[alignof])
 		end
-		return align 
+		
+		return memoize_type(align)
 	end
 end 
 
 do 
 	local Uint = newmetatype(tags.UINT)
 	function Uint:encode(encoder)
-		encoder.writer:varint(self.bits)
+		encoder:writef("V", self.bits)
 	end
 	
 	function Uint:decode(decoder)
-		self.bits = decoder.reader:varint()
+		self.bits = decoder:readf("V")
 	end 
 	
 	function meta.uint(bits)
-		return setmetatable( { bits = bits}, Uint)
+		return memoize_type(setmetatable( { bits = bits}, Uint))
 	end 
 end
 
 do  
 	local Sint = newmetatype(tags.SINT)
 	function Sint:encode(encoder)
-		encoder.writer:varint(self.bits)
+		encoder:writef("V", self.bits)
 	end
 	
 	function Sint:decode(decoder)
-		self.bits = decoder.reader:varint()
+		self.bits = decoder:readf("V")
 	end 
 	
 	function meta.int(bits)
-		return setmetatable({ bits = bits}, Sint)
+		return memoize_type(setmetatable({ bits = bits}, Sint))
 	end
 end 
 
@@ -477,7 +511,9 @@ do
 			--This would indicate inproper useage of typerefs
 			--or that there is a structural problem with metatypes. 
 			error("only use typerefs when constructing graphs! otherwize use normal types")
-		end 	
+		end
+				
+		return memoize_type(meta) 	
 	end
 	
 	function meta.typeref()

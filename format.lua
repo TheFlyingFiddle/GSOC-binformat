@@ -235,6 +235,37 @@ function Writer:flush()
    self.inner:flush()
 end
 
+local funcs =
+{
+	b = Writer.int8, 
+	h = Writer.int16,
+	i = Writer.int32,
+	l = Writer.int64,
+
+	B = Writer.uint8,
+	H = Writer.uint16,
+	I = Writer.uint32,
+	L = Writer.uint64,
+	
+	f = Writer.float,
+	d = Writer.double, 
+	
+	s = Writer.stream,
+	r = Writer.raw, 
+      
+	v = Writer.varintzz, 
+	V = Writer.varint,
+      
+      p = Writer.int,
+      P = Writer.uint
+}
+
+function Writer:writef(fmt, ...)
+	local func = funcs[fmt]
+	assert(func)
+	func(self, ...)
+end 
+
 function format.writer(innerstream)
    local writer = { inner = innerstream }
    writer.position   = 0
@@ -427,6 +458,38 @@ function Reader:discardbits()
    self.bit_count  = 0
    self.bit_buffer = 0
 end
+
+
+local funcs =
+{
+	b = Reader.int8, 
+	h = Reader.int16,
+	i = Reader.int32,
+	l = Reader.int64,
+
+	B = Reader.uint8,
+	H = Reader.uint16,
+	I = Reader.uint32,
+	L = Reader.uint64,
+	
+	f = Reader.float,
+	d = Reader.double, 
+	
+	s = Reader.stream,
+	r = Reader.raw, 
+      
+	v = Reader.varintzz, 
+	V = Reader.varint,
+      
+      p = Reader.int,
+      P = Reader.uint
+}
+
+function Reader:readf(fmt, ...)
+	local func = funcs[fmt]
+	assert(func)
+	return func(self, ...)
+end 
 
 function format.reader(innerstream)
    local reader = { inner = innerstream }

@@ -97,3 +97,51 @@ runtest {
 		{ actual = { list, nil, list }, id = "OBJECT_NULLABLE_LISTS", },
 	},
 }
+
+local ref = standard.typeref()
+local o1 = standard.object(standard.list(ref))
+local o2 = standard.object(o1)
+ref:setref(o2)
+
+local selfref = {}
+selfref[1] = selfref
+
+runtest {
+        mapping = o2,
+        { { actual = selfref, id = "OBJECTx2_LIST_SELFREF" } }
+}
+
+
+
+do
+	local concat = _G.table.concat
+	local StringObject = standard.object(standard.list(primitive.char))
+
+	local h = { identify = function (self, value) return concat(value) end }
+	local StringValue = custom.object(h, StringObject)
+
+	local t = standard.tuple{
+		{ key = "objects", mapping = standard.list(StringObject) },
+		{ key = "values", mapping = standard.list(StringValue) },
+	}
+
+	local A1 = {"A"}
+	local A2 = {"A"}
+
+	runtest{ nodynamic = true,
+		mapping = t,
+		{
+			{
+				id = "DISTINCT_NESTED_OBJECTS_2",
+				actual = {
+					objects = { A1, A2, A1 },
+					values = { A1, A2, {"B"} },
+				},
+				expected = {
+					objects = { A1, A2, A1 },
+					values = { A1, A1, {"B"} },
+				},
+			},
+		}
+	}
+end

@@ -11,11 +11,11 @@ local custom = { }
 do 
     local Int = { } Int.__index = Int
     function Int:encode(encoder, value)
-        encoder.writer:int(self.meta.bits, value)
+        encoder:writef("p", self.meta.bits, value)
     end
     
     function Int:decode(decoder)
-        return decoder.reader:int(self.meta.bits)
+        return decoder:readf("p", self.meta.bits)
     end
     
     function custom.int(numbits)
@@ -26,11 +26,11 @@ end
 do 
     local Uint = { } Uint.__index = Uint
     function Uint:encode(encoder, value)
-        encoder.writer:uint(self.meta.bits, value)
+        encoder:writef("P", self.meta.bits, value)
     end
     
     function Uint:decode(decoder)
-        return decoder.reader:uint(self.meta.bits)
+        return decoder:readf("P", self.meta.bits)
     end
     
     function custom.uint(numbits)
@@ -88,17 +88,17 @@ end
 
 local function writesize(writer, bits, size)
     if bits == 0 then
-       writer:varint(size)
+       writer:writef("V", size)
     else
-       writer:uint(bits, size) 
+       writer:writef("P", bits, size) 
     end
 end
 
 local function readsize(reader, bits)
     if bits == 0 then
-        return reader:varint()
+        return reader:readf("V")
     else
-        return reader:uint(bits)
+        return reader:readf("P", bits)
     end
 end
 
@@ -378,10 +378,10 @@ do
         local pos = map[identity]
         if pos == nil then 
             map[identity] = writer:getposition()
-            writer:varint(0)
+            writer:writef("V", 0)
             mapping:encode(encoder, value)
         else 
-            writer:varint(writer:getposition() - pos)
+            writer:writef("V", writer:getposition() - pos)
         end
     end
     
@@ -389,11 +389,11 @@ do
         local reader  = decoder.reader
         local mapping = self.mapping
         local pos = reader:getposition()
-        local shift = reader:varint()
+        local shift = reader:readf("V")
         local index = pos - shift
         local found, value = decoder:getobject(self, index)
         if not found then
-            value = decoder:endobject(self, value, index, mapping:decode(decoder))
+            value = decoder:endobject(self, index, mapping:decode(decoder))
         end
         return value
     end 
@@ -446,22 +446,19 @@ do
         enco:close()
         
         local data    = outstream:getdata()
-        encoder.writer:stream(data)
+        encoder:writef("s", data)
         outstream:close()
     end
     
-    local newreader  = format.reader 
-    local newdecoder = core.decoder
-    
     function Embedded:decode(decoder) 
         local mapping   = self.mapping
-        local data      = decoder.reader:stream() 
-        local instream  = self.handler:getinstream(data)
-        local deco      = newdecoder(newreader(instream), false)
-        local value     = self.mapping:decode(deco) 
-            
-        deco:close()
-        instream:close()
+        local reader    = decoder.reader
+        
+        local length    = reader:readf("V")
+        local spos      = reader:getposition()
+        local value     = mapping:decode(decoder)
+        local epos      = reader:getposition()
+        assert(epos - spos == length, "did not read the embedded stream correctly!")        
         return value
     end
     
@@ -474,6 +471,23 @@ do
         embedded.handler = handler
         return embedded
     end
+    
+    local Opaque = { } Opaque.__index = Opaque
+    function Opaque:encode(encoder, value)
+        assert(value.opaque == self)
+        encoder:writef("s", data)
+    end 
+    
+    function Opaque:decode(decoder)
+        local data = decoder:readf("s")
+        return { data = data, opaque = self }
+    end
+    
+    function custom.opaque()
+        local opaque = setmetatable({}, Opaque)
+        opaque.meta  = meta.embedded(meta.void)
+        return opaque
+    end      
 end 
 
 do 
@@ -543,7 +557,7 @@ do
         --we want to replace any occurance of a typeref with the 
         --actual mapping. 
         fixrefs(mapping, self, mapping)
-        self.meta:setref(mapping.meta)
+        mapping.meta = self.meta:setref(mapping.meta)
     end
     
     function custom.typeref()

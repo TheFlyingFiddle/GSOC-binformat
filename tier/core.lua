@@ -25,6 +25,10 @@ function Encoder:encode(mapping, data)
    mapping:encode(self, data)	
 end
 
+function Encoder:writef(fmt, ...)
+   self.writer:writef(fmt, ...)  
+end 
+
 --Finishes any pending operations and closes 
 --the encoder. After this operation the encoder can no longer be used.
 function Encoder:close()
@@ -36,8 +40,8 @@ end
 
 function core.encoder(writer, usemetadata)
 	local encoder = setmetatable({ }, Encoder)
-    encoder.writer = writer;
-	encoder.domains = { }
+  encoder.writer = writer;
+  encoder.domains = { }
 	encoder.usemetadata = usemetadata
 	return encoder	
 end
@@ -54,37 +58,26 @@ function Decoder:getobject(mapping, id)
   end
   if not domain.defined[id] then
     local pending = self.pending
-    local top = #pending+1
-    pending[top] = { domain = domain, id = id }
-    return false, top
+    pending[#pending+1] = { domain = domain, id = id }
+    return false
   end
   return true, domain.values[id]
 end
 
 function Decoder:setobject(value)
   local pending = self.pending
-  local top = #pending
-  if top > 0 then
-    local entry = pending[top]
-    pending[top] = nil
+  for _, entry in ipairs(pending) do
     local domain, id = entry.domain, entry.id
     domain.defined[id] = true
     domain.values[id] = value
   end
+  self.pending = {}
 end
 
-function Decoder:endobject(mapping, expected, id, value)
-  local domain = self.domains[mapping]
-  local pending = self.pending
-  local top = #pending
-  if domain.defined[id] then
-    expected = expected-1
-  else
-    pending[top] = nil
-    domain.defined[id] = true
-    domain.values[id] = value
+function Decoder:endobject(mapping, id, value)
+  if not self.domains[mapping].defined[id] then
+    self:setobject(value)  
   end
-  assert(top == expected, "corrupted mapping, unresolved objects")
   return value
 end
 
@@ -101,6 +94,10 @@ function Decoder:decode(mapping)
    
    return mapping:decode(self)
 end
+
+function Decoder:readf(fmt, ...)
+  return self.reader:readf(fmt, ...)
+end 
 
 --Closes the decoder.
 --After this operation is performed the decoder can no longer be used.

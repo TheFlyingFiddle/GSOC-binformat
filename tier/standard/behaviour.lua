@@ -63,6 +63,7 @@ return function(standard)
     standard.object   = createobject
 	standard.semantic = createsemantic
 	standard.embedded = createembedded
+    standard.opaque   = custom.opaque
     
     --Should standard include typeref?
     standard.typeref  = newtyperef
