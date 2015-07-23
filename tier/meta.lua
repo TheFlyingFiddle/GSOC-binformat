@@ -87,7 +87,7 @@ function meta.getid(type)
 		encoder.types = { }
 		encodeid(encoder, type)
 		encoder:close()		
-		type.id    = buffer:getdata()	
+		type.id    = buffer:getdata()
 	end 
 	return type.id 
 end 
@@ -113,6 +113,7 @@ local function newdecodetype(decoder, MetaTable)
 	local type = setmetatable({}, MetaTable)
 end 
 
+local decoded_types = setmetatable({}, { __mode = "v"})
 local function decodeid(decoder)
 	local reader = decoder.reader
 	local pos  = reader:getposition()
@@ -121,20 +122,25 @@ local function decodeid(decoder)
 	if simple_metatypes[tag] then
 		return metafromtag(tag)
 	elseif tag == tags.TYPEREF then 
-		local typeref = pos - reader:varint() 
-		local type    = decoder.types[typeref]
-		return type
+		local typeref = pos - reader:varint()
+		return decoder.types[typeref]
 	else 
-		local type = meta_types[tag]
+		local type = setmetatable({}, meta_types[tag])
+		decoder.types[pos] = type
+		type:decode(decoder)
 		
-		--We have to create a value of the appropriate type 
-		--before we can start decoding to fix potential typereference. 
-		local item = setmetatable({}, type)
-		decoder.types[pos] = item
-		type:decode(decoder, item)
-		return item
-	end 
+		local endpos 	= reader:getposition()
+		local id        = string.sub(decoder.idbuffer, pos + 1, endpos + 1)
+		if decoded_types[id] then 
+			type = decoded_types[id]
+		else
+			decoded_types[id] = type
+			type.id 		  = id
+		end 
+		return type
+	end	
 end 
+
 
 local instream  = format.inmemorystream
 local newreader  = format.reader
@@ -145,11 +151,14 @@ function meta.decodetype(decoder)
 		return metafromtag(tag)
 	else 
 		local data    	 = pack(tag) .. decoder.reader:stream()
-		local decoder 	 = newdecoder(newreader(instream(data)))
-		decoder.types 	 = { }
-		local type 		 = decodeid(decoder)
-		type.id 		 = data 
-		return type			
+		if decoded_types[data] then 
+			return decoded_types[data]
+		end 
+				
+		local decoder 	   = newdecoder(newreader(instream(data)))
+		decoder.types 	   = { }
+		decoder.idbuffer   = data
+		return decodeid(decoder)			
 	end  
 end
 
@@ -160,9 +169,9 @@ do
 		encodeid(encoder, self[1])
 	end
 	
-	function Array:decode(decoder, item)
-		item.size = decoder.reader:varint()
-		item[1]	  = decodeid(decoder)
+	function Array:decode(decoder)
+		self.size = decoder.reader:varint()
+		self[1]	  = decodeid(decoder)
 	end
 	
 	function meta.array(element_type, size)
@@ -180,9 +189,9 @@ do
 		encodeid(encoder, self[1])
 	end
 	
-	function List:decode(decoder, item)
-		item.sizebits	  = decoder.reader:varint()
-		item[1]			  = decodeid(decoder)
+	function List:decode(decoder)
+		self.sizebits	  = decoder.reader:varint()
+		self[1]			  = decodeid(decoder)
 	end
 	
 	function meta.list(element_type, sizebits)
@@ -201,9 +210,9 @@ do
 		encodeid(encoder, self[1])
 	end
 	
-	function Set:decode(decoder, item)
-		item.sizebits 	= decoder.reader:varint()
-		item[1]			= decodeid(decoder)
+	function Set:decode(decoder)
+		self.sizebits 	= decoder.reader:varint()
+		self[1]			= decodeid(decoder)
 	end
 	
 	function meta.set(element_type, sizebits)
@@ -224,10 +233,10 @@ do
 		encodeid(encoder, self[2])
 	end
 	
-	function Map:decode(decoder, item)
-		item.sizebits = decoder.reader:varint()
-		item[1]		  = decodeid(decoder)
-		item[2]		  = decodeid(decoder)
+	function Map:decode(decoder)
+		self.sizebits = decoder.reader:varint()
+		self[1]		  = decodeid(decoder)
+		self[2]		  = decodeid(decoder)
 	end
 	
 	function meta.map(key_type, value_type, sizebits)
@@ -250,10 +259,10 @@ do
 		end
 	end
 	
-	function Tuple:decode(decoder, item)
+	function Tuple:decode(decoder)
 		local size  = decoder.reader:varint()
 		for i=1, size do 
-			item[i] = decodeid(decoder)
+			self[i] = decodeid(decoder)
 		end 
 	end
 	
@@ -277,12 +286,12 @@ do
 		end 
 	end
 	
-	function Union:decode(decoder, item)
-		item.sizebits = decoder.reader:varint()
+	function Union:decode(decoder)
+		self.sizebits = decoder.reader:varint()
 		local size    = decoder.reader:varint()
 
 		for i=1, size do 
-			item[i] = decodeid(decoder)
+			self[i] = decodeid(decoder)
 		end 
 	end 
 	 
@@ -304,8 +313,8 @@ do
 		encodeid(encoder, self[1])
 	end
 	
-	function Object:decode(decoder, item)
-		item[1]		= decodeid(decoder)
+	function Object:decode(decoder)
+		self[1]		= decodeid(decoder)
 	end
 	
 	function meta.object(element_type)
@@ -321,8 +330,8 @@ do
 		encodeid(encoder, self[1])
 	end 
 	
-	function Embedded:decode(decoder, item)
-		item[1] = decodeid(decoder)
+	function Embedded:decode(decoder)
+		self[1] = decodeid(decoder)
 	end 
 	
 	function meta.embedded(element_type)
@@ -339,9 +348,9 @@ do
 		encodeid(encoder, self[1])
 	end
 	
-	function Semantic:decode(decoder, item)
-		item.identifier = decoder.reader:stream()
-		item[1] = decodeid(decoder)
+	function Semantic:decode(decoder)
+		self.identifier = decoder.reader:stream()
+		self[1] = decodeid(decoder)
 	end 
 	 
 	function meta.semantic(id, element_type)
@@ -359,18 +368,18 @@ do
 		encodeid(encoder, self[1])
 	end  
 	
-	function Align:decode(decoder, item)
-		item.alignof = decoder.reader:varint()
-		item[1]   = decodeid(decoder)
+	function Align:decode(decoder)
+		self.alignof = decoder.reader:varint()
+		self[1]   = decodeid(decoder)
 	end
 	
 	local function fixedalignencode(self, encoder)
 		encodeid(encoder, self[1])
 	end
 	
-	local function fixedaligndecode(self, decoder, item)
-		item.alignof = self.fixedalignof
-		item[1] = decodeid(decoder)
+	local function fixedaligndecode(self, decoder)
+		self.alignof = self.fixedalignof
+		self[1] = decodeid(decoder)
 	end 
 	
 	local function newaligntype(tag, alignof)
@@ -408,8 +417,8 @@ do
 		encoder.writer:varint(self.bits)
 	end
 	
-	function Uint:decode(decoder, item)
-		item.bits = decoder.reader:varint()
+	function Uint:decode(decoder)
+		self.bits = decoder.reader:varint()
 	end 
 	
 	function meta.uint(bits)
@@ -423,8 +432,8 @@ do
 		encoder.writer:varint(self.bits)
 	end
 	
-	function Sint:decode(decoder, item)
-		item.bits = decoder.reader:varint()
+	function Sint:decode(decoder)
+		self.bits = decoder.reader:varint()
 	end 
 	
 	function meta.int(bits)

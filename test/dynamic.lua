@@ -69,7 +69,7 @@ local ComplexLuaCases =
 			d = { 14, 12, { 31, "hi"} }
 		} 
 	},
-	--{ actual = cyclic }, 
+	{ actual = cyclic }, 
 }
 
 
