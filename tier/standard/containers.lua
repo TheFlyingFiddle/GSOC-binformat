@@ -182,12 +182,40 @@ local function optional(mapper)
 	return newunion(Optional, { primitive.null, mapper }, 0)   
 end
 
+
+local EnumHandler = { } EnumHandler.__index = EnumHandler
+function EnumHandler:getenumid(value)
+    for k, v in pairs(self.values) do 
+        if k == value then return v end 
+    end    
+    return nil
+end
+
+function EnumHandler:getenumvalue(id)
+    for k, v in pairs(self.values) do 
+        if v == id then return k end 
+    end
+    return nil
+end 
+
+local newenum = custom.enum
+local function enum(name, values, mapping)
+    local handler  = setmetatable({}, EnumHandler)
+    handler.values = values
+    return  newenum(name, handler, mapping)
+end
+
+
+local bytearray = custom.bytearray
+
 return function (standard)
-    standard.list     = createlist
-    standard.array    = createarray
-    standard.set      = createset
-    standard.map      = createmap
-    standard.tuple    = createtuple
-    standard.union    = createunion
-    standard.optional = optional
+    standard.list        = createlist
+    standard.array       = createarray
+    standard.set         = createset
+    standard.map         = createmap
+    standard.tuple       = createtuple
+    standard.union       = createunion
+    standard.optional    = optional
+    standard.enum        = enum
+    standard.bytearray   = bytearray
 end

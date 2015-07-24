@@ -291,7 +291,7 @@ return function (standard)
     
     
     dynamic_handler["nil"]        = function() return meta.null end
-    dynamic_handler["function"]   = function() return standard.script.meta end
+    dynamic_handler["function"]   = function() return standard.closure.meta end
     dynamic_handler.boolean       = function() return meta.boolean end
     dynamic_handler.string        = function() return meta.object(meta.stream) end
     

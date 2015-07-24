@@ -1,6 +1,8 @@
 require "test.utils"
 
-dofile("test/script.lua")
+dofile("test/bytearray.lua")
+dofile("test/enum.lua")
+dofile("test/closure.lua")
 dofile("test/bimap.lua")
 dofile("test/empty.lua")
 dofile("test/bool.lua")

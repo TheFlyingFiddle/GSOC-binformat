@@ -38,6 +38,57 @@ do
     end
 end 
 
+
+do 
+    local Enum = { } Enum.__index = Enum
+    function Enum:encode(encoder, value)
+        local enumid = self.handler:getenumid(value)
+        if enumid then 
+            self.mapping:encode(encoder, enumid)
+        else 
+            error("no enum id for the value " .. value .. " exists")
+        end 
+    end 
+    
+    function Enum:decode(decoder)
+        local enumid = self.mapping:decode(decoder)
+        local value  = self.handler:getenumvalue(enumid)
+        if value then
+            return value 
+        else 
+            error("unkown enum id " .. enumid)
+        end         
+    end 
+    
+    function custom.enum(name, handler, mapping)
+        assert(util.ismapping(mapping))
+        local enum   = setmetatable({ }, Enum)
+        enum.mapping = custom.semantic(name, mapping)
+        enum.handler = handler
+        enum.meta    = enum.mapping.meta
+        return enum
+    end     
+end 
+
+do 
+    local ByteArray = { } ByteArray.__index = ByteArray
+    function ByteArray:encode(encoder, value)
+        local len = string.len(value)
+        assert(len == self.meta.size, "string has the wrong length")
+        encoder:writef("r", value)
+    end 
+    
+    function ByteArray:decode(decoder)
+        return decoder:readf("r", self.meta.size)
+    end 
+    
+    function custom.bytearray(size)
+        local array = setmetatable({}, ByteArray)
+        array.meta  = meta.array(meta.uint8, size)
+        return array
+    end
+end 
+
 do 
     --mapping for the ARRAY <T> tag.
     local Array = { } Array.__index = Array

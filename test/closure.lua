@@ -18,6 +18,32 @@ local function uses_global(n)
 	return math.abs(n)
 end
 
+local mut_rec1
+local function mut_rec2(a)
+	if a > 5 then 
+		return mut_rec1(a - 1)
+	end
+	return 0 
+end 
+
+mut_rec1 = function(a)
+	if a < 5 then 
+		return mut_rec2(a - 1)
+	end 
+
+	return 0
+end 
+
+
+local shared = 5
+local function sharerA(a) 
+	return a + shared
+end 
+
+local function sharerB(a)
+	return a - shared
+end 
+
 local GoodCases = 
 {
 	{ actual = simple , 			id = "simple function"},
@@ -25,7 +51,16 @@ local GoodCases =
 	{ actual = add,					id = "add function"}, 
 	{ actual = with_upvalue , 		id = "function with upvalue"},
 	{ actual = recursive , 			id = "recusive function" },
-	--{ actual = uses_global , 		id = "global function"}
+	{ actual = uses_global , 		id = "global function"},
+}
+
+local SharedCases = 
+{
+	{ actual = { sharerA, sharerB   } , id = "sharing an upvalue" },
+	
+	--Gives a matching error... I don't know if this is because of an error in 
+	--closure or that the functions just are different.
+	--{ actual = { mut_rec1, mut_rec2 } , id = "mutualy recursive functions" }
 }
 
 --Functions that should not work
@@ -51,19 +86,25 @@ local CFunctionCases =
 }
 
 runtest {
-	mapping = standard.script,
+	mapping = standard.closure,
 	noregression = true,
 	GoodCases
 }
 
 runtest {
-	mapping = standard.script,
+	mapping = standard.tuple{{mapping=standard.closure}, {mapping=standard.closure}},
+	noregression = true, 
+	SharedCases
+}
+
+runtest {
+	mapping = standard.closure,
 	encodeerror = "expected function",
 	NonFunctionCases,
 }
 
 runtest {
-	mapping = standard.script, 
+	mapping = standard.closure, 
 	encodeerror = "unable to dump given function",
 	CFunctionCases,
 }
