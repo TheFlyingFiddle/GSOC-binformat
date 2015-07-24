@@ -32,23 +32,26 @@ function Closure:encode(encoder, value)
     local upcount = encoder.upvaluecount    
     for i=1, count do 
         local upname, upval = debug.getupvalue(value, i)
-        if upname == "_ENV" then 
-            upval = "_ENV"            
-        end 
         
         local upid          = debug.upvalueid (value, i)
         
-        local numberid      = upvals[upid]
-        if not numberid then 
-            upcount      = upcount + 1
-            upvals[upid] = upcount
-            numberid     = upcount
+        local numberid  
+        if upval == _ENV or upname == "_ENV" then 
+            numberid = 0
+            upval    = nil
+        else
+            numberid      = upvals[upid]
+            if not numberid then 
+                upcount      = upcount + 1
+                upvals[upid] = upcount
+                numberid     = upcount
+            end
         end
-        
-        self.upmapping:encode(encoder, { numberid, upval})
+
+        self.upmapping:encode(encoder, { numberid, upval} )
     end
         
-     encoder.upvaluecount = upcount                                                                                      
+    encoder.upvaluecount = upcount                                                                                      
 end
 
 function Closure:decode(decoder)
@@ -64,8 +67,8 @@ function Closure:decode(decoder)
 
     for i=1, upcount do 
         local upval = self.upmapping:decode(decoder)
-        if upval[2] == "_ENV" then 
-            --Do nothing i guess. 
+        if upval[1] == 0 then 
+            --We have an environment.
         else 
             local fup     = decoder.upvalues[upval[1]]
             if fup then 
