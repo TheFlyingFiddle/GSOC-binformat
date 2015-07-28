@@ -526,7 +526,7 @@ do
     local Opaque = { } Opaque.__index = Opaque
     function Opaque:encode(encoder, value)
         assert(value.opaque == self)
-        encoder:writef("s", data)
+        encoder:writef("s", value.data)
     end 
     
     function Opaque:decode(decoder)
@@ -597,18 +597,22 @@ do
             end 
         end 
     end 
-    
-        
+            
     function Typeref:setref(mapping)
         assert(self.mapping == nil, "canot reseed a typeref")
         self.mapping = mapping
         
-        --We really don't want to have typerefs in the final mapping 
-        --chaing when we have initialized the value. Instead 
-        --we want to replace any occurance of a typeref with the 
-        --actual mapping. 
         fixrefs(mapping, self, mapping)
         mapping.meta = self.meta:setref(mapping.meta)
+        self.meta    = mapping.meta
+        
+        self.encode = function(self, encoder, value)
+            mapping:encode(encoder, value)
+        end 
+        
+        self.decode = function(self, decoder)
+            return mapping:decode(decoder)        
+        end
     end
     
     function custom.typeref()

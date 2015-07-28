@@ -18,15 +18,13 @@ end
 function Encoder:encode(mapping, data)
    local meta = require"tier.meta"
    self.writer:flushbits()
-   if self.usemetadata then
-      meta.encodetype(self, mapping.meta)
-   end
-   
+   meta.encodetype(self, mapping.meta)
    mapping:encode(self, data)	
 end
 
-function Encoder:writef(fmt, ...)
-   self.writer:writef(fmt, ...)  
+function Encoder:encoderaw(mapping, data)
+   self.writer:flushbits()
+   mapping:encode(self, data)	
 end 
 
 --Finishes any pending operations and closes 
@@ -38,11 +36,13 @@ function Encoder:close()
    setmetatable(self, nil);
 end
 
-function core.encoder(writer, usemetadata)
+function core.encoder(writer)
 	local encoder = setmetatable({ }, Encoder)
   encoder.writer = writer;
+  
+  local writef = writer.writef
+  encoder.writef = function(self, fmt, ...) writef(writer, fmt, ...) end 
   encoder.domains = { }
-	encoder.usemetadata = usemetadata
 	return encoder	
 end
 
@@ -83,17 +83,27 @@ end
 
 --Decodes using the specified mapping.
 function Decoder:decode(mapping)
-  local meta = require"tier.meta"
-
+   local meta = require"tier.meta"
    self.reader:discardbits()   
-   if self.usemetadata and mapping.meta ~= meta.dynamic then 
-      local id         = meta.getencodeid(mapping.meta)
-      local meta_types = self.reader:raw(#id)
-      assert(meta_types == id)
-   end 
-   
+   local metatype   = meta.decodetype(self)
+   assert(meta.typecheck(metatype, mapping.meta))
    return mapping:decode(self)
 end
+
+function Decoder:decoderaw(mapping)
+   self.reader:discardbits()   
+   return mapping:decode(self)
+end
+
+function Decoder:autodecode(automapping)
+  if automapping == nil then 
+    local standard = require"tier.standard" 
+    automapping    = standard.dynamic
+  end 
+  
+  self.reader:discardbits()
+  return automapping:decode(self)
+end 
 
 function Decoder:readf(fmt, ...)
   return self.reader:readf(fmt, ...)
@@ -108,12 +118,14 @@ function Decoder:close()
 end
 
 --Creates a decoder
-function core.decoder(reader, usemetadata)
+function core.decoder(reader)
 	local decoder = setmetatable({ }, Decoder)
-    decoder.reader  = reader
-	decoder.domains = {}
+  decoder.reader  = reader
+  
+  local readf = reader.readf
+	decoder.readf   = function(self, fmt, ...) return readf(reader, fmt, ...) end 
+  decoder.domains = {}
 	decoder.pending = {}
-	decoder.usemetadata = usemetadata
 	return decoder
 end
 

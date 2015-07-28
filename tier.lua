@@ -6,47 +6,70 @@ tier.primitive = require"tier.primitive"
 tier.standard  = require"tier.standard"
 
 
-tier.writer = format.writer
 --Convinience function for tier  single value
-function tier.encode(stream, value, mapping, usemetadata)
+tier.writer = format.writer
+function tier.encode(stream, value, mapping)
    if mapping == nil then
       mapping = tier.standard.dynamic
-   end
-   
-   if usemetadata == nil then
-      usemetadata = true
    end
       
    assert(util.ismapping(mapping))
    assert(util.isoutputstream(stream))
       
-   local writer  = format.writer(stream)      
-   local encoder = tier.encoder(writer, usemetadata)
+   local encoder = tier.encoder(tier.writer(stream))
    encoder:encode(mapping, value)
    encoder:close()   
 end
 
-tier.reader = format.reader
+function tier.encoderaw(stream, value, mapping)
+   if mapping == nil then
+      mapping = tier.standard.dynamic
+   end
+      
+   assert(util.ismapping(mapping))
+   assert(util.isoutputstream(stream))
+      
+   local encoder = tier.encoder(tier.writer(stream))
+   encoder:encoderaw(mapping, value)
+   encoder:close()     
+end 
 
---Convinience function for decoding a single value.
-function tier.decode(stream, mapping, usemetadata)
+function tier.encodestring(value, mapping)
+    local out = format.outmemorystream()
+    tier.encode(out, value, mapping)
+    return out:getdata()
+end 
+
+local function decode(method, stream, mapping)
    if mapping == nil then
        mapping = tier.standard.dynamic
    end
    
-   if usemetadata == nil then
-      usemetadata = true
-   end
-
+   if type(stream) == "string" then 
+      stream = format.inmemorystream(stream)
+   end 
   
    assert(util.isinputstream(stream))
    assert(util.ismapping(mapping))
-      
-   local reader  = format.reader(stream)   
-   local decoder = tier.decoder(reader, usemetadata)
-   local val     = decoder:decode(mapping)
+   
+   local decoder = tier.decoder(tier.reader(stream))
+   local val     = decoder[method](decoder, mapping)
    decoder:close()
-   return val
+   return val    
+end 
+
+--Convinience functions for decoding a single value.
+tier.reader = format.reader
+function tier.decode(stream, mapping)
+    return decode("decode", stream, mapping)
 end
+
+function tier.decoderaw(stream, mapping)
+    return decode("decoderaw", stream, mapping)
+end
+
+function tier.autodecode(stream, automapping)
+    return decode("autodecode", stream, automapping)
+end  
 
 return tier
