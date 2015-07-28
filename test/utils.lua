@@ -176,11 +176,9 @@ local function checksame(test, case, recovered)
 			assert(ok, errmsg)
 		end
 	end
-	viewer:write(recovered)								
-	print()
 end
 
-
+local istream = format.inmemorystream
 local function rundynamictest(test)
 	local mapping = test.mapping
 	local basedir = test.basedir or "streams"
@@ -188,12 +186,17 @@ local function rundynamictest(test)
 		for cid, case in ipairs(group) do
 			io.write("Dyn_" .. tags[mapping.meta.tag], ": "); viewer:write(case.actual); io.write(" ... "); io.flush()
 			local output 	 = format.outmemorystream()
-			tier.encode(output, case.actual, mapping, true)
+			tier.encode(output, case.actual, mapping)
 			--hexastream(io.stdout, output:getdata())
 			
-			local input 	= format.inmemorystream(output:getdata())			
-			local recovered 	= tier.decode(input, standard.dynamic, false)
+			local recovered 	= tier.autodecode(istream(output:getdata()))
+			local recovered2    = tier.decode(istream(output:getdata()), mapping)
 			checksame(test, case, recovered)
+			checksame(test, case, recovered2)
+			
+			
+			viewer:write(recovered)								
+			print()
 		end
 	end
 end
@@ -221,9 +224,9 @@ function runtest(test)
 			do
 				local encoder = tier.encoder(tier.writer(output), false)
 				if encodeerror == nil then
-					encoder:encode(mapping, case.actual)
+					encoder:encoderaw(mapping, case.actual)
 				else
-					asserterror(encodeerror, encoder.encode, encoder, mapping, case.actual)
+					asserterror(encodeerror, encoder.encoderaw, encoder, mapping, case.actual)
 				end
 				
 				encoder:close()
@@ -246,11 +249,13 @@ function runtest(test)
 				local input = test.noregression and format.inmemorystream(output)
 				                                 or assert(io.open(outpath, "rb"))
 				local decoder = tier.decoder(tier.reader(input), false)
-				local recovered = assertcount(test.countexpected, decoder:decode(mapping))
+				local recovered = assertcount(test.countexpected, decoder:decoderaw(mapping))
 				decoder:close()
 				input:close()
 				
 				checksame(test, case, recovered)
+				viewer:write(recovered)								
+				print()
 			else
 				print("error: "..encodeerror)
 			end

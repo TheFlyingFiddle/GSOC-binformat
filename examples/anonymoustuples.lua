@@ -15,7 +15,7 @@ output:close()
 
 local input = io.open("AnonymousTuples.dat", "rb")
 local point_a = tier.decode(input, point_mapping)
-local point_b = tier.decode(input)
+local point_b = tier.autodecode(input)
 input:close()
 
 --The values in the points are accessed with the integers 

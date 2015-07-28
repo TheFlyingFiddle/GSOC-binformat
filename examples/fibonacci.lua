@@ -22,7 +22,7 @@ local input   = io.open("Fibonacci.dat", "rb");
 --Decodes the file into a list again.
 --Metadata is encoded together with the sequence so we 
 --Dont have to supply a mapping.
-local in_list = tier.decode(input)
+local in_list = tier.autodecode(input)
 input:close()
 
 --Check that the list contains the same stuff.

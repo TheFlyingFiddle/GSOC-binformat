@@ -15,7 +15,7 @@ output:close()
 
 local input = io.open("NamedTupleLimitations.dat", "rb")
 local with_mapping = tier.decode(input, tuple)
-local without_mapping = tier.decode(input)
+local without_mapping = tier.autodecode(input)
 input:close()
 
 --The fields are there as expected and they still have the same values.

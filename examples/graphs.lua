@@ -84,8 +84,8 @@ tier.encode(output, tree, tree_mapping)
 output:close()
 
 local input = io.open("Graphs.dat", "rb")
-local list_a = tier.decode(input, list_mapping)
-local list_b = tier.decode(input) --Dynamic decoding
-local cyclic_list = tier.decode(input, list_mapping)
+local list_a = tier.decode(input, linked_list_mapping)
+local list_b = tier.autodecode(input) --Dynamic decoding
+local cyclic_list = tier.decode(input, linked_list_mapping2)
 local tree_a = tier.decode(input, tree_mapping)
 input:close()

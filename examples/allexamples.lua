@@ -1,4 +1,4 @@
-dofile("examples/graphs.lua")
+
 dofile("examples/arrays.lua")
 dofile("examples/book.lua")
 dofile("examples/encoding_a_value.lua")
@@ -13,3 +13,4 @@ dofile("examples/references.lua")
 dofile("examples/set.lua")
 dofile("examples/unions.lua")
 dofile("examples/anonymoustuples.lua")
+dofile("examples/graphs.lua")
