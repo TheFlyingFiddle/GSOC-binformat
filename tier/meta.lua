@@ -125,25 +125,19 @@ function meta.getid(type)
 	return type.id 
 end 
 
-function meta.getencodeid(type)
+function meta.encodetype(encoder, type)
 	meta.getid(type)
-	
+	local id 
 	--This is the encoded version of an id. 	
 	if #type.id > 1 then 
 		local head = string.sub(type.id, 1,  1)  
 		local body = string.sub(type.id, 2, -1)	
-		return head .. pack(#body) .. body
+		id 	= head .. pack(#body) .. body
 	else
-		return type.id 
+		id = type.id 
 	end 
-end 
 
-function meta.encodetype(encoder, type)
-	encoder:writef("r", meta.getencodeid(type))	
-end 
-
-local function newdecodetype(decoder, MetaTable)
-	local type = setmetatable({}, MetaTable)
+	encoder:writef("r", id)	
 end 
 
 local function decodeid(decoder)
@@ -225,7 +219,7 @@ do
 		self.sizebits	  = decoder:readf("V")
 		self[1]			  = decodeid(decoder)
 	end
-	
+
 	function meta.list(element_type, sizebits)
 		if sizebits == nil then sizebits = 0 end
 		local list 	  = setmetatable({ }, List)
@@ -365,6 +359,12 @@ do
 	
 	function Embedded:decode(decoder)
 		self[1] = decodeid(decoder)
+	end
+	
+	function Embedded:typecheck(other)
+		return other[1] == meta.void or 
+		       self[1]  == meta.void or
+			   meta.typecheck(other[1], self[1]) 
 	end 
 	
 	function meta.embedded(element_type)
@@ -475,7 +475,6 @@ do
 	end
 end 
 
-
 do 
 	local Typeref = { } Typeref.__index = Typeref 
 	
@@ -523,6 +522,37 @@ do
 	function meta.istyperef(type)
 		return type.tag == tags.TYPEREF
 	end   	
+end 
+
+
+--Checks if two types are compatible. 
+function meta.typecheck(typeA, typeB)
+	if typeA == typeB then return true end 
+	
+	local mtA = getmetatable(typeA)
+	local mtB = getmetatable(typeB)
+	
+	if mtA == mtB then 
+		local typecheck = mtA.typecheck
+		if typecheck then 
+			return typecheck(typeA, typeB)
+		end 
+		
+		if #typeA == #typeB then 
+			local success = true
+			for i=1, #typeA do 
+				if not meta.typecheck(typeA[i], typeB[i]) then 
+					success = false
+					break
+				end
+			end
+			return success 
+		else 
+			return false
+		end 
+	else 
+		return false
+	end 
 end 
 
 return meta
