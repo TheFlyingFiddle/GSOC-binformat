@@ -3,16 +3,11 @@ runtest {
 	{ { actual = { true, false, true } } },
 }
 
-
-
 local table = {}
-
 runtest { 
 	mapping = standard.list(standard.object(standard.list(primitive.varint))),
 	{ { actual = { {}, table, table } } },
 }
-
-
 
 local ref = custom.typeref()
 local list = standard.list(standard.object(ref))
@@ -29,8 +24,9 @@ runtest {
 	},
 }
 
+do
 
-local old_dynamic do
+	local dynamic 
 	local lua2tag = 
 	{
 		["nil"]      = primitive.null,
@@ -46,18 +42,54 @@ local old_dynamic do
 	    return self[type(value)] or error("no mapping for value of type " .. type(value))
 	end
 
-	old_dynamic = custom.dynamic(lua2tag, standard.type)
-	lua2tag["table"] = standard.object(standard.map(old_dynamic, old_dynamic)) 
+	dynamic = custom.dynamic(lua2tag, standard.type)
+	lua2tag["table"] = standard.object(standard.map(dynamic, dynamic)) 
+
+	standard.generator:register_mapping(dynamic)
+
+	runtest { 
+		mapping = dynamic,
+		{
+			{ actual = nested , id = "simple dynamic nested"},
+			{ actual = { nested, nested } , id = "double simple dynamic nested"},
+		},
+	}
+	
+	runtest {
+		mapping = standard.list(standard.object(dynamic)),
+		{
+			{ actual = { 1,2,3 }, id = "OBJECT_DYNAMIC_1_2_3", },
+			{ actual = { nested }, id = "OBJECT_DYNAMIC_NESTED" },
+			{ actual = { nested, nested }, id = "OBJECT_DYNAMIC_NESTED_NESTED" },
+		},
+	}
+	
+	
 end
 
-runtest { 
-	mapping = old_dynamic,
-	{
-		{ actual = nested },
-		{ actual = { nested, nested } },
-	},
-}
 
+do 
+	collectgarbage()
+	local dynamic = standard.dynamic
+	standard.generator:register_mapping(dynamic)
+
+	runtest { 
+		mapping = dynamic,
+		{
+			{ actual = nested , id = "DESCRIPTIVE DYNAMIC NESTED"},
+			{ actual = { nested, nested },  id = "DESCRIPTIVE DYNAMIC NESTED 2"},
+		},
+	}
+	
+	runtest {
+		mapping = standard.list(standard.object(dynamic)),
+		{
+			{ actual = { 1,2,3 }, id = "OBJECT_DESCRIPTIVE_1_2_3", },
+			{ actual = { nested }, id = "OBJECT_DESCRIPTIVE_NESTED" },
+			{ actual = { nested, nested }, id = "OBJECT_DESCRIPTIVE_NESTED_NESTED" },
+		},
+	}
+end 
 
 runtest { 
 	mapping = standard.object(list),
@@ -75,15 +107,6 @@ runtest {
 	},
 }
 
-
-runtest {
-	mapping = standard.list(standard.object(old_dynamic)),
-	{
-		{ actual = { 1,2,3 }, id = "OBJECT_DYNAMIC_1_2_3", },
-		{ actual = { nested }, id = "OBJECT_DYNAMIC_NESTED" },
-		{ actual = { nested, nested }, id = "OBJECT_DYNAMIC_NESTED_NESTED" },
-	},
-}
 
 
 local list = { 1,2,3 }
@@ -110,8 +133,6 @@ runtest {
         mapping = o2,
         { { actual = selfref, id = "OBJECTx2_LIST_SELFREF" } }
 }
-
-
 
 do
 	local concat = _G.table.concat
