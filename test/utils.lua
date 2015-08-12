@@ -193,11 +193,10 @@ local function rundynamictest(test)
 			local outdata    = output:getdata()
 			
 			--hexastream(io.stdout, output:getdata())
-			local recovered 	= tier.decode(istream(outdata), standard.dynamic)
+			local recovered 	= tier.decode(istream(outdata), standard.descriptive)
 			local recovered2    = tier.decode(istream(outdata), primitive.dynamic, mapping)
 			checksame(test, case, recovered)
 			checksame(test, case, recovered2)
-			
 			
 			local rec3 = tier.decode(istream(outdata), standard.preserving)
 			checksame(test, case, rec3.data)

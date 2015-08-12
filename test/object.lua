@@ -25,26 +25,7 @@ runtest {
 }
 
 do
-
-	local dynamic 
-	local lua2tag = 
-	{
-		["nil"]      = primitive.null,
-		["boolean"]  = primitive.boolean,
-		["number"]   = primitive.double,
-		["string"]   = primitive.string,
-		["function"] = nil,
-		["thread"]   = nil,
-		["userdata"] = nil,
-	}
-
-	function lua2tag:getmappingof(value)
-	    return self[type(value)] or error("no mapping for value of type " .. type(value))
-	end
-
-	dynamic = custom.dynamic(lua2tag, standard.type)
-	lua2tag["table"] = standard.object(standard.map(dynamic, dynamic)) 
-
+	local dynamic = standard.dynamic
 	standard.generator:register_mapping(dynamic)
 
 	runtest { 
@@ -70,7 +51,7 @@ end
 
 do 
 	collectgarbage()
-	local dynamic = standard.dynamic
+	local dynamic = standard.descriptive
 	standard.generator:register_mapping(dynamic)
 
 	runtest { 

@@ -85,16 +85,12 @@ end
 --reader:stream() or writer:stream(str)
 local String = { meta = meta.string }
 function String:encode(encoder, value)
-    encoder:writef("V", string.len(value) + 1)
-    encoder:writef("r", value)
-    encoder:writef("r", "\0")
+    encoder:writef("Vrr", string.len(value) + 1, value, '\0')
 end
 
 function String:decode(decoder)
     local len = decoder:readf("V")
-    local val = decoder:readf("r", len - 1)
-    decoder:readf("r", 1)
-    return val
+    return decoder:readf("rr", len - 1, 1)
 end
 
 --The wstring does not have a one-to-one mapping with an tier/decoding function.
@@ -103,16 +99,12 @@ local WString = { meta = meta.wstring}
 function WString:encode(encoder, value)
     local length = string.len(value)
     assert(length %2 == 0, "invalid wide string")
-
-    encoder:writef("V", length / 2 + 1)
-    encoder:writef("r", value)
-    encoder:writef("r", '\000\000') --Add null terminator
+    encoder:writef("Vrr", length / 2 + 1, value, '\000\000')
 end
 
 function WString:decode(decoder)
     local length = decoder:readf("V") * 2
-    local string = decoder:readf("r", length - 2)
-    decoder:readf("r", 2) --Discard null terminator
+    local string = decoder:readf("rr", length - 2, 2) --Discard null terminator
     return string
 end
 
