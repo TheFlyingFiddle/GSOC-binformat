@@ -237,33 +237,38 @@ end
 
 local funcs =
 {
-	b = Writer.int8, 
-	h = Writer.int16,
-	i = Writer.int32,
-	l = Writer.int64,
+      b = { f = Writer.int8,  args = 1 }, 
+	h = { f = Writer.int16, args = 1 },
+	i = { f = Writer.int32, args = 1 },
+	l = { f = Writer.int64, args = 1 },
 
-	B = Writer.uint8,
-	H = Writer.uint16,
-	I = Writer.uint32,
-	L = Writer.uint64,
+	B = { f = Writer.uint8,  args = 1 }, 
+	H = { f = Writer.uint16, args = 1 }, 
+	I = { f = Writer.uint32, args = 1 }, 
+	L = { f = Writer.uint64, args = 1 }, 
 	
-	f = Writer.float,
-	d = Writer.double, 
+	f = { f = Writer.float,  args = 1 }, 
+	d = { f = Writer.double, args = 1 },
 	
-	s = Writer.stream,
-	r = Writer.raw, 
+	s = { f = Writer.stream, args = 1 },
+	r = { f = Writer.raw,    args = 1 },
       
-	v = Writer.varintzz, 
-	V = Writer.varint,
+	v = { f = Writer.varintzz, args = 1 },
+	V = { f = Writer.varint,   args = 1 },
       
-      p = Writer.int,
-      P = Writer.uint
+      p = { f = Writer.int,  args = 2 },
+      P = { f = Writer.uint, args = 2 }
 }
 
 function Writer:writef(fmt, ...)
-	local func = funcs[fmt]
-	assert(func)
-	func(self, ...)
+   local idx = 1
+   for i=1, #fmt do 
+      local char = string.sub(fmt, i, i)
+      local func = funcs[char]
+      assert(func)
+      func.f(self, select(idx, ...))
+      idx = idx + func.args
+   end 
 end 
 
 function format.writer(innerstream)
@@ -462,33 +467,42 @@ end
 
 local funcs =
 {
-	b = Reader.int8, 
-	h = Reader.int16,
-	i = Reader.int32,
-	l = Reader.int64,
+	b = { f = Reader.int8,  args = 0 },
+	h = { f = Reader.int16, args = 0 },
+	i = { f = Reader.int32, args = 0 },
+	l = { f = Reader.int64, args = 0 },
 
-	B = Reader.uint8,
-	H = Reader.uint16,
-	I = Reader.uint32,
-	L = Reader.uint64,
+	B = { f = Reader.uint8,  args = 0 }, 
+	H = { f = Reader.uint16, args = 0 },
+	I = { f = Reader.uint32, args = 0 },
+	L = { f = Reader.uint64, args = 0 },
 	
-	f = Reader.float,
-	d = Reader.double, 
+	f = { f = Reader.float,  args = 0 },
+	d = { f = Reader.double, args = 0 },
 	
-	s = Reader.stream,
-	r = Reader.raw, 
+	s = { f = Reader.stream, args = 0 },
+	r = { f = Reader.raw,    args = 1 },
       
-	v = Reader.varintzz, 
-	V = Reader.varint,
+	v = { f = Reader.varintzz, args = 0 },
+	V = { f = Reader.varint,   args = 0 },
       
-      p = Reader.int,
-      P = Reader.uint
+      p = { f = Reader.int,  args = 1 },
+      P = { f = Reader.uint, args = 1 }
 }
 
+local sub = string.sub
+local readf_storage = { }
 function Reader:readf(fmt, ...)
-	local func = funcs[fmt]
-	assert(func)
-	return func(self, ...)
+   local idx = 1
+   for i=1, #fmt do 
+      local char = sub(fmt, i, i)
+      local func = funcs[char]
+      assert(func)
+      readf_storage[i] = func.f(self, select(idx, ...))
+      idx = idx + func.args
+   end
+   
+   return tunpack(readf_storage, 1, #fmt)
 end 
 
 function format.reader(innerstream)
