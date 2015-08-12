@@ -136,7 +136,7 @@ return function (standard)
             end
         end
        
-        if not isarray(type_tuple, count) then
+        if not isarray(type_tuple, count) or count < 2 then
             return meta.dynamic
         end
         
