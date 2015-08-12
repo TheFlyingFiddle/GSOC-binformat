@@ -116,6 +116,18 @@ function WString:decode(decoder)
     return string
 end
 
+local Dynamic = { meta = meta.dynamic }
+
+function Dynamic:encode(encoder, value, mapping)
+    meta.encodetype(encoder, mapping.meta)
+    mapping:encode(encoder, value)
+end 
+
+function Dynamic:decode(decoder, mapping)
+    local decoded_meta = meta.decodetype(decoder)
+    assert(meta.typecheck(decoded_meta, mapping.meta))
+    return mapping:decode(decoder)
+end 
 
 primitive.varint   = createMapper(meta.varint,   "V")
 primitive.varintzz = createMapper(meta.varintzz, "v")
@@ -131,9 +143,6 @@ primitive.float    = createMapper(meta.float,    "f")
 primitive.double   = createMapper(meta.double,   "d")
 primitive.stream   = createMapper(meta.stream,   "s")
 
---Should probably remove this. ([maia] I agree)
-primitive.byte     = primitive.uint8
-
 --Not yet implemented primitive.half = createMapper(tags.HALF, "half")
 --Not yet implemented primitive.quad = createMapper(tags.QUAD, "quad");
 
@@ -147,5 +156,6 @@ primitive.char 		= Char
 primitive.wchar 	= WChar
 primitive.string 	= String
 primitive.wstring	= WString
+primitive.dynamic   = Dynamic
 
 return primitive

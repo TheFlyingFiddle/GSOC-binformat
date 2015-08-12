@@ -1,5 +1,4 @@
 local format	= require"format"
-
 local core = { }
 
 local Encoder = { }
@@ -15,17 +14,10 @@ function Encoder:getobjectmap(mapping)
 end
 
 --Encodes data using the specified mapping.
-function Encoder:encode(mapping, data)
-   local meta = require"tier.meta"
+function Encoder:encode(mapping, data, ...)
    self.writer:flushbits()
-   meta.encodetype(self, mapping.meta)
-   mapping:encode(self, data)	
+   mapping:encode(self, data, ...)	
 end
-
-function Encoder:encoderaw(mapping, data)
-   self.writer:flushbits()
-   mapping:encode(self, data)	
-end 
 
 --Finishes any pending operations and closes 
 --the encoder. After this operation the encoder can no longer be used.
@@ -82,31 +74,9 @@ function Decoder:endobject(mapping, id, value)
 end
 
 --Decodes using the specified mapping.
-function Decoder:decode(mapping)
-   local meta = require"tier.meta"
-   self.reader:discardbits()   
-   local metatype   = meta.decodetype(self)
-   assert(meta.typecheck(metatype, mapping.meta))
-   return mapping:decode(self)
-end
-
-function Decoder:decoderaw(mapping)
-   self.reader:discardbits()   
-   return mapping:decode(self)
-end
-
-function Decoder:autodecode(automapping)
-  if automapping == nil then 
-    local standard = require"tier.standard" 
-    automapping    = standard.dynamic
-  end 
-  
-  self.reader:discardbits()
-  return automapping:decode(self)
-end 
-
-function Decoder:readf(fmt, ...)
-  return self.reader:readf(fmt, ...)
+function Decoder:decode(mapping, ...)
+   self.reader:discardbits()  
+   return mapping:decode(self, ...)
 end 
 
 --Closes the decoder.
