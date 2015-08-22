@@ -108,7 +108,7 @@ do
     
     function Array:decode(decoder)
         local size = self.meta.size
-        local value = self.handler:create()
+        local value = self.handler:create(size)
         decoder:setobject(value)
         
         local mapping = self.mapping

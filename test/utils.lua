@@ -178,6 +178,9 @@ local function checksame(test, case, recovered)
 	end
 end
 
+local meta = require"tier.meta"
+			
+
 local istream = format.inmemorystream
 local function rundynamictest(test)
 	local mapping = test.mapping
@@ -186,14 +189,22 @@ local function rundynamictest(test)
 		for cid, case in ipairs(group) do
 			io.write("Dyn_" .. tags[mapping.meta.tag], ": "); viewer:write(case.actual); io.write(" ... "); io.flush()
 			local output 	 = format.outmemorystream()
-			tier.encode(output, case.actual, mapping)
-			--hexastream(io.stdout, output:getdata())
+			tier.encode(output, case.actual, primitive.dynamic, mapping)
+			local outdata    = output:getdata()
 			
-			local recovered 	= tier.autodecode(istream(output:getdata()))
-			local recovered2    = tier.decode(istream(output:getdata()), mapping)
+			--hexastream(io.stdout, output:getdata())
+			local recovered 	= tier.decode(istream(outdata), standard.descriptive)
+			local recovered2    = tier.decode(istream(outdata), primitive.dynamic, mapping)
 			checksame(test, case, recovered)
 			checksame(test, case, recovered2)
 			
+			local rec3 = tier.decode(istream(outdata), standard.preserving)
+			checksame(test, case, rec3.data)
+			assert(rec3.mapping.meta == mapping.meta)
+			
+			local out2 = format.outmemorystream()
+			tier.encode(out2, {mapping = rec3.mapping, data = case.actual }, standard.preserving)
+			assert(#outdata >= #out2:getdata())
 			
 			viewer:write(recovered)								
 			print()
@@ -224,9 +235,9 @@ function runtest(test)
 			do
 				local encoder = tier.encoder(tier.writer(output), false)
 				if encodeerror == nil then
-					encoder:encoderaw(mapping, case.actual)
+					encoder:encode(mapping, case.actual)
 				else
-					asserterror(encodeerror, encoder.encoderaw, encoder, mapping, case.actual)
+					asserterror(encodeerror, encoder.encode, encoder, mapping, case.actual)
 				end
 				
 				encoder:close()
@@ -249,7 +260,7 @@ function runtest(test)
 				local input = test.noregression and format.inmemorystream(output)
 				                                 or assert(io.open(outpath, "rb"))
 				local decoder = tier.decoder(tier.reader(input), false)
-				local recovered = assertcount(test.countexpected, decoder:decoderaw(mapping))
+				local recovered = assertcount(test.countexpected, decoder:decode(mapping))
 				decoder:close()
 				input:close()
 				

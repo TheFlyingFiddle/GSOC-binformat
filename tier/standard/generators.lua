@@ -45,7 +45,7 @@ local tagToLua = {
 --Standard generator functions
 local function metatypetoluatype(g, metatype)
 	local lua_type = tagToLua[metatype.tag] or "unknown"
-	if lua_type == "unkown" then
+	if lua_type == "unknown" then
         return metatypetoluatype(generator, metatype[1])
 	end
 	return lua_type
@@ -67,6 +67,7 @@ return function(standard)
     	for i=1, #metatype do
     		local sub = metatype[i]        
             local ltype = metatypetoluatype(g, sub)
+            if ltype == "unknown" then ltype = "table" end 
     		union[i] = { type = ltype, mapping = g:generate(sub) }	
     	end
     		

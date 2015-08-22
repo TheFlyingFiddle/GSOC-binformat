@@ -92,7 +92,7 @@ return function(standard)
     local upvalue = custom.object(UpvalHandler, 
                            standard.tuple{ 
                                { mapping = primitive.varint }, 
-                               { mapping = standard.dynamic } })
+                               { mapping = standard.descriptive } })
                                
     Closure.upmapping    = upvalue
     Closure.meta         = meta.semantic("closure", meta.tuple(meta.stream, meta.list(upvalue.meta)))    

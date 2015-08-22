@@ -524,6 +524,21 @@ do
 	end   	
 end 
 
+function meta.tostring(type, level)
+	if level == nil then level = 0 end 
+	type.is_writing_to_string = true
+
+	local s = string.rep(" ", level) .. tags[type.tag] .. "\n"
+	for i=1, #type do 
+		if not type[i].is_writing_to_string then 
+			s = s .. meta.tostring(type[i], level + 1)	
+		end 
+	
+	end 
+	
+	type.is_writing_to_string = false
+	return s or ""
+end 
 
 --Checks if two types are compatible. 
 function meta.typecheck(typeA, typeB)

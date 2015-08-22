@@ -83,6 +83,6 @@ local IllegalLuaCases =
 	{ actual = { io.stdout }}
 }
 
-runtest { mapping = standard.dynamic, SimpleLuaCases  }
-runtest { mapping = standard.dynamic, noregression = true, ComplexLuaCases } 
-runtest { mapping = standard.dynamic, encodeerror = "any" , IllegalLuaCases }
+runtest { mapping = standard.descriptive, SimpleLuaCases  }
+runtest { mapping = standard.descriptive, noregression = true, ComplexLuaCases } 
+runtest { mapping = standard.descriptive, encodeerror = "any" , IllegalLuaCases }

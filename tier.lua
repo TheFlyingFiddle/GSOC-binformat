@@ -8,7 +8,7 @@ tier.standard  = require"tier.standard"
 
 --Convinience function for tier  single value
 tier.writer = format.writer
-function tier.encode(stream, value, mapping)
+function tier.encode(stream, value, mapping, ...)
    if mapping == nil then
       mapping = tier.standard.dynamic
    end
@@ -17,22 +17,9 @@ function tier.encode(stream, value, mapping)
    assert(util.isoutputstream(stream))
       
    local encoder = tier.encoder(tier.writer(stream))
-   encoder:encode(mapping, value)
+   encoder:encode(mapping, value, ...)
    encoder:close()   
 end
-
-function tier.encoderaw(stream, value, mapping)
-   if mapping == nil then
-      mapping = tier.standard.dynamic
-   end
-      
-   assert(util.ismapping(mapping))
-   assert(util.isoutputstream(stream))
-      
-   local encoder = tier.encoder(tier.writer(stream))
-   encoder:encoderaw(mapping, value)
-   encoder:close()     
-end 
 
 function tier.encodestring(value, mapping)
     local out = format.outmemorystream()
@@ -40,7 +27,8 @@ function tier.encodestring(value, mapping)
     return out:getdata()
 end 
 
-local function decode(method, stream, mapping)
+tier.reader = format.reader
+function tier.decode(stream, mapping, ...)
    if mapping == nil then
        mapping = tier.standard.dynamic
    end
@@ -53,23 +41,9 @@ local function decode(method, stream, mapping)
    assert(util.ismapping(mapping))
    
    local decoder = tier.decoder(tier.reader(stream))
-   local val     = decoder[method](decoder, mapping)
+   local val     = decoder:decode(mapping, ...)
    decoder:close()
    return val    
 end 
-
---Convinience functions for decoding a single value.
-tier.reader = format.reader
-function tier.decode(stream, mapping)
-    return decode("decode", stream, mapping)
-end
-
-function tier.decoderaw(stream, mapping)
-    return decode("decoderaw", stream, mapping)
-end
-
-function tier.autodecode(stream, automapping)
-    return decode("autodecode", stream, automapping)
-end  
 
 return tier

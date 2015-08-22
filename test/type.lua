@@ -1,6 +1,8 @@
 local PrimitiveCases = { }
 for k,v in pairs(primitive) do 
-	table.insert(PrimitiveCases, { actual = v , id = "primitive" .. k })
+	if k ~= "dynamic" then 
+		table.insert(PrimitiveCases, { actual = v , id = "primitive" .. k })
+	end 
 end
 table.sort(PrimitiveCases, function(a,b) return a.actual.meta.tag < b.actual.meta.tag end)
 

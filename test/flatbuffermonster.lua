@@ -38,8 +38,8 @@ local monster = standard.tuple(
 	{ key = "hp",   		mapping = primitive.int16 },
 	{ key = "name", 		mapping = primitive.string },
 	{ key = "friendly",  	mapping = primitive.boolean },
-	{ key = "inventory", 	mapping = standard.list(primitive.byte) },
-	{ key = "color",		mapping = primitive.byte }	
+	{ key = "inventory", 	mapping = standard.list(primitive.uint8) },
+	{ key = "color",		mapping = primitive.uint8 }	
 })
 
 local Color = { Red = 0, Green = 1, Blue = 2 }
