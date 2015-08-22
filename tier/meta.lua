@@ -12,7 +12,6 @@ local function newmetatype(tag)
 	assert(tag)
 	local mt = {} mt.__index = mt
 	mt.tag = tag
-	mt.__tostring = meta.typestring
 	meta_types[tag] = mt
 	
 	return mt
@@ -527,49 +526,33 @@ end
 
 
 --Checks if two types are compatible. 
-function meta.iscompatible(typeA, typeB)
+function meta.typecheck(typeA, typeB)
 	if typeA == typeB then return true end 
 	
 	local mtA = getmetatable(typeA)
 	local mtB = getmetatable(typeB)
-	local success = true
 	
-	if mtA == mtB and not mtA == nil then 
+	if mtA == mtB then 
 		local typecheck = mtA.typecheck
 		if typecheck then 
-			success = typecheck(typeA, typeB)
-		elseif #typeA == #typeB then 
-			for i=1, #typeA do
-				local s, e = meta.typecheck(typeA[i], typeB[i]) 
-				if not s then  
+			return typecheck(typeA, typeB)
+		end 
+		
+		if #typeA == #typeB then 
+			local success = true
+			for i=1, #typeA do 
+				if not meta.typecheck(typeA[i], typeB[i]) then 
 					success = false
 					break
 				end
 			end
+			return success 
 		else 
-			success = false
+			return false
 		end 
 	else 
-		success = false
+		return false
 	end 
-
-	local error 	
-	if success == false then 
-		error = "Types are not compatible. \n"
-		error = error .. "TypeA:\n" .. meta.typestring(typeA, 1) .. "\n"
-		error = error .. "TypeB:\n" .. meta.typestring(typeB, 1) .. "\n"
-	end 	
-	
-	return success, error
-end
-
-function meta.typestring(type, level)
-	if not level then level = 0 end 
-	local s = string.rep(" ", level) .. tags[type.tag] .. "\n"
-	for i=1, #type do 
-		s = s .. string.rep(" ", level) .. meta.typestring(type[i], level + 1)
-	end
-	return s	
 end 
 
 return meta

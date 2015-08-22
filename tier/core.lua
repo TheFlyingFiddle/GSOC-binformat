@@ -86,7 +86,7 @@ function Decoder:decode(mapping)
    local meta = require"tier.meta"
    self.reader:discardbits()   
    local metatype   = meta.decodetype(self)
-   assert(meta.iscompatible(metatype, mapping.meta))
+   assert(meta.typecheck(metatype, mapping.meta))
    return mapping:decode(self)
 end
 
