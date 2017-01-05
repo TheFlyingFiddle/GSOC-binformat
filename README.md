@@ -44,15 +44,8 @@ to this function. The file already contains metadata that is used to figure out 
 
 ##Documentation
 The [wiki](https://github.com/TheFlyingFiddle/GSOC-binformat/wiki) contains a growing collection of tutorials 
-on how to use the format. The exact encoding format is not yet set in stone but when it is the wiki will contain the
-complete specification document. 
+on how to use the format.
 
 ##How to get TIER
 TIER is avaliable from this github repo. Simply clone the repo and extract the contents of the tier directory
-to the standard lua path on your system. When the format and implementation has reached a more stable state
-the format will be avaliable as a LuaRocks moonrock. 
-
-##Version Alpha 0
-TIER is currently in an alpha stage. It is not ready for production use. Anything from the code to the 
-encoding format is stil subject to change. Changes are however more likely to be additions to the 
-format or background changes that do not affect the end user api.
+to the standard lua path on your system. 
